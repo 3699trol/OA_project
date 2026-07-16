@@ -263,22 +263,30 @@ smart-recruitment/sql/init.sql
 默认库名：`smart_recruitment`  
 默认数据源（可改）：`root/root@localhost:3306`
 
-### 5.3 启动后端
+### 5.3 启动后端（推荐：本地轻量模式）
+
+默认 `spring.profiles.active=local`，**不依赖** Nacos / MySQL / Redis / ES，仅用于先把前后端跑通。
 
 ```bash
 cd smart-recruitment/recruitment-backend
 mvn clean install -DskipTests
 
-# 核心服务
+# 核心服务（8080）
 cd recruitment-service
 mvn spring-boot:run
 
-# AI 服务（另开终端）
+# AI 服务可选（8081，另开终端）
 cd ../recruitment-ai-service
 mvn spring-boot:run
 ```
 
-可选环境变量：
+后续接入完整中间件时再切换：
+
+```bash
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+可选环境变量（AI 联调）：
 
 ```bash
 # Windows PowerShell 示例
@@ -293,6 +301,9 @@ cd smart-recruitment/recruitment-web
 npm install
 npm run dev
 ```
+
+> Windows 若出现 `Cannot find module ... npm-cli.js`，请使用完整路径：  
+> `"C:\Program Files\nodejs\npm.cmd" install` / `"C:\Program Files\nodejs\npm.cmd" run dev`
 
 默认地址：
 

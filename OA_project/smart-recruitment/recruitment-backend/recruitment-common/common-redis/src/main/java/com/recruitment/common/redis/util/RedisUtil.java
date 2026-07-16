@@ -1,16 +1,18 @@
 package com.recruitment.common.redis.util;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * Redis缓存工具类
+ * Redis缓存工具类（仅在存在 RedisTemplate 时生效）
  */
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean(name = "redisTemplate")
 public class RedisUtil {
 
     private final RedisTemplate<String, Object> redisTemplate;

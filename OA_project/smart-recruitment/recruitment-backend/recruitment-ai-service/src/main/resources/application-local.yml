@@ -1,0 +1,10 @@
+# 本地轻量启动：不依赖 Nacos / Redis / 真实大模型
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+recruitment:
+  security:
+    permit-all: true
