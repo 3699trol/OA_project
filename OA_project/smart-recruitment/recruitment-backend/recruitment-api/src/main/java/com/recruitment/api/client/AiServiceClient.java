@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * AI服务Feign客户端
+ * 本地模式通过 url 直连，不依赖 Nacos 服务发现
  */
-@FeignClient(name = "recruitment-ai-service")
+@FeignClient(name = "recruitment-ai-service", url = "${ai.service.url:http://localhost:8081}")
 public interface AiServiceClient {
 
     @PostMapping("/api/ai/resume/parse")

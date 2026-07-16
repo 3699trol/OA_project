@@ -1,0 +1,44 @@
+# 完整中间件联调配置（后续启用）
+# 启动方式: mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+spring:
+  config:
+    import: "optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension:yml}"
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/smart_recruitment?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+  data:
+    redis:
+      host: localhost
+      port: 6379
+    elasticsearch:
+      uris: http://localhost:9200
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: localhost:8848
+        fail-fast: false
+      config:
+        enabled: true
+        server-addr: localhost:8848
+        file-extension: yml
+        import-check:
+          enabled: false
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+recruitment:
+  security:
+    permit-all: false
