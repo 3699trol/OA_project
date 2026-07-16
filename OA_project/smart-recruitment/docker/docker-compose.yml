@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Redis Stack (支持向量检索)
+  redis-stack:
+    image: redis/redis-stack:latest
+    container_name: recruitment-redis-stack
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  # Elasticsearch
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    container_name: recruitment-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  # MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: recruitment-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: smart_recruitment
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  es-data:
+  mysql-data:
