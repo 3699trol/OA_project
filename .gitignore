@@ -1,0 +1,43 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temp
+*.tmp
+*.temp
+
+# Env secrets (do not ignore application.yml / bootstrap.yml)
+.env
+.env.*
+!.env.example
+
+# Java / Maven
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Node / Frontend
+**/node_modules/
+**/dist/
+**/.vite/
+*.local
+
+# Build / coverage
+**/coverage/
+**/*.class
+**/*.jar
+!**/src/main/resources/**/*.jar
+
+# Uploads / local data
+**/uploads/
+**/data/
