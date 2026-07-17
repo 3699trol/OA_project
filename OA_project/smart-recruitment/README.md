@@ -161,9 +161,137 @@ smart-recruitment/
 
 ---
 
-## 4. 编码规范
+# 4 数据库字段
 
-### 4.1 通用约定
+### 4.1 用户表
+
+| 字段名 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT PK | 用户 ID |
+| username | VARCHAR(50) | 登录账号 |
+| password | VARCHAR(255) | 密码（加密） |
+| real_name | VARCHAR(50) | 真实姓名 |
+| user_type | TINYINT | 用户类型（1 管理员、2 HR、3 面试官、4 求职者） |
+| gender | TINYINT | 性别 |
+| phone | VARCHAR(20) | 手机号 |
+| email | VARCHAR(100) | 邮箱 |
+| status | TINYINT | 账号状态（0 禁用，1 正常） |
+| last_login_time | DATETIME | 最后登录时间 |
+| create_time | DATETIME | 创建时间 |
+| update_time | DATETIME | 更新时间 |
+| company_id | BIGINT | 关联公司主表，标识 HR 所属企业 |
+
+### 4.2 职位表
+
+| 字段名 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT PK | 职位 ID |
+| job_name | VARCHAR(100) | 职位名称 |
+| department | VARCHAR(100) | 部门 |
+| category | VARCHAR(50) | 岗位类别 |
+| city | VARCHAR(100) | 工作地点 |
+| salary_min | DECIMAL(10,2) | 最低薪资 |
+| salary_max | DECIMAL(10,2) | 最高薪资 |
+| education | VARCHAR(50) | 学历要求 |
+| experience | VARCHAR(50) | 经验要求 |
+| headcount | INT | 招聘人数 |
+| description | TEXT | 岗位描述 |
+| requirements | TEXT | 岗位要求 |
+| status | TINYINT | 职位状态（0 下架、1 招聘中） |
+| publisher_id | BIGINT | 发布 HR（关联 sys_user.id） |
+| publish_time | DATETIME | 发布时间 |
+| create_time | DATETIME | 创建时间 |
+| update_time | DATETIME | 更新时间 |
+
+### 4.3 简历表
+
+| 字段名 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| id | BIGINT | Y | 主键 ID |
+| user_id | BIGINT | Y | 求职者用户 ID |
+| file_url | VARCHAR(500) | N | 上传文件 URL（Word/PDF） |
+| parsed_content | LONGTEXT | N | AI 解析后的纯文本（供 ES 全文检索） |
+| ai_score | DECIMAL(5,2) | N | AI 简历质量评分 |
+| ai_analysis | TEXT | N | AI 优化建议 |
+| current_salary | DECIMAL(10,2) | N | 当前薪资 |
+| expected_salary | DECIMAL(10,2) | N | 期望薪资 |
+| self_evaluation | TEXT | N | 自我评价 |
+| embedding_vector | VECTOR(768) | N | 简历内容向量（用于智能匹配） |
+| created_at | DATETIME | Y | 创建时间 |
+| updated_at | DATETIME | Y | 更新时间 |
+
+### 4.4 教育经历子表
+
+| 字段名 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| id | BIGINT | Y | 主键 ID |
+| resume_id | BIGINT | Y | 简历 ID |
+| school | VARCHAR(100) | Y | 学校名称 |
+| major | VARCHAR(100) | N | 专业 |
+| degree | VARCHAR(20) | N | 学历（专科/本科/硕士/博士） |
+| start_date | DATE | N | 入学时间 |
+| end_date | DATE | N | 毕业时间 |
+| is_highest | TINYINT | Y | 是否最高学历：0-否 1-是 |
+
+### 4.5 工作经历子表
+
+| 字段名 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| id | BIGINT | Y | 主键 ID |
+| resume_id | BIGINT | Y | 简历 ID |
+| company | VARCHAR(100) | Y | 公司名称 |
+| position | VARCHAR(100) | N | 职位 |
+| department | VARCHAR(100) | N | 部门 |
+| start_date | DATE | N | 入职时间 |
+| end_date | DATE | N | 离职时间（NULL 表示至今） |
+| description | TEXT | N | 工作内容描述 |
+
+### 4.6 职位投递表
+
+| 字段名 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT PK | 投递 ID |
+| job_id | BIGINT | 职位 ID |
+| user_id | BIGINT | 求职者 ID |
+| resume_id | BIGINT | 简历 ID |
+| apply_time | DATETIME | 投递时间 |
+| status | TINYINT | 状态（0 待筛选、1 面试中、2 录用、3 淘汰） |
+| remark | VARCHAR(255) | 备注 |
+
+> 建议建立唯一索引：UNIQUE(job_id, user_id)，防止重复投递。
+
+### 4.7 面试表
+
+| 字段名 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT PK | 面试 ID |
+| application_id | BIGINT | 投递记录 ID |
+| interviewer_id | BIGINT | 面试官 ID |
+| interview_time | DATETIME | 面试时间 |
+| interview_type | VARCHAR(20) | 线上/线下 |
+| address | VARCHAR(255) | 会议链接或地点 |
+| ai_questions | TEXT | AI 生成的面试题 |
+| status | TINYINT | 0 待面试、1 已完成、2 取消 |
+| create_time | DATETIME | 创建时间 |
+
+### 4.8 面试评价表
+
+| 字段名 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT PK | 评价 ID |
+| interview_id | BIGINT | 面试 ID |
+| technical_score | INT | 技术评分 |
+| communication_score | INT | 沟通评分 |
+| logic_score | INT | 逻辑评分 |
+| overall_score | INT | 综合评分 |
+| evaluation | TEXT | 评价内容 |
+| result | TINYINT | 0 淘汰、1 待定、2 通过 |
+| feedback_time | DATETIME | 评价时间 |
+
+
+## 5. 编码规范
+
+### 5.1 通用约定
 
 1. **统一语言**：代码注释、提交说明、接口文档使用简体中文或英文，同一模块内保持一致。  
 2. **统一响应**：后端接口统一返回 `Result<T>`，禁止直接裸返回业务对象（特殊文件流除外）。  
@@ -171,7 +299,7 @@ smart-recruitment/
 4. **统一鉴权**：接口默认需登录；白名单仅限注册/登录等公开接口。  
 5. **统一日志**：关键业务操作使用操作日志注解；敏感信息脱敏后落库/输出。
 
-### 4.2 Java 后端规范
+### 5.2 Java 后端规范
 
 | 项 | 规范 |
 |----|------|
@@ -197,7 +325,7 @@ com.recruitment.job
 └── vo
 ```
 
-### 4.3 Vue 前端规范
+### 5.3 Vue 前端规范
 
 | 项 | 规范 |
 |----|------|
@@ -220,7 +348,7 @@ views/
 └── error/
 ```
 
-### 4.4 Git 与协作规范
+### 5.4 Git 与协作规范
 
 - 分支建议：`main`（稳定） / `develop`（集成） / `feature/*`（功能） / `fix/*`（修复）
 - Commit 建议：`feat:` / `fix:` / `docs:` / `refactor:` / `chore:`
@@ -239,9 +367,9 @@ views/
 
 ---
 
-## 5. 快速开始
+## 6. 快速开始
 
-### 5.1 启动中间件
+### 6.1 启动中间件
 
 方式 A：Docker（推荐联调）
 
@@ -252,7 +380,7 @@ docker compose up -d
 
 方式 B：按课程要求安装本机环境（JDK21、Maven3.9+、Nacos、ES、Redis、Redis Stack）
 
-### 5.2 初始化数据库
+### 6.2 初始化数据库
 
 执行：
 
@@ -263,7 +391,7 @@ smart-recruitment/sql/init.sql
 默认库名：`smart_recruitment`  
 默认数据源（可改）：`root/root@localhost:3306`
 
-### 5.3 启动后端（推荐：本地轻量模式）
+### 6.3 启动后端（推荐：本地轻量模式）
 
 默认 `spring.profiles.active=local`，**不依赖** Nacos / MySQL / Redis / ES，仅用于先把前后端跑通。
 
@@ -294,7 +422,7 @@ $env:OPENAI_API_KEY="your-key"
 $env:OPENAI_BASE_URL="https://api.openai.com"
 ```
 
-### 5.4 启动前端
+### 6.4 启动前端
 
 ```bash
 cd smart-recruitment/recruitment-web
@@ -320,7 +448,7 @@ npm run dev
 
 ---
 
-## 6. 接口约定
+## 7. 接口约定
 
 - 统一前缀：`/api`
 - 认证方式：`Authorization: Bearer <JWT>`
@@ -338,7 +466,7 @@ npm run dev
 
 ---
 
-## 7. 开发建议顺序
+## 8. 开发建议顺序
 
 1. 基础 CRUD：用户、角色、职位、简历、投递、面试相关表  
 2. 登录鉴权与角色权限  
@@ -359,7 +487,7 @@ AI 服务：Spring Boot + Spring AI + Redis Stack
 
 ---
 
-## 8. 相关文档
+## 9. 相关文档
 
 - 模块划分：`../模块划分.md`
 - 接口文档：`docs/api-docs.md`
@@ -368,7 +496,7 @@ AI 服务：Spring Boot + Spring AI + Redis Stack
 
 ---
 
-## 9. 许可证与团队约定
+## 10. 许可证与团队约定
 
 本项目用于课程/团队实训开发。提交代码前请确认：
 
