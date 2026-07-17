@@ -23,3 +23,7 @@ export function publishJob(id) {
 export function unpublishJob(id) {
   return request.post(`/job/${id}/unpublish`)
 }
+
+export function getJobCategories() {
+  return request.get('/job/categories')
+}

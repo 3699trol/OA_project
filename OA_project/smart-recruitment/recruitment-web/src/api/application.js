@@ -11,3 +11,7 @@ export function getApplicationList(params) {
 export function updateApplicationStatus(id, data) {
   return request.put(`/application/${id}/status`, data)
 }
+
+// Aliases for convenience
+export const apply = createApplication
+export const getApplications = getApplicationList
