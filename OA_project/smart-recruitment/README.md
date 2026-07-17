@@ -421,20 +421,15 @@ views/
 
 ## 6. 快速开始
 
-### 6.1 启动中间件
+标准流程分五步：**准备环境 → 初始化数据库 → 启动中间件 → 启动后端 → 启动前端**。也可跳到 [6.6](#66-一键启动脚本windows-powershell) 使用脚本一次性拉起。
 
-方式 A：Docker（推荐联调）
+### 6.1 环境准备
 
-```bash
-cd smart-recruitment/docker
-docker compose up -d
-```
-
-方式 B：按课程要求安装本机环境（JDK21、Maven3.9+、Nacos、ES、Redis、Redis Stack）
+按 [2.4 开发环境要求](#24-开发环境要求) 安装 JDK 21+、Maven 3.9+、Node.js 18+、MySQL 8；如需完整联调再装 Nacos / Redis Stack / Elasticsearch。
 
 ### 6.2 初始化数据库
 
-执行：
+执行脚本：
 
 ```text
 smart-recruitment/sql/init.sql
@@ -443,9 +438,24 @@ smart-recruitment/sql/init.sql
 默认库名：`smart_recruitment`  
 默认数据源（可改）：`root/root@localhost:3306`
 
-### 6.3 启动后端（推荐：本地轻量模式）
+> 若已存在同名库/管理员账号，脚本重复执行会在插入 `admin` 时报唯一键冲突，属预期行为，可忽略或先清空 `sys_user` 后再执行。
 
-默认 `spring.profiles.active=local`，**不依赖** Nacos / MySQL / Redis / ES，仅用于先把前后端跑通。
+### 6.3 启动中间件
+
+方式 A：Docker（推荐联调，一次性拉起 MySQL/Redis Stack/ES/Nacos）
+
+```bash
+cd smart-recruitment/docker
+docker compose up -d
+```
+
+方式 B：手动安装并启动本机中间件（JDK21、Maven3.9+、Nacos、ES、Redis、Redis Stack）
+
+### 6.4 启动后端
+
+推荐先用本地轻量模式验证前后端联通，再切换完整中间件模式。
+
+**本地轻量模式**（`spring.profiles.active=local`，不依赖 Nacos / MySQL / Redis / ES）：
 
 ```bash
 cd smart-recruitment/recruitment-backend
@@ -460,7 +470,7 @@ cd ../recruitment-ai-service
 mvn spring-boot:run
 ```
 
-后续接入完整中间件时再切换：
+**完整中间件模式**（依赖 6.3 已启动的中间件）：
 
 ```bash
 mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
@@ -468,13 +478,13 @@ mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 
 可选环境变量（AI 联调）：
 
-```bash
+```powershell
 # Windows PowerShell 示例
 $env:OPENAI_API_KEY="your-key"
 $env:OPENAI_BASE_URL="https://api.openai.com"
 ```
 
-### 6.4 启动前端
+### 6.5 启动前端
 
 ```bash
 cd smart-recruitment/recruitment-web
@@ -485,7 +495,25 @@ npm run dev
 > Windows 若出现 `Cannot find module ... npm-cli.js`，请使用完整路径：  
 > `"C:\Program Files\nodejs\npm.cmd" install` / `"C:\Program Files\nodejs\npm.cmd" run dev`
 
-默认地址：
+前端通过 Vite 代理将 `/api` 转发到 `http://localhost:8080`。
+
+### 6.6 一键启动脚本（Windows PowerShell）
+
+仓库根目录 `smart-recruitment/start-dev.ps1` 会自动完成 6.3～6.5（默认本地轻量模式，不含数据库初始化）：
+
+1. （可选）`-WithDocker`：执行 `docker compose up -d`
+2. 启动 `recruitment-service`：`mvn spring-boot:run -Dspring-boot.run.profiles=dev`
+3. （可选）`-WithAiService`：启动 `recruitment-ai-service`
+4. `recruitment-web`：无 `node_modules` 时先 `npm install`，再 `npm run dev`
+
+```powershell
+cd smart-recruitment
+./start-dev.ps1 -WithDocker -WithAiService
+```
+
+> 首次运行前需先完成 6.2 数据库初始化；脚本只负责启动中间件与前后端进程。
+
+### 6.7 默认地址
 
 | 服务 | 地址 |
 |------|------|
@@ -495,8 +523,6 @@ npm run dev
 | Nacos | http://localhost:8848/nacos |
 | ES | http://localhost:9200 |
 | Redis Stack | 6379（Redis） / 8001（RedisInsight） |
-
-前端通过 Vite 代理将 `/api` 转发到 `http://localhost:8080`。
 
 ---
 
