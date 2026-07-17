@@ -161,106 +161,157 @@ smart-recruitment/
 
 ---
 
-# 4 数据库字段
+# 4. 数据库设计
 
-### 4.1 用户表
+### 4.1 命名与通用字段
+
+- 统一下划线命名：`job_application.status`、`resume_education.start_date`。
+- 所有主数据表包含：`create_time`、`update_time`（`DEFAULT CURRENT_TIMESTAMP` + `ON UPDATE`）。
+- 软删除字段统一使用 `deleted TINYINT DEFAULT 0`（0=有效，1=删除）。
+- 金额字段使用 `DECIMAL(10,2)`，评分使用 `DECIMAL(5,2)` / `INT`，布尔值使用 `TINYINT(1)`。
+
+### 4.2 用户表（sys_user）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | BIGINT | PK | 用户 ID |
+| username | VARCHAR(50) | UNIQUE, NOT NULL | 登录账号 |
+| password | VARCHAR(255) | NOT NULL | Bcrypt 密码 |
+| real_name | VARCHAR(50) |  | 真实姓名 |
+| user_type | TINYINT | NOT NULL | 1 管理员 / 2 HR / 3 面试官 / 4 求职者 |
+| gender | TINYINT | DEFAULT 0 | 性别（0 未知、1 男、2 女） |
+| phone | VARCHAR(20) |  | 手机号（建立唯一索引防重复） |
+| email | VARCHAR(100) |  | 邮箱 |
+| status | TINYINT | DEFAULT 1 | 账号状态（0 禁用，1 正常） |
+| last_login_time | DATETIME |  | 最后登录时间 |
+| company_id | BIGINT | FK | HR 所属公司，关联 `company.id` |
+| avatar_url | VARCHAR(255) |  | 头像 |
+| create_time | DATETIME |  | 创建时间 |
+| update_time | DATETIME |  | 更新时间 |
+| deleted | TINYINT | DEFAULT 0 | 逻辑删除标记 |
+
+> 索引：`uk_sys_user_username`、`idx_sys_user_phone`、`idx_sys_user_company`。
+
+### 4.3 公司表（company）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | BIGINT | PK | 公司 ID |
+| company_name | VARCHAR(100) | NOT NULL | 公司全称 |
+| short_name | VARCHAR(50) |  | 简称 |
+| industry | VARCHAR(100) |  | 行业 |
+| scale | VARCHAR(50) |  | 规模（50 人、500 人等） |
+| city | VARCHAR(100) |  | 所在城市 |
+| address | VARCHAR(255) |  | 办公地址或线上办公 |
+| logo_url | VARCHAR(255) |  | LOGO |
+| description | TEXT |  | 公司简介 |
+| create_time | DATETIME |  | 创建时间 |
+| update_time | DATETIME |  | 更新时间 |
+
+### 4.4 职位表（job）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | BIGINT | PK | 职位 ID |
+| job_name | VARCHAR(100) | NOT NULL | 职位名称 |
+| department | VARCHAR(100) |  | 所属部门 |
+| category | VARCHAR(50) |  | 岗位类别（技术/产品/职能…） |
+| city | VARCHAR(100) |  | 工作城市（远程可写 remote） |
+| salary_min | DECIMAL(10,2) |  | 最低薪资（K/月） |
+| salary_max | DECIMAL(10,2) |  | 最高薪资 |
+| education | VARCHAR(50) |  | 学历要求 |
+| experience | VARCHAR(50) |  | 经验要求 |
+| headcount | INT | DEFAULT 1 | 招聘人数 |
+| description | TEXT |  | 岗位描述 |
+| requirements | TEXT |  | 任职要求 |
+| status | TINYINT | DEFAULT 0 | 0 草稿 / 1 招聘中 / 2 下架 |
+| publisher_id | BIGINT | FK | 发布 HR（`sys_user.id`） |
+| publish_time | DATETIME |  | 发布时间 |
+| create_time | DATETIME |  | 创建时间 |
+| update_time | DATETIME |  | 更新时间 |
+| deleted | TINYINT | DEFAULT 0 | 逻辑删除 |
+
+> 索引：`idx_job_status`、`idx_job_city`，并建立全文索引 `ft_job_content(job_name, description, requirements)` 供检索。
+
+### 4.5 简历主表（resume）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | BIGINT | PK | 简历 ID |
+| user_id | BIGINT | FK, NOT NULL | 求职者 ID（`sys_user.id`） |
+| file_url | VARCHAR(500) |  | 原始文件存储位置（PDF/Word） |
+| parsed_content | LONGTEXT |  | AI/ETL解析出的纯文本，供 ES 索引 |
+| ai_score | DECIMAL(5,2) |  | AI 质量评分 |
+| ai_analysis | TEXT |  | AI 优化建议与点评 |
+| current_salary | DECIMAL(10,2) |  | 当前薪资 |
+| expected_salary | DECIMAL(10,2) |  | 期望薪资 |
+| self_evaluation | TEXT |  | 自我评价或求职意向 |
+| embedding_vector | JSON |  | 768 维向量 JSON，作为 Redis Stack 向量的备份 |
+| create_time | DATETIME |  | 创建时间 |
+| update_time | DATETIME |  | 更新时间 |
+| deleted | TINYINT | DEFAULT 0 | 逻辑删除 |
+
+### 4.6 教育经历子表（resume_education）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | BIGINT | PK | 主键 |
+| resume_id | BIGINT | FK, NOT NULL | 对应简历 ID |
+| school | VARCHAR(100) | NOT NULL | 学校名称 |
+| major | VARCHAR(100) |  | 专业 |
+| degree | VARCHAR(20) |  | 学历（专科/本科/硕士/博士） |
+| start_date | DATE |  | 入学时间 |
+| end_date | DATE |  | 毕业时间（NULL=至今） |
+| is_highest | TINYINT | DEFAULT 0 | 是否最高学历 |
+| sort_order | INT | DEFAULT 0 | 排序 |
+
+> `resume_id` 建立外键并开启 `ON DELETE CASCADE`，便于删除简历时同步清表。
+
+### 4.7 工作经历子表（resume_experience）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | BIGINT | PK | 主键 |
+| resume_id | BIGINT | FK, NOT NULL | 对应简历 ID |
+| company | VARCHAR(100) | NOT NULL | 公司名称 |
+| position | VARCHAR(100) |  | 职位名称 |
+| department | VARCHAR(100) |  | 部门 |
+| start_date | DATE |  | 入职时间 |
+| end_date | DATE |  | 离职时间（NULL=至今） |
+| description | TEXT |  | 工作内容与成绩 |
+| sort_order | INT | DEFAULT 0 | 排序 |
+
+### 4.8 职位投递表（job_application）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | BIGINT | PK | 投递 ID |
+| job_id | BIGINT | FK, NOT NULL | 职位 ID |
+| user_id | BIGINT | FK, NOT NULL | 求职者 ID |
+| resume_id | BIGINT | FK, NOT NULL | 使用的简历 ID |
+| apply_time | DATETIME | DEFAULT CURRENT_TIMESTAMP | 投递时间 |
+| status | TINYINT | DEFAULT 0 | 0 待筛选 / 1 面试中 / 2 录用 / 3 淘汰 / 4 撤回 |
+| remark | VARCHAR(255) |  | HR 备注 |
+| ai_match_score | DECIMAL(5,2) |  | AI 人岗匹配得分 |
+| ai_match_reason | TEXT |  | AI 匹配解释/推荐原因 |
+| create_time | DATETIME |  | 创建时间 |
+| update_time | DATETIME |  | 更新时间 |
+
+> 约束：`UNIQUE KEY uk_job_user (job_id, user_id)` 防重复投递；`idx_application_status` 便于列表筛选。
+
+### 4.9 投递流转日志（application_log）
 
 | 字段名 | 类型 | 说明 |
 |---|---|---|
-| id | BIGINT PK | 用户 ID |
-| username | VARCHAR(50) | 登录账号 |
-| password | VARCHAR(255) | 密码（加密） |
-| real_name | VARCHAR(50) | 真实姓名 |
-| user_type | TINYINT | 用户类型（1 管理员、2 HR、3 面试官、4 求职者） |
-| gender | TINYINT | 性别 |
-| phone | VARCHAR(20) | 手机号 |
-| email | VARCHAR(100) | 邮箱 |
-| status | TINYINT | 账号状态（0 禁用，1 正常） |
-| last_login_time | DATETIME | 最后登录时间 |
-| create_time | DATETIME | 创建时间 |
-| update_time | DATETIME | 更新时间 |
-| company_id | BIGINT | 关联公司主表，标识 HR 所属企业 |
+| id | BIGINT PK | 日志 ID |
+| application_id | BIGINT | 投递记录 |
+| from_status | TINYINT | 原状态 |
+| to_status | TINYINT | 新状态 |
+| remark | VARCHAR(500) | 操作备注 |
+| operator_id | BIGINT | 操作人 |
+| create_time | DATETIME | 操作时间 |
 
-### 4.2 职位表
-
-| 字段名 | 类型 | 说明 |
-|---|---|---|
-| id | BIGINT PK | 职位 ID |
-| job_name | VARCHAR(100) | 职位名称 |
-| department | VARCHAR(100) | 部门 |
-| category | VARCHAR(50) | 岗位类别 |
-| city | VARCHAR(100) | 工作地点 |
-| salary_min | DECIMAL(10,2) | 最低薪资 |
-| salary_max | DECIMAL(10,2) | 最高薪资 |
-| education | VARCHAR(50) | 学历要求 |
-| experience | VARCHAR(50) | 经验要求 |
-| headcount | INT | 招聘人数 |
-| description | TEXT | 岗位描述 |
-| requirements | TEXT | 岗位要求 |
-| status | TINYINT | 职位状态（0 下架、1 招聘中） |
-| publisher_id | BIGINT | 发布 HR（关联 sys_user.id） |
-| publish_time | DATETIME | 发布时间 |
-| create_time | DATETIME | 创建时间 |
-| update_time | DATETIME | 更新时间 |
-
-### 4.3 简历表
-
-| 字段名 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| id | BIGINT | Y | 主键 ID |
-| user_id | BIGINT | Y | 求职者用户 ID |
-| file_url | VARCHAR(500) | N | 上传文件 URL（Word/PDF） |
-| parsed_content | LONGTEXT | N | AI 解析后的纯文本（供 ES 全文检索） |
-| ai_score | DECIMAL(5,2) | N | AI 简历质量评分 |
-| ai_analysis | TEXT | N | AI 优化建议 |
-| current_salary | DECIMAL(10,2) | N | 当前薪资 |
-| expected_salary | DECIMAL(10,2) | N | 期望薪资 |
-| self_evaluation | TEXT | N | 自我评价 |
-| embedding_vector | VECTOR(768) | N | 简历内容向量（用于智能匹配） |
-| created_at | DATETIME | Y | 创建时间 |
-| updated_at | DATETIME | Y | 更新时间 |
-
-### 4.4 教育经历子表
-
-| 字段名 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| id | BIGINT | Y | 主键 ID |
-| resume_id | BIGINT | Y | 简历 ID |
-| school | VARCHAR(100) | Y | 学校名称 |
-| major | VARCHAR(100) | N | 专业 |
-| degree | VARCHAR(20) | N | 学历（专科/本科/硕士/博士） |
-| start_date | DATE | N | 入学时间 |
-| end_date | DATE | N | 毕业时间 |
-| is_highest | TINYINT | Y | 是否最高学历：0-否 1-是 |
-
-### 4.5 工作经历子表
-
-| 字段名 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| id | BIGINT | Y | 主键 ID |
-| resume_id | BIGINT | Y | 简历 ID |
-| company | VARCHAR(100) | Y | 公司名称 |
-| position | VARCHAR(100) | N | 职位 |
-| department | VARCHAR(100) | N | 部门 |
-| start_date | DATE | N | 入职时间 |
-| end_date | DATE | N | 离职时间（NULL 表示至今） |
-| description | TEXT | N | 工作内容描述 |
-
-### 4.6 职位投递表
-
-| 字段名 | 类型 | 说明 |
-|---|---|---|
-| id | BIGINT PK | 投递 ID |
-| job_id | BIGINT | 职位 ID |
-| user_id | BIGINT | 求职者 ID |
-| resume_id | BIGINT | 简历 ID |
-| apply_time | DATETIME | 投递时间 |
-| status | TINYINT | 状态（0 待筛选、1 面试中、2 录用、3 淘汰） |
-| remark | VARCHAR(255) | 备注 |
-
-> 建议建立唯一索引：UNIQUE(job_id, user_id)，防止重复投递。
-
-### 4.7 面试表
+### 4.10 面试表（interview）
 
 | 字段名 | 类型 | 说明 |
 |---|---|---|
@@ -268,13 +319,14 @@ smart-recruitment/
 | application_id | BIGINT | 投递记录 ID |
 | interviewer_id | BIGINT | 面试官 ID |
 | interview_time | DATETIME | 面试时间 |
-| interview_type | VARCHAR(20) | 线上/线下 |
+| interview_type | VARCHAR(20) | 线上 / 线下 |
 | address | VARCHAR(255) | 会议链接或地点 |
-| ai_questions | TEXT | AI 生成的面试题 |
+| ai_questions | TEXT | AI 生成题目缓存 |
 | status | TINYINT | 0 待面试、1 已完成、2 取消 |
 | create_time | DATETIME | 创建时间 |
+| update_time | DATETIME | 更新时间 |
 
-### 4.8 面试评价表
+### 4.11 面试评价表（interview_evaluation）
 
 | 字段名 | 类型 | 说明 |
 |---|---|---|
