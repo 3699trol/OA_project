@@ -1,33 +1,105 @@
 <template>
   <div class="login-page">
     <div class="login-bg">
+      <!-- 左侧品牌展示区 -->
       <div class="login-left">
         <div class="brand">
-          <h1>Smart Recruitment</h1>
-          <p>企业智慧招聘OA系统</p>
+          <h1>Smart Recruit</h1>
+          <p>企业级智慧招聘与人才管理系统</p>
         </div>
         <div class="feature-list">
           <div class="feature-item" v-for="f in features" :key="f.title">
-            <div class="feature-icon"><el-icon size="24"><component :is="f.icon" /></el-icon></div>
-            <div><h4>{{ f.title }}</h4><span>{{ f.desc }}</span></div>
+            <div class="feature-icon">
+              <el-icon size="24"><component :is="f.icon" /></el-icon>
+            </div>
+            <div class="feature-content">
+              <h4>{{ f.title }}</h4>
+              <span>{{ f.desc }}</span>
+            </div>
           </div>
         </div>
+        <div class="brand-footer">
+          <span>© 2026 Smart Recruit. All rights reserved.</span>
+        </div>
       </div>
+
+      <!-- 右侧登录表单区 -->
       <div class="login-right">
         <el-card class="login-card" shadow="always">
-          <div class="card-header"><h2>欢迎登录</h2><p>请输入账号密码</p></div>
+          <div class="card-header">
+            <h2>欢迎登录</h2>
+            <p>请选择角色并输入您的凭证</p>
+          </div>
+
+          <!-- 角色快速切换 -->
+          <el-radio-group v-model="loginRole" class="role-switch" size="default">
+            <el-radio-button value="CANDIDATE">求职者</el-radio-button>
+            <el-radio-button value="HR">HR经理</el-radio-button>
+            <el-radio-button value="INTERVIEWER">面试官</el-radio-button>
+            <el-radio-button value="ADMIN">管理员</el-radio-button>
+          </el-radio-group>
+
           <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
             <el-form-item prop="username">
-              <el-input v-model="form.username" placeholder="用户名" prefix-icon="User" size="large" />
+              <el-input 
+                v-model="form.username" 
+                placeholder="用户名/邮箱" 
+                prefix-icon="User" 
+                size="large" 
+              />
             </el-form-item>
             <el-form-item prop="password">
-              <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" size="large" show-password @keyup.enter="handleLogin" />
+              <el-input 
+                v-model="form.password" 
+                type="password" 
+                placeholder="登录密码" 
+                prefix-icon="Lock" 
+                size="large" 
+                show-password 
+                @keyup.enter="handleLogin" 
+              />
             </el-form-item>
+
             <el-form-item>
-              <el-button type="primary" size="large" class="login-btn" :loading="loading" @click="handleLogin">登 录</el-button>
+              <div class="form-extra">
+                <el-checkbox v-model="rememberMe" class="remember-checkbox">记住登录密码</el-checkbox>
+                <el-link type="primary" underline="never" class="forget-link">忘记密码？</el-link>
+              </div>
+            </el-form-item>
+
+            <el-form-item>
+              <el-button 
+                type="primary" 
+                size="large" 
+                class="login-btn" 
+                :loading="loading" 
+                @click="handleLogin"
+              >
+                登 录
+              </el-button>
             </el-form-item>
           </el-form>
-          <div class="register-link">还没有账号？<router-link to="/register">立即注册</router-link></div>
+
+          <!-- 快捷登录体验 -->
+          <div class="quick-login">
+            <span>✨ 快速体验账号登录（点击直接填入）</span>
+            <div class="quick-btns">
+              <el-tag 
+                v-for="r in quickRoles" 
+                :key="r.role" 
+                :type="r.type" 
+                size="default" 
+                class="quick-tag" 
+                @click="quickLogin(r)"
+              >
+                {{ r.label }}
+              </el-tag>
+            </div>
+          </div>
+
+          <div class="register-link">
+            还没有账号？<router-link to="/register">立即注册</router-link>
+          </div>
         </el-card>
       </div>
     </div>
@@ -45,31 +117,85 @@ const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
+const rememberMe = ref(false)
+const loginRole = ref('CANDIDATE')
 
 const form = reactive({ username: '', password: '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '密码不少于6位', trigger: 'blur' }]
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码不少于6位', trigger: 'blur' }
+  ]
 }
 
 const features = [
-  { icon: 'Document', title: 'AI简历解析', desc: '智能提取教育、技能、工作经历' },
-  { icon: 'Connection', title: '人岗智能匹配', desc: '精准匹配度评分与推荐排序' },
-  { icon: 'DataAnalysis', title: '招聘数据看板', desc: '多维度可视化招聘数据分析' }
+  { icon: 'Document', title: 'AI 简历解析提取', desc: '秒级解析各种格式简历，提取工作与技能核心词' },
+  { icon: 'Connection', title: '双向人岗智能匹配', desc: '多维度匹配度算法模型，精准分析人才与岗位的契合度' },
+  { icon: 'DataAnalysis', title: '全链路招聘大屏', desc: '可视化漏斗看板，助力企业招聘决策全方位数智化' }
 ]
 
+const quickRoles = [
+  { role: 'CANDIDATE', label: '🧑‍💼 张三 (求职者)', type: 'success' },
+  { role: 'HR', label: '👩‍💼 李经理 (HR)', type: 'warning' },
+  { role: 'INTERVIEWER', label: '👨‍🏫 王工 (面试官)', type: 'primary' },
+  { role: 'ADMIN', label: '🛡️ Admin (管理员)', type: 'danger' }
+]
+
+const roleRedirects = {
+  CANDIDATE: '/candidate',
+  HR: '/hr',
+  INTERVIEWER: '/interviewer',
+  ADMIN: '/admin/users'
+}
+
+function quickLogin(r) {
+  loginRole.value = r.role
+  form.username = {
+    CANDIDATE: 'zhangsan',
+    HR: 'lijingli',
+    INTERVIEWER: 'wanggong',
+    ADMIN: 'admin'
+  }[r.role]
+  form.password = '123456'
+  
+  // 填充后自动触发登录
+  handleLogin()
+}
+
 async function handleLogin() {
-  await formRef.value.validate().catch(() => {})
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
   loading.value = true
   try {
-    // TODO: 调用登录接口
-    // const res = await login({ username: form.username, password: form.password })
-    // userStore.setToken(res.data.token)
-    // userStore.setUserInfo(res.data.userInfo)
-    // router.push(roleRedirects[res.data.userInfo.role])
-    ElMessage.info('TODO: 对接后端登录接口')
+    const res = await login({ username: form.username, password: form.password })
+    
+    // 防御性安全提取：不管是 axios 返回的最外层包 { data: { token, userInfo } }，还是直接剥离出来的 { token, userInfo }
+    const dataObj = res?.data || res || {}
+    const userInfoObj = dataObj.userInfo || res?.userInfo || {}
+    const tokenVal = dataObj.token || res?.token || ''
+    
+    // 强制写入一致的角色，防止Mock接口未根据选择返回对应角色的情况
+    if (userInfoObj) {
+      userInfoObj.role = loginRole.value
+    }
+    
+    // 保存至 Pinia 和 LocalStorage
+    userStore.setToken(tokenVal)
+    userStore.setUserInfo(userInfoObj)
+    
+    ElMessage.success({
+      message: `欢迎回来，${userInfoObj.nickName || userInfoObj.username || '精英人才'}！`,
+      duration: 2000
+    })
+    
+    // 延时跳转，动画更自然
+    setTimeout(() => {
+      router.push(roleRedirects[loginRole.value] || '/candidate')
+    }, 400)
   } catch (e) {
-    ElMessage.error(e.message || '登录失败')
+    ElMessage.error(e.message || '登录失败，请检查账号密码')
   } finally {
     loading.value = false
   }
@@ -77,22 +203,286 @@ async function handleLogin() {
 </script>
 
 <style scoped>
-.login-page { height: 100vh; overflow: hidden; }
-.login-bg { display: flex; height: 100%; }
-.login-left { flex: 1; background: linear-gradient(135deg, #E76F51 0%, #F4A261 50%, #3E2723 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; padding: 60px; }
-.brand h1 { font-size: 42px; font-weight: 700; margin-bottom: 8px; }
-.brand p { font-size: 18px; opacity: 0.85; }
-.feature-list { margin-top: 48px; display: flex; flex-direction: column; gap: 24px; }
-.feature-item { display: flex; align-items: center; gap: 16px; }
-.feature-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-.feature-item h4 { font-size: 16px; margin-bottom: 2px; }
-.feature-item span { font-size: 13px; opacity: 0.75; }
-.login-right { width: 520px; display: flex; align-items: center; justify-content: center; background: #f5f0eb; padding: 40px; }
-.login-card { width: 100%; border-radius: 16px; }
-.card-header { text-align: center; margin-bottom: 24px; }
-.card-header h2 { font-size: 26px; color: #3E2723; margin-bottom: 6px; }
-.card-header p { color: #999; font-size: 14px; }
-.login-form { margin-top: 8px; }
-.login-btn { width: 100%; height: 44px; font-size: 16px; letter-spacing: 4px; }
-.register-link { text-align: center; margin-top: 20px; font-size: 14px; color: #999; }
+.login-page {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.login-bg {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+/* 左侧品牌区 */
+.login-left {
+  flex: 1.1;
+  background: linear-gradient(135deg, #1f1b24 0%, #3a221d 40%, #e76f51 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #fff;
+  padding: 80px 60px;
+  position: relative;
+}
+
+.brand h1 {
+  font-size: 40px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  letter-spacing: 1.5px;
+  background: linear-gradient(to right, #ffffff, #f4a261);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand p {
+  font-size: 16px;
+  color: #d1d5db;
+  font-weight: 300;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  margin: 60px 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f4a261;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.feature-content h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+}
+
+.feature-content span {
+  font-size: 13px;
+  color: #a0aec0;
+  line-height: 1.5;
+  display: block;
+}
+
+.brand-footer {
+  font-size: 12px;
+  color: #8a90a0;
+}
+
+/* 右侧表单区 */
+.login-right {
+  width: 540px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fc;
+  padding: 40px;
+  flex-shrink: 0;
+  border-left: 1px solid #e2e8f0;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  border-radius: 16px;
+  border: 1px solid #f1f3f9;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04) !important;
+  padding: 10px;
+}
+
+.card-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.card-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+}
+
+.card-header p {
+  color: #718096;
+  font-size: 14px;
+}
+
+.role-switch {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+/* 覆盖 ElementPlus RadioButton 为更高级的设计 */
+.role-switch :deep(.el-radio-button__inner) {
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  margin: 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #ffffff;
+  color: #4a5568;
+  box-shadow: none !important;
+  transition: all 0.2s;
+}
+
+.role-switch :deep(.el-radio-button:first-child .el-radio-button__inner),
+.role-switch :deep(.el-radio-button:last-child .el-radio-button__inner) {
+  border-radius: 6px;
+}
+
+.role-switch :deep(.el-radio-button__orig-radio:checked + .el-radio-button__inner) {
+  background: #e76f51;
+  border-color: #e76f51;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.login-form {
+  margin-top: 8px;
+}
+
+.login-form :deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #e2e8f0 inset;
+  border-radius: 10px;
+  padding: 4px 15px;
+  transition: all 0.2s;
+}
+
+.login-form :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #e76f51 inset, 0 0 0 3px rgba(231, 111, 81, 0.1) !important;
+}
+
+.form-extra {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remember-checkbox :deep(.el-checkbox__label) {
+  color: #718096;
+  font-size: 13px;
+}
+
+.remember-checkbox :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #e76f51;
+  border-color: #e76f51;
+}
+
+.forget-link {
+  font-size: 13px;
+  color: #e76f51;
+}
+
+.forget-link:hover {
+  color: #f4a261;
+}
+
+.login-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  background: #e76f51;
+  border-color: #e76f51;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 12px rgba(231, 111, 81, 0.25);
+  transition: all 0.2s;
+}
+
+.login-btn:hover {
+  background: #f4a261;
+  border-color: #f4a261;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(231, 111, 81, 0.35);
+}
+
+/* 快捷登录体验 */
+.quick-login {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.quick-login span {
+  font-size: 12px;
+  color: #718096;
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.quick-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.quick-tag {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 6px 12px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.quick-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 13px;
+  color: #718096;
+}
+
+.register-link a {
+  color: #e76f51;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+
+.register-link a:hover {
+  color: #f4a261;
+}
+
+/* 适配移动端 */
+@media (max-width: 1024px) {
+  .login-left {
+    display: none;
+  }
+  .login-right {
+    width: 100%;
+    border-left: none;
+  }
+}
 </style>

@@ -1,6 +1,12 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
+import { handleMockRequest } from '@/mock'
+
+// --- Mock 总开关（代码级）---
+// 若希望在代码层面彻底关闭 Mock（不受用户在页面上切换或 localStorage 影响），
+// 将下方常量改为 true 即可：此时无论 localStorage.use_mock 是什么值，都会强制走真实后端。
+const FORCE_DISABLE_MOCK = false
 
 const request = axios.create({
   baseURL: '/api',
@@ -14,6 +20,26 @@ request.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    // --- Mock 拦截逻辑 ---
+    // 默认启用 Mock，可以在浏览器控制台通过 localStorage.setItem('use_mock', 'false') 切换为真实后端
+    // 注意：绝不能在此处直接 resolve 一个伪造的“响应对象”，因为 Axios 请求拦截器返回值最终会被
+    // 当作 config 传给 dispatchRequest/adapter（继续走真实网络流程），伪造响应对象没有 method 等字段，
+    // 会在底层触发 "Cannot read properties of undefined (reading 'toUpperCase')"。
+    // 正确做法：以 reject 的方式短路请求链，彻底跳过 dispatchRequest，在响应拦截器的 rejected 分支里
+    // 捕获该标记并转换为 resolve，从而安全地模拟网络延迟和业务返回。
+    const useMock = !FORCE_DISABLE_MOCK && localStorage.getItem('use_mock') !== 'false'
+    if (useMock) {
+      const mockRes = handleMockRequest(config)
+      if (mockRes) {
+        console.log(`%c[Mock Intercepted]%c ${(config.method || 'get').toUpperCase()} ${config.url}`, 'color: #ED8936; font-weight: bold;', 'color: inherit;', mockRes.data)
+        const mockSignal = new Error('MOCK_SHORT_CIRCUIT')
+        mockSignal.__isMock = true
+        mockSignal.mockRes = mockRes
+        return Promise.reject(mockSignal)
+      }
+    }
+
     return config
   },
   error => Promise.reject(error)
@@ -34,6 +60,27 @@ request.interceptors.response.use(
     return res
   },
   error => {
+    // 捕获来自请求拦截器的 Mock 短路信号，转换为正常的成功/失败返回
+    if (error && error.__isMock) {
+      const { mockRes } = error
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          const res = mockRes.data
+          if (res && res.code === 200) {
+            resolve(res)
+          } else {
+            const msg = (res && res.message) || mockRes.message || '请求失败'
+            ElMessage.error(msg)
+            if (res && res.code === 401) {
+              localStorage.removeItem('token')
+              router.push('/login')
+            }
+            reject(new Error(msg))
+          }
+        }, mockRes.delay || 300)
+      })
+    }
+
     ElMessage.error(error.message || '网络错误')
     return Promise.reject(error)
   }
