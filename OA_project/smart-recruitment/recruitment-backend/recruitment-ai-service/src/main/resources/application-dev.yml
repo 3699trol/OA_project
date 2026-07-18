@@ -1,11 +1,12 @@
 # 完整中间件联调配置：注册到 Nacos，并启用 Redis Stack 与真实模型配置。
+# 个人配置通过 .env 文件或环境变量注入
 spring:
   config:
     import: "optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension:yml}"
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   cloud:
     nacos:
       discovery:
