@@ -24,6 +24,22 @@ export function unpublishJob(id) {
   return request.post(`/job/${id}/unpublish`)
 }
 
-export function getJobCategories() {
-  return request.get('/job/categories')
+export function getJobCategories(params) {
+  return request.get('/job/category/list', { params })
+}
+
+export function createJobCategory(data) {
+  return request.post('/job/category', data)
+}
+
+export function updateJobCategory(id, data) {
+  return request.put(`/job/category/${id}`, data)
+}
+
+export function deleteJobCategory(id) {
+  return request.delete(`/job/category/${id}`)
+}
+
+export function updateJobCategoryStatus(id, status) {
+  return request.put(`/job/category/${id}/status`, null, { params: { status } })
 }

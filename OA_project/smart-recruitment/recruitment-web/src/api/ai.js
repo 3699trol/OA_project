@@ -15,3 +15,23 @@ export function followUp(data) {
 export function getMockInterviewReport(sessionId) {
   return request.get(`/ai/mock-interview/report/${sessionId}`)
 }
+
+export function aiMatch(data) {
+  return request.post('/ai/match', data)
+}
+
+export function generateFormalQuestions(data) {
+  return request.post('/ai/question/generate', data)
+}
+
+export function aiParseResume(data) {
+  return request.post('/ai/resume/parse', data)
+}
+
+export function aiEvaluateResume(resumeContent) {
+  return request.post('/ai/resume/evaluate', resumeContent)
+}
+
+export function aiOptimizeResume(resumeContent) {
+  return request.post('/ai/resume/optimize', resumeContent)
+}
