@@ -1,5 +1,6 @@
 package com.recruitment.interview.controller;
 
+import com.recruitment.common.core.model.PageResult;
 import com.recruitment.common.core.model.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +20,11 @@ public class InterviewController {
     }
 
     @GetMapping("/list")
-    public Result<?> list() {
-        // TODO: 面试列表
-        return Result.success();
+    public Result<PageResult<?>> list(@RequestParam(defaultValue = "1") long page,
+                                       @RequestParam(defaultValue = "10") long size,
+                                       @RequestParam(required = false) Integer status) {
+        // TODO: 面试列表（支持状态筛选）
+        return Result.success(PageResult.empty(page, size));
     }
 
     @GetMapping("/{id}")
