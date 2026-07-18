@@ -12,20 +12,26 @@ spring:
     redis:
       host: localhost
       port: 6379
-    elasticsearch:
-      uris: http://localhost:9200
+  elasticsearch:
+    uris: http://localhost:9200
   cloud:
     nacos:
       discovery:
         enabled: true
-        server-addr: localhost:8848
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+        ip: "${NACOS_DISCOVERY_IP:127.0.0.1}"
         fail-fast: false
       config:
         enabled: true
-        server-addr: localhost:8848
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
         file-extension: yml
         import-check:
           enabled: false
+
+# 默认为空时，OpenFeign 通过 Nacos 按服务名发现 AI 服务；设置后可临时直连指定地址。
+ai:
+  service:
+    url: "${AI_SERVICE_URL:}"
 
 mybatis-plus:
   mapper-locations: classpath:mapper/**/*.xml

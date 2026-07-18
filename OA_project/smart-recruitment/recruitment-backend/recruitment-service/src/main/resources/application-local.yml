@@ -1,5 +1,12 @@
-# 本地轻量启动配置：仅保证服务可启动联调，不依赖中间件
+# 本地轻量启动配置：业务数据中间件保持禁用，Nacos 服务发现按 fail-fast=false 可选接入
 spring:
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+        ip: "${NACOS_DISCOVERY_IP:127.0.0.1}"
+        fail-fast: false
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration

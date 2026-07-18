@@ -1,0 +1,25 @@
+# 完整中间件联调配置：注册到 Nacos，并启用 Redis Stack 与真实模型配置。
+spring:
+  config:
+    import: "optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension:yml}"
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+        ip: "${NACOS_DISCOVERY_IP:127.0.0.1}"
+        fail-fast: false
+      config:
+        enabled: true
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+        file-extension: yml
+        import-check:
+          enabled: false
+
+recruitment:
+  security:
+    permit-all: false
