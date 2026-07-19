@@ -169,17 +169,59 @@ addRoute('GET', '/api/dashboard/stats', () => {
 
 // ==================== 3. 职位模块 ====================
 addRoute('GET', '/api/job/list', (req) => {
-  const { title, category, status } = req.params || {}
+  const { title, keyword, category, status, sortBy, sortOrder, location } = req.params || {}
   let list = [...state.jobs]
-  if (title) {
-    list = list.filter(j => j.title.toLowerCase().includes(title.toLowerCase()))
+  
+  // Filter by title / keyword
+  const searchTitle = title || keyword
+  if (searchTitle) {
+    list = list.filter(j => j.title.toLowerCase().includes(searchTitle.toLowerCase()) || (j.requirements && j.requirements.toLowerCase().includes(searchTitle.toLowerCase())))
   }
+  
+  // Filter by location
+  if (location) {
+    list = list.filter(j => j.city === location || j.location === location)
+  }
+  
+  // Filter by category
   if (category) {
     list = list.filter(j => j.category === category)
   }
+  
+  // Filter by status (default to PUBLISHED for candidates)
   if (status) {
     list = list.filter(j => j.status === status)
+  } else {
+    list = list.filter(j => j.status === 'PUBLISHED')
   }
+  
+  // Apply sorting
+  if (sortBy) {
+    const isDesc = sortOrder === 'desc'
+    list.sort((a, b) => {
+      let valA = a[sortBy]
+      let valB = b[sortBy]
+      
+      if (sortBy === 'salary') {
+        // Parse salary string e.g. "25K-35K" or "40K-60K"
+        const getSalaryVal = (str) => {
+          if (!str) return 0
+          const match = str.match(/(\d+)/)
+          return match ? parseInt(match[1], 10) : 0
+        }
+        valA = getSalaryVal(valA)
+        valB = getSalaryVal(valB)
+      } else if (sortBy === 'createTime') {
+        valA = valA ? new Date(valA).getTime() : 0
+        valB = valB ? new Date(valB).getTime() : 0
+      }
+      
+      if (valA < valB) return isDesc ? 1 : -1
+      if (valA > valB) return isDesc ? -1 : 1
+      return 0
+    })
+  }
+  
   return { code: 200, message: '获取成功', data: { list, total: list.length } }
 })
 
@@ -335,6 +377,46 @@ addRoute('POST', '/api/resume/evaluate', () => {
     data: {
       score: 88,
       analysis: '简历完整度高。亮点：具备一线大厂高并发电商重构经验，Redis、JVM原理掌握到位。不足：缺少Kubernetes生产集群调优细节，建议在技能描述中细化对微服务链路追踪和网关灰度发布的理解。'
+    }
+  }
+})
+
+addRoute('POST', '/api/ai/resume/evaluate', (req) => {
+  return {
+    code: 200,
+    message: '评估成功',
+    data: {
+      score: 87,
+      dimensions: [
+        { name: '技术栈契合度', score: 92 },
+        { name: '项目经验深度', score: 85 },
+        { name: '教育与专业背景', score: 88 },
+        { name: '简历完整度', score: 95 },
+        { name: '核心竞争力描述', score: 80 }
+      ],
+      highlights: [
+        '具备大流量高并发业务系统（QPS 5000+）实战经历与重构经验。',
+        '熟练掌握 Spring Cloud、Redis、Message Queue 等中后台微服务组件。',
+        '学习经历清晰，软件工程专业背景良好，基本技术栈扎实。'
+      ],
+      weaknesses: [
+        '项目经历中缺少量化的绩效数据（例如：吞吐量提升%、服务器成本降低%等）。',
+        '缺少对容器平台（K8s/Docker）以及日志、监控、灰度发布等运维体系的微调经验描述。',
+        '自我评价或职业竞争力总结稍显平淡，没有亮出个人标志性技术标签。'
+      ],
+      advice: '建议采用标准的 STAR 法则重写项目经验，重点体现“你在高并发下解决什么难题、怎么做的、最终提升了多少性能”；并在技能树中显式增加 APM 链路监控、服务治理或分布式锁调优细节，以彰显资深属性。'
+    }
+  }
+})
+
+addRoute('POST', '/api/ai/resume/optimize', (req) => {
+  return {
+    code: 200,
+    message: '优化成功',
+    data: {
+      summary: '5年Java核心系统研发经验，具备高并发高可靠系统重构经验。擅长多层高频缓存架构设计，曾在QPS 5000+秒杀核心场景下将响应时间降低30%。深入理解并发编程及JVM内存性能调优，熟练掌握 Spring Cloud、RabbitMQ 微服务架构体系，具备 K8s 与微服务灰度发布的部署实践经验。',
+      skills: ['Java', 'Spring Cloud', 'Redis (两级缓存设计)', 'MySQL (分库分表调优)', 'RabbitMQ (分布式事务)', 'Docker/K8s', 'Sentinel 限流熔断'],
+      experience: '1. 主导核心购物车与结算微服务化重构，克服极端瞬时高流量，QPS达5000+，核心接口P99延迟缩短30%。\n2. 引入Redis+Caffeine两级分布式缓存，实现布隆过滤器防止穿透，使得核心业务缓存命中率提升至98.5%。\n3. 基于RabbitMQ事务消息实现高抗压下的分布式事务及强一致性投递，确保高额结算全流程“零死锁、零掉单”。'
     }
   }
 })

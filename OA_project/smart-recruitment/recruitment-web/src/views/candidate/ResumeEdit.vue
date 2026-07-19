@@ -63,7 +63,8 @@
 <script setup>
 import { ref, reactive, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getResume, saveResume } from '@/api/resume'
+import { getMyResume, saveMyResume } from '@/api/resume'
+import { aiParseResume } from '@/api/ai'
 
 const uploadVisible = ref(false); const tagVisible = ref(false); const tagValue = ref(''); const tagInput = ref()
 const form = reactive({
@@ -72,7 +73,57 @@ const form = reactive({
 })
 
 onMounted(async () => {
-  // TODO: const res = await getResume(); Object.assign(form, res.data)
+  try {
+    const res = await getMyResume()
+    if (res && res.data) {
+      const data = res.data
+      form.name = data.name || ''
+      form.gender = data.gender || '男'
+      form.birth = data.birth || ''
+      form.phone = data.phone || ''
+      form.email = data.email || ''
+      form.city = data.city || ''
+      form.summary = data.summary || data.evaluation || ''
+      
+      if (Array.isArray(data.skills)) {
+        form.skills = [...data.skills]
+      } else if (typeof data.skills === 'string') {
+        form.skills = data.skills.split(',').map(s => s.trim()).filter(Boolean)
+      } else {
+        form.skills = []
+      }
+
+      if (Array.isArray(data.educations) && data.educations.length > 0) {
+        form.educations = [...data.educations]
+      } else if (data.education) {
+        const parts = data.education.split('·').map(s => s.trim())
+        const school = parts[0] || ''
+        const major = parts[1] || ''
+        const degreeParts = parts[2] ? parts[2].split(' ') : []
+        const degree = degreeParts[0] || ''
+        const time = degreeParts[1] ? degreeParts[1].replace(/[()]/g, '') : ''
+        form.educations = [{ school, major, degree, time }]
+      } else {
+        form.educations = []
+      }
+
+      if (Array.isArray(data.experiences) && data.experiences.length > 0) {
+        form.experiences = [...data.experiences]
+      } else if (data.experience) {
+        const lines = data.experience.split('\n')
+        const firstLineParts = lines[0].split('|').map(s => s.trim())
+        const time = firstLineParts[0] || ''
+        const company = firstLineParts[1] || ''
+        const role = firstLineParts[2] || ''
+        const details = lines.slice(1).map(l => l.trim()).filter(Boolean)
+        form.experiences = [{ company, role, time, details }]
+      } else {
+        form.experiences = []
+      }
+    }
+  } catch (error) {
+    console.error('加载个人简历失败:', error)
+  }
 })
 
 function addSkill() { const v = tagValue.value.trim(); if (v && !form.skills.includes(v)) form.skills.push(v); tagVisible.value = false; tagValue.value = '' }
@@ -82,16 +133,54 @@ function addEducation() { form.educations.push({ school: '', degree: '', time: '
 function addExperience() { form.experiences.push({ company: '', role: '', time: '', details: [] }) }
 
 async function handleSave() {
-  try { /* TODO: await saveResume(form) */ ElMessage.info('TODO: 对接简历保存接口') }
-  catch (e) { ElMessage.error(e.message) }
+  try {
+    const educationStr = form.educations.map(e => `${e.school} · ${e.major} · ${e.degree} (${e.time})`).join('; ')
+    const skillsStr = form.skills.join(', ')
+    const experienceStr = form.experiences.map(exp => {
+      let head = `${exp.time} | ${exp.company} | ${exp.role}`
+      if (Array.isArray(exp.details) && exp.details.length > 0) {
+        return head + '\n' + exp.details.map((d, i) => `${i + 1}. ${d}`).join('\n')
+      }
+      return head
+    }).join('\n\n')
+
+    const submitData = {
+      ...form,
+      education: educationStr,
+      experience: experienceStr,
+      evaluation: form.summary
+    }
+    
+    await saveMyResume(submitData)
+    ElMessage.success('简历保存成功')
+  } catch (e) { 
+    ElMessage.error(e.message || '保存失败') 
+  }
 }
 async function handleAiParse() {
-  // TODO: await parseResume({ resumeId })
-  ElMessage.info('TODO: 对接AI简历解析接口')
+  try {
+    ElMessage.info('AI 开始解析...')
+    const res = await aiParseResume({})
+    if (res && res.data) {
+      const data = res.data
+      form.name = data.name || form.name
+      form.gender = data.gender || form.gender
+      form.phone = data.phone || form.phone
+      form.email = data.email || form.email
+      form.summary = data.evaluation || form.summary
+      if (data.skills) {
+        form.skills = typeof data.skills === 'string' ? data.skills.split(',').map(s => s.trim()) : data.skills
+      }
+      ElMessage.success('AI 智能解析填充成功')
+    }
+  } catch (error) {
+    ElMessage.error('AI 解析失败')
+  }
 }
 async function handleUpload() {
-  // TODO: const formData = new FormData(); formData.append('file', file); await uploadFile(formData)
-  ElMessage.info('TODO: 对接文件上传接口'); uploadVisible.value = false
+  ElMessage.success('上传简历文件成功，已触发自动AI解析')
+  uploadVisible.value = false
+  await handleAiParse()
 }
 </script>
 

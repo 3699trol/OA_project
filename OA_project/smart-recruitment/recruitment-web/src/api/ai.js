@@ -1,5 +1,17 @@
 import request from '@/utils/request'
 
+export function startMockInterview(data) {
+  return request.post('/ai/mock-interview/start', data)
+}
+
+export function chatMockInterview(data) {
+  return request.post('/ai/mock-interview/chat', data)
+}
+
+export function submitMockInterview(data) {
+  return request.post('/ai/mock-interview/submit', data)
+}
+
 export function generateMockInterview(data) {
   return request.post('/ai/mock-interview/generate', data)
 }

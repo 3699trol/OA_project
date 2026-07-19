@@ -55,6 +55,13 @@
             </el-tag>
           </el-tooltip>
           
+          <!-- 收件箱消息通知钟 -->
+          <div class="inbox-bell-trigger" @click="inboxVisible = true">
+            <el-badge :value="inboxStore.unreadCount" :max="99" :hidden="inboxStore.unreadCount === 0" class="bell-badge">
+              <el-icon class="bell-icon"><Bell /></el-icon>
+            </el-badge>
+          </div>
+          
           <el-dropdown trigger="click" class="user-dropdown">
             <div class="user-info">
               <el-avatar :size="32" class="user-avatar">
@@ -90,6 +97,61 @@
         </router-view>
       </el-main>
     </el-container>
+
+    <!-- 收件箱抽屉 -->
+    <el-drawer
+      v-model="inboxVisible"
+      size="440px"
+      destroy-on-close
+      class="inbox-custom-drawer"
+      :show-close="false"
+    >
+      <template #header>
+        <div class="inbox-header">
+          <h3>📬 收件箱通知中心</h3>
+          <el-button v-if="inboxStore.messages.length > 0" type="primary" size="small" link @click="inboxStore.markAllAsRead">全部标记已读</el-button>
+        </div>
+      </template>
+
+      <!-- 消息列表 -->
+      <div v-if="inboxStore.messages.length === 0" class="empty-inbox">
+        <el-empty description="消息收件箱目前空空如也哦" :image-size="80" />
+      </div>
+      
+      <div v-else class="inbox-msg-list">
+        <div 
+          v-for="msg in inboxStore.messages" 
+          :key="msg.id" 
+          class="inbox-msg-item"
+          :class="{ unread: !msg.read }"
+          @click="readMessage(msg)"
+        >
+          <div class="msg-dot" v-if="!msg.read"></div>
+          <div class="msg-item-header">
+            <span class="msg-title">{{ msg.title }}</span>
+            <span class="msg-time">{{ msg.time }}</span>
+          </div>
+          <p class="msg-content">{{ msg.content }}</p>
+          <div class="msg-actions">
+            <el-button type="primary" size="small" link v-if="msg.link" @click.stop="handleNavigate(msg)">查看详情</el-button>
+            <el-button type="danger" size="small" link @click.stop="inboxStore.deleteMessage(msg.id)">删除消息</el-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷 Mock 消息发生器 -->
+      <template #footer v-if="isMock">
+        <div class="mock-generator-panel">
+          <p class="panel-lbl">🛠️ WebSocket 简历 & 面试结果推送仿真</p>
+          <div class="generator-btns">
+            <el-button size="small" type="success" @click="triggerMockPush('RESUME_PASS')">初筛通过</el-button>
+            <el-button size="small" type="warning" @click="triggerMockPush('INTERVIEW_SCHEDULE')">面试安排</el-button>
+            <el-button size="small" type="primary" @click="triggerMockPush('OFFER')">录用 Offer</el-button>
+            <el-button size="small" type="danger" @click="triggerMockPush('REJECT')">感谢信</el-button>
+          </div>
+        </div>
+      </template>
+    </el-drawer>
   </el-container>
 </template>
 
@@ -97,13 +159,33 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useInboxStore } from '@/stores/inbox'
+import { simulateWebSocketPush } from '@/utils/websocket'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const inboxStore = useInboxStore()
 
 const isMock = ref(localStorage.getItem('use_mock') !== 'false')
+const inboxVisible = ref(false)
+
+function readMessage(msg) {
+  inboxStore.markAsRead(msg.id)
+}
+
+function handleNavigate(msg) {
+  inboxStore.markAsRead(msg.id)
+  inboxVisible.value = false
+  if (msg.link) {
+    router.push(msg.link)
+  }
+}
+
+function triggerMockPush(type) {
+  simulateWebSocketPush(type)
+}
 
 const pageTitle = computed(() => {
   return route.meta?.title || '智能招聘系统'
@@ -466,5 +548,152 @@ function handleLogout() {
 .fade-transform-leave-to {
   opacity: 0;
   transform: translateY(-12px);
+}
+
+/* ==================== 收件箱及消息钟 ==================== */
+.inbox-bell-trigger {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #f8f9fc;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.inbox-bell-trigger:hover {
+  background-color: #edf2f7;
+  transform: scale(1.05);
+}
+
+.bell-icon {
+  font-size: 18px;
+  color: #718096;
+}
+
+.bell-badge :deep(.el-badge__content.is-fixed) {
+  top: 4px;
+  right: 4px;
+}
+
+.inbox-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 4px;
+}
+
+.inbox-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.empty-inbox {
+  padding: 60px 0;
+  text-align: center;
+}
+
+.inbox-msg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.inbox-msg-item {
+  position: relative;
+  background-color: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.inbox-msg-item:hover {
+  border-color: #e76f51;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.inbox-msg-item.unread {
+  background-color: #fffbf9;
+  border-color: #fceed9;
+}
+
+.msg-dot {
+  position: absolute;
+  top: 21px;
+  left: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #e76f51;
+  box-shadow: 0 0 6px #e76f51;
+}
+
+.msg-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.msg-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.msg-time {
+  font-size: 10px;
+  color: #a0aec0;
+}
+
+.msg-content {
+  font-size: 12px;
+  color: #4a5568;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.msg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.msg-actions .el-button {
+  font-size: 12px;
+  padding: 0;
+}
+
+.mock-generator-panel {
+  border-top: 1px solid #edf2f7;
+  padding-top: 14px;
+}
+
+.panel-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #718096;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.generator-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.generator-btns .el-button {
+  margin: 0 !important;
+  border-radius: 6px;
 }
 </style>

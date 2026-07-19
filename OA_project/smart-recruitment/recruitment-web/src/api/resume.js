@@ -8,6 +8,14 @@ export function saveResume(data) {
   return request.post('/resume', data)
 }
 
+export function getMyResume() {
+  return request.get('/resume/my')
+}
+
+export function saveMyResume(data) {
+  return request.put('/resume/my', data)
+}
+
 export function updateResume(id, data) {
   return request.put(`/resume/${id}`, data)
 }
