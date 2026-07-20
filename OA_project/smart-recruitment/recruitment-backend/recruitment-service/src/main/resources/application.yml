@@ -9,6 +9,10 @@ spring:
   profiles:
     # 默认本地轻量启动，不依赖 Nacos / MySQL / Redis / ES
     active: local
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   cloud:
     nacos:
       discovery:
@@ -25,6 +29,11 @@ jwt:
 ai:
   service:
     url: http://localhost:8081
+
+# 文件上传配置
+file:
+  upload-dir: ./uploads
+  max-size: 10485760
 
 logging:
   level:

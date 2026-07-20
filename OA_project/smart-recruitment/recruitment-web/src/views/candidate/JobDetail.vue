@@ -6,11 +6,11 @@
         <el-card shadow="never" class="section-card">
           <div class="detail-header">
             <div>
-              <div class="title-row"><h2>{{ job.title }}</h2><el-tag v-if="job.isUrgent" type="danger" size="small">急聘</el-tag></div>
-              <div class="company-name">{{ job.company }}</div>
-              <div class="meta-row"><span><el-icon><Location /></el-icon> {{ job.location }}</span><span><el-icon><School /></el-icon> {{ job.education }}</span><span><el-icon><Clock /></el-icon> {{ job.experience }}</span></div>
+              <div class="title-row"><h2>{{ job.jobName }}</h2><el-tag v-if="job.isUrgent" type="danger" size="small">急聘</el-tag></div>
+              <div class="company-name">{{ job.department }}</div>
+              <div class="meta-row"><span><el-icon><Location /></el-icon> {{ job.city }}</span><span><el-icon><School /></el-icon> {{ job.education }}</span><span><el-icon><Clock /></el-icon> {{ job.experience }}</span></div>
             </div>
-            <div class="salary-box"><div class="salary">{{ job.salary }}</div></div>
+            <div class="salary-box"><div class="salary">{{ job.salaryMin != null && job.salaryMax != null ? (job.salaryMin) + 'K-' + (job.salaryMax) + 'K' : '-' }}</div></div>
           </div>
         </el-card>
         <el-card shadow="never" class="section-card">
@@ -50,13 +50,13 @@ const route = useRoute()
 const applying = ref(false)
 
 const job = reactive({
-  id: route.params.id, title: '', company: '', location: '', education: '', experience: '',
-  salary: '', description: '', requirements: '', isUrgent: false, skills: [], companyIntro: ''
+  id: route.params.id, jobName: '', department: '', city: '', education: '', experience: '',
+  salaryMin: null, salaryMax: null, description: '', requirements: '', isUrgent: false, skills: [], companyIntro: ''
 })
 
 function formatSalary(min, max) {
   if (!min && !max) return '薪资面议'
-  const k = v => (v / 1000).toFixed(0) + 'K'
+  const k = v => (v ).toFixed(0) + 'K'
   return k(min) + '-' + k(max)
 }
 
@@ -65,11 +65,13 @@ onMounted(async () => {
     const res = await getJobDetail(route.params.id)
     const j = res.data
     Object.assign(job, {
-      title: j.jobName || '',
-      location: j.city || '',
+      jobName: j.jobName || '',
+      department: j.department || '',
+      city: j.city || '',
       education: j.education || '',
       experience: j.experience || '',
-      salary: formatSalary(j.salaryMin, j.salaryMax),
+      salaryMin: j.salaryMin,
+      salaryMax: j.salaryMax,
       description: j.description || '',
       requirements: j.requirements || '',
       skills: j.requirements ? j.requirements.split('\n').filter(Boolean) : []

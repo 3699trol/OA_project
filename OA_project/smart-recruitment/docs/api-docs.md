@@ -50,17 +50,17 @@
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
 | 简历详情 | GET | /api/resume/{id} | 查询简历 | ⬜ |
-| 保存简历 | POST | /api/resume | 新建简历 | ⬜ |
-| 更新简历 | PUT | /api/resume/{id} | 更新简历 | ⬜ |
+| 保存简历 | POST | /api/resume | 新建简历 | ✅️ |
+| 更新简历 | PUT | /api/resume/{id} | 更新简历 | ✅️ |
 | AI解析 | POST | /api/resume/{id}/parse | AI解析简历 | ⬜ |
 | AI评估 | POST | /api/resume/{id}/evaluate | AI简历评估 | ⬜ |
 
 ## 投递接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 投递 | POST | /api/application | 投递职位 | ⬜ |
-| 投递记录 | GET | /api/application/list | 查询投递记录（支持职位、状态筛选） | ⬜ |
-| 修改状态 | PUT | /api/application/{id}/status | 修改投递状态 | ⬜ |
+| 投递 | POST | /api/application | 投递职位 | ✅️ |
+| 投递记录 | GET | /api/application/list | 查询投递记录（支持职位、状态筛选） | ✅️ |
+| 修改状态 | PUT | /api/application/{id}/status | 修改投递状态 | ❓️ |
 
 ## 面试接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
@@ -102,5 +102,5 @@
 ## 文件接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 上传文件 | POST | /api/file/upload | 文件上传 | ⬜ |
-| 下载文件 | GET | /api/file/download/{id} | 文件下载 | ⬜ |
+| 上传文件 | POST | /api/file/upload | 文件上传 | ❓️ |
+| 下载文件 | GET | /api/file/download/{id} | 文件下载 | ❓️ |

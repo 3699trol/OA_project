@@ -54,7 +54,7 @@
         <el-table-column prop="title" label="职位名称" min-width="180">
           <template #default="{ row }">
             <div class="job-title-cell">
-              <span class="j-title">{{ row.title }}</span>
+              <span class="j-title">{{ row.jobName }}</span>
               <span class="j-dept">{{ row.department }}</span>
             </div>
           </template>
@@ -67,7 +67,7 @@
         <el-table-column prop="city" label="工作城市" width="120" />
         <el-table-column prop="salary" label="薪资范围" width="130">
           <template #default="{ row }">
-            <span class="salary-text">{{ row.salary }}</span>
+            <span class="salary-text">{{ row.salaryMin != null && row.salaryMax != null ? (row.salaryMin) + 'K-' + (row.salaryMax) + 'K' : '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="experience" label="经验要求" width="120" />
@@ -207,7 +207,7 @@ function resetFilter() {
 
 async function handlePublish(row) {
   try {
-    await ElMessageBox.confirm(`确定要发布该职位 [${row.title}] 吗？发布后将展示给求职者大厅。`, '发布提示', {
+    await ElMessageBox.confirm(`确定要发布该职位 [${row.jobName}] 吗？发布后将展示给求职者大厅。`, '发布提示', {
       confirmButtonText: '立即发布',
       cancelButtonText: '取消',
       type: 'warning',
@@ -228,7 +228,7 @@ async function handlePublish(row) {
 
 async function handleUnpublish(row) {
   try {
-    await ElMessageBox.confirm(`确定要下架职位 [${row.title}] 吗？下架后求职者将无法浏览此职位。`, '下架提示', {
+    await ElMessageBox.confirm(`确定要下架职位 [${row.jobName}] 吗？下架后求职者将无法浏览此职位。`, '下架提示', {
       confirmButtonText: '下线职位',
       cancelButtonText: '取消',
       type: 'warning',

@@ -12,11 +12,15 @@
       </el-form>
     </el-card>
     <el-table :data="jobList" style="width:100%;margin-top:16px;" v-loading="loading" stripe>
-      <el-table-column prop="title" label="职位名称" min-width="160" />
-      <el-table-column prop="company" label="公司" min-width="140" />
-      <el-table-column prop="location" label="地点" width="120" />
-      <el-table-column prop="salary" label="薪资" width="110" />
-      <el-table-column prop="matchScore" label="匹配度" width="90" align="center" />
+      <el-table-column prop="jobName" label="职位名称" min-width="160" />
+      <el-table-column prop="department" label="公司/部门" min-width="140" />
+      <el-table-column prop="city" label="地点" width="120" />
+      <el-table-column label="薪资" width="130">
+        <template #default="{ row }">
+          {{ row.salaryMin != null && row.salaryMax != null ? (row.salaryMin) + 'K-' + (row.salaryMax) + 'K' : '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="category" label="类别" width="120" />
       <el-table-column label="操作" width="120"><template #default="{ row }"><el-button type="primary" link @click="$router.push(`/candidate/jobs/${row.id}`)">查看详情</el-button></template></el-table-column>
     </el-table>
     <el-pagination v-model:current-page="page" :page-size="10" :total="total" layout="prev, pager, next, total" background style="margin-top:20px;justify-content:center;" />

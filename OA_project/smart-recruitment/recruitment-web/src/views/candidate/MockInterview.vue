@@ -19,7 +19,7 @@
                 <el-option 
                   v-for="job in jobOptions" 
                   :key="job.id" 
-                  :label="job.title" 
+                  :label="job.jobName" 
                   :value="job.id" 
                 />
               </el-select>
@@ -72,8 +72,8 @@
             </div>
           </template>
           <div class="job-meta-row">
-            <span class="job-title-tag">{{ customTitle || selectedJob.title }}</span>
-            <el-tag type="danger" size="small">{{ customSalary || selectedJob.salary }}</el-tag>
+            <span class="job-title-tag">{{ customTitle || selectedJob.jobName }}</span>
+            <el-tag type="danger" size="small">{{ customSalary || (selectedJob.salaryMin != null && selectedJob.salaryMax != null ? (selectedJob.salaryMin/1000) + 'K-' + (selectedJob.salaryMax/1000) + 'K' : '-') }}</el-tag>
           </div>
           <div class="meta-small-text">
             <span>地点: {{ customCity || selectedJob.city || selectedJob.location || '北京' }}</span> | <span>部门: {{ customDept || selectedJob.department || '研发部' }}</span>
@@ -333,8 +333,8 @@ function saveCustomJd() {
 watch(() => config.jobId, (newJobId) => {
   const job = jobOptions.value.find(j => j.id === newJobId)
   if (job) {
-    customTitle.value = job.title || ''
-    customSalary.value = job.salary || ''
+    customTitle.value = job.jobName || ''
+    customSalary.value = (job.salaryMin != null && job.salaryMax != null ? (job.salaryMin/1000) + 'K-' + (job.salaryMax/1000) + 'K' : '') || ''
     customCity.value = job.city || job.location || ''
     customDept.value = job.department || '研发部'
     customJd.value = job.description || ''
@@ -354,8 +354,8 @@ watch(jobOptions, (newOptions) => {
   if (config.jobId) {
     const job = newOptions.find(j => j.id === config.jobId)
     if (job) {
-      customTitle.value = job.title || ''
-      customSalary.value = job.salary || ''
+      customTitle.value = job.jobName || ''
+      customSalary.value = (job.salaryMin != null && job.salaryMax != null ? (job.salaryMin/1000) + 'K-' + (job.salaryMax/1000) + 'K' : '') || ''
       customCity.value = job.city || job.location || ''
       customDept.value = job.department || '研发部'
       customJd.value = job.description || ''
@@ -408,7 +408,7 @@ async function startInterview() {
   try {
     const res = await startMockInterview({
       jobId: config.jobId,
-      jobTitle: customTitle.value || selectedJob.value?.title || '', // 提交用户自定义编辑后的职位名称
+      jobTitle: customTitle.value || selectedJob.value?.jobName || '', // 提交用户自定义编辑后的职位名称
       jobRequirements: customRequirements.value || '', // 提交用户自定义编辑后的技能要求
       jobDescription: customJd.value || '',           // 提交用户自定义编辑后的岗位描述
       resumeData: resumeData.value,
@@ -450,7 +450,7 @@ async function sendMessage() {
       sessionId: sessionId.value,
       message: content,
       chatCount: chatCount.value,
-      jobTitle: selectedJob.value?.title || ''
+      jobTitle: selectedJob.value?.jobName || ''
     })
 
     if (res && res.data) {
@@ -504,7 +504,7 @@ async function finishInterview() {
   try {
     const res = await submitMockInterview({
       sessionId: sessionId.value,
-      jobTitle: selectedJob.value?.title || ''
+      jobTitle: selectedJob.value?.jobName || ''
     })
     if (res && res.data) {
       ElMessage.success('🎉 面试已顺利结束！AI 资深面试官正在撰写全维度能力分析报告...')

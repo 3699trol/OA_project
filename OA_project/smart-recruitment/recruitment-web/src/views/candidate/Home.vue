@@ -63,10 +63,10 @@
           <el-card shadow="hover" class="job-card" @click="$router.push(`/candidate/jobs`)">
             <div class="job-card-header">
               <div class="job-main-info">
-                <h4 class="job-title">{{ job.title }}</h4>
+                <h4 class="job-title">{{ job.jobName }}</h4>
                 <span class="job-dept">{{ job.department }}</span>
               </div>
-              <span class="job-salary">{{ job.salary }}</span>
+              <span class="job-salary">{{ job.salaryMin != null && job.salaryMax != null ? (job.salaryMin) + 'K-' + (job.salaryMax) + 'K' : '-' }}</span>
             </div>
             
             <div class="job-tags">

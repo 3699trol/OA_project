@@ -51,7 +51,7 @@ async function fetchApplications() {
       if (a.status === 1) statusLabel = '面试中'
       else if (a.status === 2) statusLabel = '已录用'
       else if (a.status === 3) statusLabel = '不合适'
-      return { ...a, status: statusLabel, jobTitle: a.jobName || a.jobTitle || '', company: a.company || '' }
+      return { ...a, status: statusLabel, jobTitle: a.jobName || a.jobTitle || '', company: a.department || a.company || '' }
     })
   } catch (e) { /* fallback */ }
   finally { loading.value = false }
