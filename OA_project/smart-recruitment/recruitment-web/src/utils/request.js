@@ -6,7 +6,18 @@ import { handleMockRequest } from '@/mock'
 // --- Mock 总开关（代码级）---
 // 若希望在代码层面彻底关闭 Mock（不受用户在页面上切换或 localStorage 影响），
 // 将下方常量改为 true 即可：此时无论 localStorage.use_mock 是什么值，都会强制走真实后端。
-const FORCE_DISABLE_MOCK = false
+const FORCE_DISABLE_MOCK = true
+
+// Keep all frontend transports on the same mode. A demo token cannot be
+// authenticated by the real Spring Security filter chain.
+if (FORCE_DISABLE_MOCK) {
+  localStorage.setItem('use_mock', 'false')
+  const token = localStorage.getItem('token') || ''
+  if (token.startsWith('demo-token-')) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+  }
+}
 
 const request = axios.create({
   baseURL: '/api',

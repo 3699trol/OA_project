@@ -20,10 +20,10 @@ public class JobApplicationController {
     }
 
     @GetMapping("/list")
-    public Result<PageResult<?>> list(@RequestParam(defaultValue = "1") long page,
-                                       @RequestParam(defaultValue = "10") long size,
-                                       @RequestParam(required = false) Long jobId,
-                                       @RequestParam(required = false) Integer status) {
+    public Result<PageResult<?>> list(@RequestParam(name = "page", defaultValue = "1") long page,
+                                       @RequestParam(name = "size", defaultValue = "10") long size,
+                                       @RequestParam(name = "jobId", required = false) Long jobId,
+                                       @RequestParam(name = "status", required = false) Integer status) {
         // TODO: 投递记录（支持职位、状态筛选）
         return Result.success(PageResult.empty(page, size));
     }

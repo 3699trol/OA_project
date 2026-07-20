@@ -14,17 +14,17 @@ import org.springframework.web.bind.annotation.*;
 public class SearchController {
 
     @GetMapping("/job")
-    public Result<PageResult<?>> searchJob(@RequestParam String keyword,
-                                            @RequestParam(defaultValue = "1") long page,
-                                            @RequestParam(defaultValue = "10") long size) {
+    public Result<PageResult<?>> searchJob(@RequestParam(name = "keyword") String keyword,
+                                            @RequestParam(name = "page", defaultValue = "1") long page,
+                                            @RequestParam(name = "size", defaultValue = "10") long size) {
         // TODO: ES职位搜索
         return Result.success(PageResult.empty(page, size));
     }
 
     @GetMapping("/resume")
-    public Result<PageResult<?>> searchResume(@RequestParam String keyword,
-                                               @RequestParam(defaultValue = "1") long page,
-                                               @RequestParam(defaultValue = "10") long size) {
+    public Result<PageResult<?>> searchResume(@RequestParam(name = "keyword") String keyword,
+                                               @RequestParam(name = "page", defaultValue = "1") long page,
+                                               @RequestParam(name = "size", defaultValue = "10") long size) {
         // TODO: ES简历搜索
         return Result.success(PageResult.empty(page, size));
     }

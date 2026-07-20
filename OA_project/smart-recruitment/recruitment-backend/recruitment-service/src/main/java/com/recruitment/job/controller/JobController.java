@@ -22,10 +22,10 @@ public class JobController {
     private JobService jobService;
 
     @GetMapping("/list")
-    public Result<PageResult<Job>> list(@RequestParam(defaultValue = "1") long page,
-                                         @RequestParam(defaultValue = "10") long size,
-                                         @RequestParam(required = false) String keyword,
-                                         @RequestParam(required = false) Integer status) {
+    public Result<PageResult<Job>> list(@RequestParam(name = "page", defaultValue = "1") long page,
+                                         @RequestParam(name = "size", defaultValue = "10") long size,
+                                         @RequestParam(name = "keyword", required = false) String keyword,
+                                         @RequestParam(name = "status", required = false) Integer status) {
         if (jobService == null) return Result.success(PageResult.empty(page, size));
         Page<Job> jobPage = jobService.listByPage(page, size, keyword, status);
         return Result.success(new PageResult<>(jobPage.getRecords(), jobPage.getTotal(), page, size));

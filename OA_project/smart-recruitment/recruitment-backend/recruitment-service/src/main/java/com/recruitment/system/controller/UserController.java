@@ -24,9 +24,9 @@ public class UserController {
     private SysUserService sysUserService;
 
     @GetMapping("/list")
-    public Result<PageResult<SysUserVO>> list(@RequestParam(defaultValue = "1") long page,
-                                               @RequestParam(defaultValue = "10") long size,
-                                               @RequestParam(required = false) String keyword) {
+    public Result<PageResult<SysUserVO>> list(@RequestParam(name = "page", defaultValue = "1") long page,
+                                               @RequestParam(name = "size", defaultValue = "10") long size,
+                                               @RequestParam(name = "keyword", required = false) String keyword) {
         if (sysUserService == null) return Result.success(PageResult.empty(page, size));
         Page<SysUser> userPage = sysUserService.listByPage(page, size, keyword);
         List<SysUserVO> voList = userPage.getRecords().stream().map(user -> {

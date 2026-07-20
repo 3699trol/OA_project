@@ -20,9 +20,9 @@ public class InterviewController {
     }
 
     @GetMapping("/list")
-    public Result<PageResult<?>> list(@RequestParam(defaultValue = "1") long page,
-                                       @RequestParam(defaultValue = "10") long size,
-                                       @RequestParam(required = false) Integer status) {
+    public Result<PageResult<?>> list(@RequestParam(name = "page", defaultValue = "1") long page,
+                                       @RequestParam(name = "size", defaultValue = "10") long size,
+                                       @RequestParam(name = "status", required = false) Integer status) {
         // TODO: 面试列表（支持状态筛选）
         return Result.success(PageResult.empty(page, size));
     }

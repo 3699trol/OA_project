@@ -2,6 +2,7 @@
 -- 创建数据库
 CREATE DATABASE IF NOT EXISTS smart_recruitment DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE smart_recruitment;
+SET NAMES utf8mb4;
 
 -- 公司信息表
 CREATE TABLE IF NOT EXISTS company (

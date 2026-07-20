@@ -19,11 +19,11 @@ public class OperationLogController {
     private OperationLogService operationLogService;
 
     @GetMapping("/list")
-    public Result<PageResult<OperationLog>> list(@RequestParam(defaultValue = "1") long page,
-                                                  @RequestParam(defaultValue = "10") long size,
-                                                  @RequestParam(required = false) String keyword,
-                                                  @RequestParam(required = false) String startTime,
-                                                  @RequestParam(required = false) String endTime) {
+    public Result<PageResult<OperationLog>> list(@RequestParam(name = "page", defaultValue = "1") long page,
+                                                  @RequestParam(name = "size", defaultValue = "10") long size,
+                                                  @RequestParam(name = "keyword", required = false) String keyword,
+                                                  @RequestParam(name = "startTime", required = false) String startTime,
+                                                  @RequestParam(name = "endTime", required = false) String endTime) {
         if (operationLogService == null) return Result.success(PageResult.empty(page, size));
         Page<OperationLog> logPage = operationLogService.listByPage(page, size, keyword, startTime, endTime);
         return Result.success(new PageResult<>(logPage.getRecords(), logPage.getTotal(), page, size));

@@ -37,7 +37,7 @@ public class JobCategoryController {
     }
 
     @PutMapping("/{id}/status")
-    public Result<?> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+    public Result<?> updateStatus(@PathVariable Long id, @RequestParam(name = "status") Integer status) {
         // TODO: 启用/停用职位分类
         return Result.success();
     }
