@@ -2,13 +2,14 @@
 # 个人配置（数据库密码、中间件地址等）通过 .env 文件或环境变量注入
 # 启动方式: mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 spring:
-  config:
-    import: "optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension:yml}"
+  # Nacos 配置中心: 暂时禁用（启动 Nacos 后取消注释下行并改 config.enabled=true）
+  # config:
+  #   import: "optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension:yml}"
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:smart_recruitment}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    password: ${DB_PASSWORD:123456}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -18,12 +19,14 @@ spring:
   cloud:
     nacos:
       discovery:
-        enabled: true
+        # 未启动 Nacos 时设为 false，启动后再打开
+        enabled: false
         server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
         ip: "${NACOS_DISCOVERY_IP:127.0.0.1}"
         fail-fast: false
       config:
-        enabled: true
+        # 未启动 Nacos 时关闭
+        enabled: false
         server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
         file-extension: yml
         import-check:

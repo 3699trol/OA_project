@@ -21,11 +21,29 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-// import { getOperationLogs } from '@/api/user'
+import { ref, onMounted, watch } from 'vue'
+import { getOperationLogs } from '@/api/user'
 
 const search = ref(''); const dateRange = ref([]); const loading = ref(false); const page = ref(1); const total = ref(0); const logs = ref([])
-onMounted(async () => { /* TODO: const res = await getOperationLogs({ page: page.value, keyword: search.value }) */ })
+
+async function fetchLogs() {
+  loading.value = true
+  try {
+    const params = { page: page.value, size: 10, keyword: search.value }
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.startTime = dateRange.value[0]
+      params.endTime = dateRange.value[1]
+    }
+    const res = await getOperationLogs(params)
+    logs.value = res.data.records || []
+    total.value = res.data.total || 0
+  } catch (e) { /* fallback */ }
+  finally { loading.value = false }
+}
+
+onMounted(fetchLogs)
+watch([page, dateRange], fetchLogs)
+watch(search, () => { page.value = 1; fetchLogs() })
 </script>
 
 <style scoped>

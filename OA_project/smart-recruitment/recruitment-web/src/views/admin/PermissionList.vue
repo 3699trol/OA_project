@@ -18,10 +18,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-// import { getPermissionList } from '@/api/user'
+import { getPermissionList } from '@/api/user'
 
 const loading = ref(false); const permissions = ref([])
-onMounted(async () => { /* TODO: const res = await getPermissionList() */ })
+onMounted(async () => {
+  loading.value = true
+  try {
+    const res = await getPermissionList()
+    permissions.value = res.data || []
+  } catch (e) { /* fallback */ }
+  finally { loading.value = false }
+})
 </script>
 
 <style scoped>

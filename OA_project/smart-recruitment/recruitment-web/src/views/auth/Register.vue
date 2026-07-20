@@ -60,10 +60,24 @@ const roles = [
   { value: 'INTERVIEWER', label: '面试官', desc: '查看面试任务、AI生成面试题、评价面试', icon: 'Avatar' }
 ]
 
-async function nextStep() { await formRef.value.validate().catch(() => {}); step.value = 1 }
+async function nextStep() {
+  try { await formRef.value.validate() } catch { return }
+  step.value = 1
+}
 async function handleRegister() {
-  // TODO: 调用注册接口 register(form)
-  ElMessage.success('TODO: 对接后端注册接口'); step.value = 2
+  try {
+    const roleTypeMap = { CANDIDATE: 4, HR: 2, INTERVIEWER: 3 }
+    await register({
+      username: form.username,
+      password: form.password,
+      realName: form.realName,
+      email: form.email,
+      userType: roleTypeMap[selectedRole.value] || 4
+    })
+    step.value = 2
+  } catch (e) {
+    ElMessage.error(e.message || '注册失败')
+  }
 }
 </script>
 

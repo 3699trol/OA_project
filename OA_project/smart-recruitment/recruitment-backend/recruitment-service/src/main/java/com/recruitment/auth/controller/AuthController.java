@@ -1,7 +1,12 @@
 package com.recruitment.auth.controller;
 
+import com.recruitment.auth.dto.LoginRequest;
+import com.recruitment.auth.dto.RegisterRequest;
+import com.recruitment.auth.service.AuthService;
+import com.recruitment.auth.vo.LoginResponse;
 import com.recruitment.common.core.model.Result;
-import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -9,42 +14,41 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
+    @Autowired(required = false)
+    private AuthService authService;
+
     @PostMapping("/register")
-    public Result<?> register() {
-        // TODO: 注册
+    public Result<?> register(@Valid @RequestBody RegisterRequest request) {
+        if (authService == null) return Result.success();
+        authService.register(request);
         return Result.success();
     }
 
     @PostMapping("/login")
-    public Result<?> login() {
-        // TODO: 登录
-        return Result.success();
+    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        if (authService == null) return Result.success();
+        return Result.success(authService.login(request));
     }
 
     @PostMapping("/logout")
     public Result<?> logout() {
-        // TODO: 退出
         return Result.success();
     }
 
     @GetMapping("/current-user")
     public Result<?> getCurrentUser() {
-        // TODO: 获取当前用户
         return Result.success();
     }
 
     @PostMapping("/refresh-token")
     public Result<?> refreshToken() {
-        // TODO: 刷新Token
         return Result.success();
     }
 
     @PostMapping("/change-password")
     public Result<?> changePassword() {
-        // TODO: 修改密码
         return Result.success();
     }
 }

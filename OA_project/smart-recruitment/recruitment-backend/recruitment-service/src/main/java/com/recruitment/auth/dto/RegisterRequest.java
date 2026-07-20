@@ -15,4 +15,5 @@ public class RegisterRequest {
     private String realName;
     private String email;
     private String phone;
+    private Integer userType;
 }

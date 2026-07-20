@@ -30,12 +30,28 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-// import { getUserList } from '@/api/user'
+import { ref, onMounted, watch } from 'vue'
+import { getUserList } from '@/api/user'
 
 const search = ref(''); const loading = ref(false); const page = ref(1); const total = ref(0); const users = ref([])
+
+const userTypeMap = { 1: '管理员', 2: 'HR', 3: '面试官', 4: '求职者' }
 function roleType(r) { return { '管理员': 'danger', 'HR': 'warning', '面试官': 'primary', '求职者': 'success' }[r] || 'info' }
-onMounted(async () => { /* TODO: const res = await getUserList({ page: page.value, keyword: search.value }) */ })
+function mapRole(userType) { return userTypeMap[userType] || '未知' }
+
+async function fetchUsers() {
+  loading.value = true
+  try {
+    const res = await getUserList({ page: page.value, size: 10, keyword: search.value })
+    users.value = (res.data.records || []).map(u => ({ ...u, role: mapRole(u.userType) }))
+    total.value = res.data.total || 0
+  } catch (e) { /* fallback */ }
+  finally { loading.value = false }
+}
+
+onMounted(fetchUsers)
+watch([page, search], fetchUsers)
+watch(search, () => { page.value = 1 })
 </script>
 
 <style scoped>

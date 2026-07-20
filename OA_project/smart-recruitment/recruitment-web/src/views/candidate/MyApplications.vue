@@ -31,21 +31,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { getApplications } from '@/api/application'
 
 const activeTab = ref('all'); const loading = ref(false); const detailVisible = ref(false); const detailStep = ref(0)
 const applications = ref([])
 
 function statusType(s) { return { '初筛中': 'warning', '面试中': 'primary', '已录用': 'success', '不合适': 'info' }[s] || '' }
-function showDetail(row) { detailVisible.value = true; /* TODO: fetch logs */ }
+function showDetail(row) { detailStep.value = { '初筛中': 1, '面试中': 2, '已录用': 3 }[row.status] || 1; detailVisible.value = true }
 
-onMounted(async () => {
+const statusMap = { all: undefined, screening: 0, interviewing: 1, hired: 2 }
+
+async function fetchApplications() {
   loading.value = true
-  // TODO: const res = await getApplications({ status: activeTab.value })
-  // applications.value = res.data.records
-  loading.value = false
-})
+  try {
+    const res = await getApplications({ page: 1, size: 50, status: statusMap[activeTab.value] })
+    applications.value = (res.data.records || []).map(a => {
+      let statusLabel = '初筛中'
+      if (a.status === 1) statusLabel = '面试中'
+      else if (a.status === 2) statusLabel = '已录用'
+      else if (a.status === 3) statusLabel = '不合适'
+      return { ...a, status: statusLabel, jobTitle: a.jobName || a.jobTitle || '', company: a.company || '' }
+    })
+  } catch (e) { /* fallback */ }
+  finally { loading.value = false }
+}
+
+onMounted(fetchApplications)
+watch(activeTab, fetchApplications)
 </script>
 
 <style scoped>

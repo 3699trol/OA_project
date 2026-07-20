@@ -54,15 +54,34 @@ const job = reactive({
   salary: '', description: '', requirements: '', isUrgent: false, skills: [], companyIntro: ''
 })
 
+function formatSalary(min, max) {
+  if (!min && !max) return '薪资面议'
+  const k = v => (v / 1000).toFixed(0) + 'K'
+  return k(min) + '-' + k(max)
+}
+
 onMounted(async () => {
-  // TODO: const res = await getJobDetail(route.params.id); Object.assign(job, res.data)
+  try {
+    const res = await getJobDetail(route.params.id)
+    const j = res.data
+    Object.assign(job, {
+      title: j.jobName || '',
+      location: j.city || '',
+      education: j.education || '',
+      experience: j.experience || '',
+      salary: formatSalary(j.salaryMin, j.salaryMax),
+      description: j.description || '',
+      requirements: j.requirements || '',
+      skills: j.requirements ? j.requirements.split('\n').filter(Boolean) : []
+    })
+  } catch (e) { /* fallback */ }
 })
 
 async function handleApply() {
   applying.value = true
   try {
-    // TODO: await apply({ jobId: job.id })
-    ElMessage.info('TODO: 对接后端投递接口')
+    await apply({ jobId: job.id })
+    ElMessage.success('投递成功')
   } catch (e) { ElMessage.error(e.message || '投递失败') }
   finally { applying.value = false }
 }

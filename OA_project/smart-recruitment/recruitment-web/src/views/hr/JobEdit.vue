@@ -40,13 +40,14 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { createJob, updateJob, getJobDetail } from '@/api/job'
+import { createJob, updateJob, getJobDetail, publishJob } from '@/api/job'
 
 const route = useRoute()
+const router = useRouter()
 const isEdit = computed(() => !!route.params.id)
-const formRef = ref(); const tagVisible = ref(false); const tagValue = ref(''); const tagInput = ref()
+const formRef = ref(); const tagVisible = ref(false); const tagValue = ref(''); const tagInput = ref(); const saving = ref(false)
 
 const form = reactive({ title: '', category: '', location: '', headcount: 1, salaryMin: 0, salaryMax: 0, education: '本科', experience: '3-5年', description: '', requirements: '', skills: [] })
 
@@ -59,11 +60,82 @@ function addTag() { const v = tagValue.value.trim(); if (v && !form.skills.inclu
 function showTagInput() { tagVisible.value = true; nextTick(() => tagInput.value?.input?.focus()) }
 
 onMounted(async () => {
-  if (isEdit.value) { /* TODO: const res = await getJobDetail(route.params.id); Object.assign(form, res.data) */ }
+  if (isEdit.value) {
+    try {
+      const res = await getJobDetail(route.params.id)
+      const job = res.data
+      Object.assign(form, {
+        title: job.jobName || '',
+        category: job.category || '',
+        location: job.city || '',
+        headcount: job.headcount || 1,
+        salaryMin: job.salaryMin || 0,
+        salaryMax: job.salaryMax || 0,
+        education: job.education || '本科',
+        experience: job.experience || '3-5年',
+        description: job.description || '',
+        requirements: job.requirements || '',
+        skills: []
+      })
+    } catch (e) { ElMessage.error('加载职位详情失败') }
+  }
 })
 
-async function handleSave() { /* TODO: await createJob(form) */ ElMessage.info('TODO: 对接职位保存接口') }
-async function handlePublish() { /* TODO: await createJob({ ...form, status: '已发布' }) */ ElMessage.info('TODO: 对接职位发布接口') }
+async function handleSave() {
+  saving.value = true
+  try {
+    const data = {
+      jobName: form.title,
+      category: form.category,
+      city: form.location,
+      headcount: form.headcount,
+      salaryMin: form.salaryMin,
+      salaryMax: form.salaryMax,
+      education: form.education,
+      experience: form.experience,
+      description: form.description,
+      requirements: form.requirements
+    }
+    if (isEdit.value) {
+      await updateJob(route.params.id, data)
+      ElMessage.success('更新成功')
+    } else {
+      await createJob(data)
+      ElMessage.success('创建成功，职位已保存为草稿')
+    }
+    setTimeout(() => router.push('/hr/jobs'), 800)
+  } catch (e) { ElMessage.error(e.message || '保存失败') }
+  finally { saving.value = false }
+}
+async function handlePublish() {
+  saving.value = true
+  try {
+    const data = {
+      jobName: form.title,
+      category: form.category,
+      city: form.location,
+      headcount: form.headcount,
+      salaryMin: form.salaryMin,
+      salaryMax: form.salaryMax,
+      education: form.education,
+      experience: form.experience,
+      description: form.description,
+      requirements: form.requirements
+    }
+    let jobId
+    if (isEdit.value) {
+      await updateJob(route.params.id, data)
+      jobId = route.params.id
+    } else {
+      const res = await createJob(data)
+      jobId = res.data.id
+    }
+    await publishJob(jobId)
+    ElMessage.success('发布成功')
+    setTimeout(() => router.push('/hr/jobs'), 800)
+  } catch (e) { ElMessage.error(e.message || '发布失败') }
+  finally { saving.value = false }
+}
 </script>
 
 <style scoped>

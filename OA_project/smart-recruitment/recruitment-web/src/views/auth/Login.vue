@@ -169,16 +169,25 @@ async function handleLogin() {
 
   loading.value = true
   try {
+    console.log('[Login] 发送请求', { username: form.username, password: form.password })
     const res = await login({ username: form.username, password: form.password })
-    
-    // 防御性安全提取：不管是 axios 返回的最外层包 { data: { token, userInfo } }，还是直接剥离出来的 { token, userInfo }
+    console.log('[Login] 收到响应', JSON.parse(JSON.stringify(res)))
+
+    // 防御性安全提取
     const dataObj = res?.data || res || {}
+    console.log('[Login] dataObj', dataObj)
     const userInfoObj = dataObj.userInfo || res?.userInfo || {}
     const tokenVal = dataObj.token || res?.token || ''
-    
-    // 强制写入一致的角色，防止Mock接口未根据选择返回对应角色的情况
+    console.log('[Login] userInfo', userInfoObj, 'token长度', tokenVal.length)
+
+    // 强制写入一致的角色
     if (userInfoObj) {
       userInfoObj.role = loginRole.value
+    }
+
+    if (!tokenVal) {
+      ElMessage.error('登录失败：未获取到 Token，请检查后端服务是否正常')
+      return
     }
     
     // 保存至 Pinia 和 LocalStorage
@@ -195,6 +204,8 @@ async function handleLogin() {
       router.push(roleRedirects[loginRole.value] || '/candidate')
     }, 400)
   } catch (e) {
+    console.error('[Login] 异常', e)
+    console.log('[Login] 异常详情: name=', e.name, 'message=', e.message, 'response=', e.response?.data)
     ElMessage.error(e.message || '登录失败，请检查账号密码')
   } finally {
     loading.value = false

@@ -22,11 +22,18 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-// import { getRoleList } from '@/api/user'
+import { getRoleList } from '@/api/user'
 
 const loading = ref(false); const roles = ref([])
 function roleColor(c) { return { 'ADMIN': 'danger', 'HR': 'warning', 'INTERVIEWER': 'primary', 'CANDIDATE': 'success' }[c] || 'info' }
-onMounted(async () => { /* TODO: const res = await getRoleList() */ })
+onMounted(async () => {
+  loading.value = true
+  try {
+    const res = await getRoleList()
+    roles.value = (res.data || []).map(r => ({ ...r, userCount: r.userCount || 0 }))
+  } catch (e) { /* fallback */ }
+  finally { loading.value = false }
+})
 </script>
 
 <style scoped>

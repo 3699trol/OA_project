@@ -21,10 +21,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-// import { getJobCategories } from '@/api/job'
+import { getJobCategories } from '@/api/job'
 
 const loading = ref(false); const categories = ref([])
-onMounted(async () => { /* TODO: const res = await getJobCategories() */ })
+onMounted(async () => {
+  loading.value = true
+  try {
+    const res = await getJobCategories()
+    categories.value = res.data || []
+  } catch (e) { /* fallback */ }
+  finally { loading.value = false }
+})
 </script>
 
 <style scoped>

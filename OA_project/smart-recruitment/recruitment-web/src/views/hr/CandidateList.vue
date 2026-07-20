@@ -33,17 +33,45 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-// import { getCandidateList } from '@/api/application'
+import { ref, onMounted, watch } from 'vue'
+import { getApplicationList } from '@/api/application'
 
 const activeTab = ref('all'); const loading = ref(false); const searchKeyword = ref(''); const page = ref(1); const total = ref(0)
 const candidates = ref([])
 
 function statusType(s) { return { '初筛中': 'warning', '面试中': 'primary', '已录用': 'success', '不合适': 'info' }[s] || '' }
 
-onMounted(async () => {
-  // TODO: const res = await getCandidateList({ page: page.value, size: 10, keyword: searchKeyword.value, status: activeTab.value })
-})
+const tabStatusMap = { all: undefined, screening: 0, interviewing: 1 }
+function mapStatus(code) {
+  if (code === 0) return '初筛中'
+  if (code === 1) return '面试中'
+  if (code === 2) return '已录用'
+  if (code === 3) return '不合适'
+  return '初筛中'
+}
+
+async function fetchCandidates() {
+  loading.value = true
+  try {
+    const params = { page: page.value, size: 10, status: tabStatusMap[activeTab.value] }
+    if (searchKeyword.value) params.keyword = searchKeyword.value
+    const res = await getApplicationList(params)
+    candidates.value = (res.data.records || []).map(a => ({
+      id: a.id,
+      name: a.candidateName || a.userName || '候选人',
+      jobTitle: a.jobName || a.jobTitle || '',
+      matchScore: a.aiMatchScore || 0,
+      status: mapStatus(a.status),
+      education: '',
+      experience: ''
+    }))
+    total.value = res.data.total || 0
+  } catch (e) { /* fallback */ }
+  finally { loading.value = false }
+}
+
+onMounted(fetchCandidates)
+watch([page, activeTab, searchKeyword], fetchCandidates)
 </script>
 
 <style scoped>
