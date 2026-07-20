@@ -17,18 +17,20 @@ public class Job {
 
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String title;
-    private String description;
-    private String requirements;
+    private String jobName;
+    private String department;
     private String category;
-    private String location;
+    private String city;
     private BigDecimal salaryMin;
     private BigDecimal salaryMax;
-    private Integer experienceYears;
     private String education;
+    private String experience;
     private Integer headcount;
-    private Integer status; // 0-草稿 1-已发布 2-已下架
-    private Long hrUserId;
+    private String description;
+    private String requirements;
+    private Integer status; // 0-草稿 1-招聘中 2-下架
+    private Long publisherId;
+    private LocalDateTime publishTime;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer deleted;

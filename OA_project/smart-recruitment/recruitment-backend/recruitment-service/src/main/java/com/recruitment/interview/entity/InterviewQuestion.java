@@ -18,7 +18,7 @@ public class InterviewQuestion {
     private Long id;
     private Long interviewId;
     private String title;
-    private String type;
+    private String questionType;
     private String difficulty;
     private String referenceAnswer;
     private String scoringCriteria;

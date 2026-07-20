@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -19,7 +20,12 @@ public class JobApplication {
     private Long jobId;
     private Long userId;
     private Long resumeId;
-    private Integer status; // 0-已投递 1-初筛通过 2-初筛不通过 3-面试中 4-录用 5-拒绝
+    private LocalDateTime applyTime;
+    private Integer status; // 0-待筛选 1-面试中 2-录用 3-淘汰 4-撤回
+    private String remark;
+    private BigDecimal aiMatchScore;
+    private String aiMatchReason;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private Integer deleted;
 }

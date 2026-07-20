@@ -17,13 +17,12 @@ public class Interview {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long applicationId;
-    private Long jobId;
-    private Long candidateId;
     private Long interviewerId;
-    private Integer status; // 0-待面试 1-面试中 2-已完成 3-已取消
     private LocalDateTime interviewTime;
-    private String location;
-    private String remark;
+    private String interviewType;
+    private String address;
+    private String aiQuestions;
+    private Integer status; // 0-待面试 1-已完成 2-取消
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

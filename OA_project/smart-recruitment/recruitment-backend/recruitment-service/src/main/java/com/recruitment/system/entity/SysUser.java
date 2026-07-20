@@ -19,10 +19,14 @@ public class SysUser {
     private String username;
     private String password;
     private String realName;
-    private String email;
+    private Integer userType;
+    private Integer gender;
     private String phone;
-    private String avatar;
+    private String email;
+    private String avatarUrl;
+    private Long companyId;
     private Integer status;
+    private LocalDateTime lastLoginTime;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer deleted;
