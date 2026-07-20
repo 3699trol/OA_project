@@ -308,4 +308,4 @@ INSERT INTO sys_role (role_code, role_name, description) VALUES
 
 -- 初始化管理员账号（密码: admin123）
 INSERT INTO sys_user (username, password, real_name, user_type, status)
-VALUES ('admin', '$2a$10$CwTycUXWue0Thq9StjUM0uJ8b6Kp0U0zZMfjXC8iP9FeCFGXFZ8Ca', '系统管理员', 1, 1);
+VALUES ('admin', '$2b$10$8vKAcLuJEFFCK6mIdbKNUOes8EvMJk.s7p6AWN.dlj6BXcXGYmC96', '系统管理员', 1, 1);
