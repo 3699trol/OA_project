@@ -58,23 +58,36 @@
         <!-- 职位要求预览 -->
         <el-card v-if="selectedJob" shadow="never" class="job-detail-preview-card">
           <template #header>
-            <span class="panel-title"><el-icon><Briefcase /></el-icon> 岗位JD与技能契合</span>
+            <div class="card-title-row" style="margin: 0; padding: 0; border: none; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span class="panel-title"><el-icon><Briefcase /></el-icon> 岗位JD与技能契合</span>
+              <el-button 
+                type="primary" 
+                link 
+                icon="Edit" 
+                :disabled="started" 
+                @click="openJdEditor"
+              >
+                自定义编辑
+              </el-button>
+            </div>
           </template>
           <div class="job-meta-row">
-            <span class="job-title-tag">{{ selectedJob.title }}</span>
-            <el-tag type="danger" size="small">{{ selectedJob.salary }}</el-tag>
+            <span class="job-title-tag">{{ customTitle || selectedJob.title }}</span>
+            <el-tag type="danger" size="small">{{ customSalary || selectedJob.salary }}</el-tag>
           </div>
           <div class="meta-small-text">
-            <span>地点: {{ selectedJob.city || selectedJob.location }}</span> | <span>部门: {{ selectedJob.department || '研发部' }}</span>
+            <span>地点: {{ customCity || selectedJob.city || selectedJob.location || '北京' }}</span> | <span>部门: {{ customDept || selectedJob.department || '研发部' }}</span>
           </div>
+          
           <el-divider style="margin: 12px 0;" />
+          
           <div class="jd-section">
             <label>岗位描述：</label>
-            <p class="jd-text">{{ selectedJob.description }}</p>
+            <p class="jd-text" style="white-space: pre-line;">{{ customJd || '暂无岗位描述' }}</p>
           </div>
           <div class="jd-section mt-2">
             <label>任职资格：</label>
-            <p class="jd-text" style="white-space: pre-line;">{{ selectedJob.requirements }}</p>
+            <p class="jd-text" style="white-space: pre-line;">{{ customRequirements || '暂无任职资格要求' }}</p>
           </div>
         </el-card>
       </el-col>
@@ -207,11 +220,61 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 自定义职位及JD编辑弹窗 -->
+    <el-dialog v-model="jdDialogVisible" title="✍️ 自定义修改目标岗位与技能门槛" width="620px" append-to-body>
+      <el-form label-position="top">
+        <el-row :gutter="16">
+          <el-col :span="14">
+            <el-form-item label="职位名称" required>
+              <el-input v-model="customTitle" placeholder="如：高级Java开发工程师" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="10">
+            <el-form-item label="薪资范围">
+              <el-input v-model="customSalary" placeholder="如：25K-35K" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="工作地点">
+              <el-input v-model="customCity" placeholder="如：北京" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="归属部门">
+              <el-input v-model="customDept" placeholder="如：技术部" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="岗位描述 (Job Description)" required>
+          <el-input 
+            v-model="customJd" 
+            type="textarea" 
+            :rows="4" 
+            placeholder="请详细描述此职位的主要职责与核心产出要求..." 
+          />
+        </el-form-item>
+        <el-form-item label="任职资格 / 技能要求" required>
+          <el-input 
+            v-model="customRequirements" 
+            type="textarea" 
+            :rows="6" 
+            placeholder="请输入此职位所要求的硬性技术栈及专业素养要求，每行一条..." 
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="jdDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveCustomJd">确认保存并应用</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getJobList } from '@/api/job'
@@ -242,6 +305,64 @@ const selectedJob = computed(() => {
   if (!config.jobId) return null
   return jobOptions.value.find(j => j.id === config.jobId) || null
 })
+
+// === 自定义 JD / 技能契合度字段 ===
+const customTitle = ref('')
+const customSalary = ref('')
+const customCity = ref('')
+const customDept = ref('')
+const customJd = ref('')
+const customRequirements = ref('')
+
+const jdDialogVisible = ref(false)
+
+function openJdEditor() {
+  jdDialogVisible.value = true
+}
+
+function saveCustomJd() {
+  if (!customTitle.value.trim()) {
+    ElMessage.warning('请输入目标职位名称')
+    return
+  }
+  jdDialogVisible.value = false
+  ElMessage.success('职位信息及JD自定义保存成功！')
+}
+
+// 监听选中的目标职位，自动同步预设 JD 描述与任职技能条件
+watch(() => config.jobId, (newJobId) => {
+  const job = jobOptions.value.find(j => j.id === newJobId)
+  if (job) {
+    customTitle.value = job.title || ''
+    customSalary.value = job.salary || ''
+    customCity.value = job.city || job.location || ''
+    customDept.value = job.department || '研发部'
+    customJd.value = job.description || ''
+    customRequirements.value = job.requirements || ''
+  } else {
+    customTitle.value = ''
+    customSalary.value = ''
+    customCity.value = ''
+    customDept.value = '研发部'
+    customJd.value = ''
+    customRequirements.value = ''
+  }
+}, { immediate: true })
+
+// 深度监听职位列表加载动作以赋初始值
+watch(jobOptions, (newOptions) => {
+  if (config.jobId) {
+    const job = newOptions.find(j => j.id === config.jobId)
+    if (job) {
+      customTitle.value = job.title || ''
+      customSalary.value = job.salary || ''
+      customCity.value = job.city || job.location || ''
+      customDept.value = job.department || '研发部'
+      customJd.value = job.description || ''
+      customRequirements.value = job.requirements || ''
+    }
+  }
+}, { deep: true })
 
 onMounted(async () => {
   await Promise.all([loadJobs(), loadResume()])
@@ -287,8 +408,9 @@ async function startInterview() {
   try {
     const res = await startMockInterview({
       jobId: config.jobId,
-      jobTitle: selectedJob.value?.title || '',
-      jobRequirements: selectedJob.value?.requirements || '',
+      jobTitle: customTitle.value || selectedJob.value?.title || '', // 提交用户自定义编辑后的职位名称
+      jobRequirements: customRequirements.value || '', // 提交用户自定义编辑后的技能要求
+      jobDescription: customJd.value || '',           // 提交用户自定义编辑后的岗位描述
       resumeData: resumeData.value,
       type: config.type,
       difficulty: config.difficulty,
