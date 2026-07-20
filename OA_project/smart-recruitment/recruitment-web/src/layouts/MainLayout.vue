@@ -24,13 +24,6 @@
           </el-menu-item>
         </el-menu>
       </div>
-
-      <div class="aside-footer">
-        <div class="mock-badge" :class="{ 'is-mock': isMock }">
-          <span class="dot"></span>
-          {{ isMock ? 'MOCK 测试数据已启用' : '真实后端接口已连' }}
-        </div>
-      </div>
     </el-aside>
 
     <!-- 主内容区 -->
@@ -39,22 +32,11 @@
       <el-header class="header-bar">
         <div class="header-left">
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">工作台</el-breadcrumb-item>
             <el-breadcrumb-item>{{ pageTitle }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         
         <div class="header-right">
-          <el-tooltip content="点击切换 Mock 状态" placement="bottom">
-            <el-tag 
-              :type="isMock ? 'success' : 'info'" 
-              class="mock-toggle-tag" 
-              @click="toggleMockMode"
-            >
-              {{ isMock ? 'Mock 模式' : 'Prod 模式' }}
-            </el-tag>
-          </el-tooltip>
-          
           <!-- 收件箱消息通知钟 -->
           <div class="inbox-bell-trigger" @click="inboxVisible = true">
             <el-badge :value="inboxStore.unreadCount" :max="99" :hidden="inboxStore.unreadCount === 0" class="bell-badge">
