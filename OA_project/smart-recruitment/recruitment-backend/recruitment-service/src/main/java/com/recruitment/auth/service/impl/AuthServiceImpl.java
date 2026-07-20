@@ -1,6 +1,7 @@
 package com.recruitment.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.recruitment.auth.dto.ChangePasswordRequest;
 import com.recruitment.auth.dto.LoginRequest;
 import com.recruitment.auth.dto.RegisterRequest;
 import com.recruitment.auth.service.AuthService;
@@ -46,6 +47,13 @@ public class AuthServiceImpl implements AuthService {
 
         // 生成 JWT
         String role = resolveRole(user.getUserType());
+        
+        // 验证角色是否匹配
+        if (request.getExpectedRole() != null && !request.getExpectedRole().isEmpty()) {
+            if (!role.equals(request.getExpectedRole())) {
+                throw new BusinessException("角色类型不匹配，请选择正确的角色登录");
+            }
+        }
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), role);
 
         // 更新最后登录时间
@@ -86,6 +94,22 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus(1);
         user.setCreateTime(LocalDateTime.now());
         sysUserMapper.insert(user);
+    }
+
+    @Override
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new BusinessException("原密码不正确");
+        }
+        if (request.getNewPassword().length() < 6) {
+            throw new BusinessException("新密码长度不能少于6位");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        sysUserMapper.updateById(user);
     }
 
     /**

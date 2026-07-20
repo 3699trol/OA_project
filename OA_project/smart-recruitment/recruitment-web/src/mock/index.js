@@ -114,6 +114,18 @@ addRoute('POST', '/api/auth/logout', () => {
   return { code: 200, message: '退出成功', data: null }
 })
 
+addRoute('POST', '/api/auth/change-password', (req) => {
+  const { oldPassword, newPassword } = req.body || {}
+  if (!oldPassword || !newPassword) {
+    return { code: 400, message: '原密码和新密码不能为空', data: null }
+  }
+  if (newPassword.length < 6) {
+    return { code: 400, message: '新密码长度不能少于6位', data: null }
+  }
+  console.log('[Mock] 修改密码成功')
+  return { code: 200, message: '密码修改成功', data: null }
+})
+
 addRoute('GET', '/api/auth/current-user', (req) => {
   // 解析 token 来获取用户名
   const authHeader = req.headers.Authorization || ''
@@ -518,21 +530,63 @@ addRoute('GET', '/api/ai/mock-interview/report/:id', (req) => {
 })
 
 // ==================== 8. 用户、角色、日志、系统配置等管理模块 ====================
-addRoute('GET', '/api/admin/user/list', () => {
-  const users = [
-    { id: 1, username: 'admin', nickName: '系统管理员', role: 'ADMIN', status: 1, email: 'admin@example.com', createTime: '2026-01-01' },
-    { id: 2, username: 'lijingli', nickName: '李经理', role: 'HR', status: 1, email: 'lijingli@example.com', createTime: '2026-01-02' },
-    { id: 3, username: 'wanggong', nickName: '王工', role: 'INTERVIEWER', status: 1, email: 'wanggong@example.com', createTime: '2026-01-03' },
-    { id: 4, username: 'zhangsan', nickName: '张三', role: 'CANDIDATE', status: 1, email: 'zhangsan@example.com', createTime: '2026-01-04' }
+// 用户管理
+addRoute('GET', '/api/system/user/list', (req) => {
+  const { keyword } = req.params || {}
+  let users = [
+    { id: 1, username: 'admin', realName: '系统管理员', userType: 1, status: 1, email: 'admin@example.com', phone: '13800000001', createTime: '2026-01-01' },
+    { id: 2, username: 'lijingli', realName: '李经理', userType: 2, status: 1, email: 'lijingli@example.com', phone: '13800000002', createTime: '2026-01-02' },
+    { id: 3, username: 'wanggong', realName: '王工', userType: 3, status: 1, email: 'wanggong@example.com', phone: '13800000003', createTime: '2026-01-03' },
+    { id: 4, username: 'zhangsan', realName: '张三', userType: 4, status: 1, email: 'zhangsan@example.com', phone: '13800000004', createTime: '2026-01-04' }
   ]
-  return { code: 200, message: '获取成功', data: { list: users, total: users.length } }
+  if (keyword) {
+    users = users.filter(u => 
+      u.username.includes(keyword) || 
+      u.realName.includes(keyword) || 
+      (u.email && u.email.includes(keyword)) ||
+      (u.phone && u.phone.includes(keyword))
+    )
+  }
+  return { code: 200, message: '获取成功', data: { records: users, total: users.length } }
 })
 
-addRoute('GET', '/api/admin/role/list', () => {
+addRoute('GET', '/api/system/user/:id', (req) => {
+  const users = [
+    { id: 1, username: 'admin', realName: '系统管理员', userType: 1, status: 1, email: 'admin@example.com', phone: '13800000001', createTime: '2026-01-01' },
+    { id: 2, username: 'lijingli', realName: '李经理', userType: 2, status: 1, email: 'lijingli@example.com', phone: '13800000002', createTime: '2026-01-02' },
+    { id: 3, username: 'wanggong', realName: '王工', userType: 3, status: 1, email: 'wanggong@example.com', phone: '13800000003', createTime: '2026-01-03' },
+    { id: 4, username: 'zhangsan', realName: '张三', userType: 4, status: 1, email: 'zhangsan@example.com', phone: '13800000004', createTime: '2026-01-04' }
+  ]
+  const user = users.find(u => u.id == req.pathParams[0])
+  if (user) {
+    return { code: 200, message: '获取成功', data: user }
+  }
+  return { code: 404, message: '用户不存在', data: null }
+})
+
+addRoute('PUT', '/api/system/user/:id/reset-password', (req) => {
+  const userId = req.pathParams[0]
+  console.log(`[Mock] 重置用户 ${userId} 的密码为 123456`)
+  return { code: 200, message: '密码重置成功', data: null }
+})
+
+addRoute('DELETE', '/api/system/user/:id', (req) => {
+  const userId = req.pathParams[0]
+  console.log(`[Mock] 删除用户 ${userId}`)
+  return { code: 200, message: '用户删除成功', data: null }
+})
+
+addRoute('PUT', '/api/system/user/:id/restore', (req) => {
+  const userId = req.pathParams[0]
+  console.log(`[Mock] 恢复用户 ${userId}`)
+  return { code: 200, message: '用户恢复成功', data: null }
+})
+
+addRoute('GET', '/api/system/role/list', () => {
   return { code: 200, message: '获取成功', data: state.roles }
 })
 
-addRoute('GET', '/api/admin/log/list', () => {
+addRoute('GET', '/api/system/log/list', () => {
   return { code: 200, message: '获取成功', data: { list: state.logs, total: state.logs.length } }
 })
 

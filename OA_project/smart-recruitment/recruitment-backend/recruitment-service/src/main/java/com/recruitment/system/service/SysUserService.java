@@ -17,4 +17,19 @@ public interface SysUserService {
      * 根据ID查询用户
      */
     SysUser getById(Long id);
+
+    /**
+     * 重置用户密码为默认密码 123456
+     */
+    void resetPassword(Long id);
+
+    /**
+     * 删除用户（逻辑删除）
+     */
+    void deleteUser(Long id);
+
+    /**
+     * 恢复已删除的用户
+     */
+    void restoreUser(Long id);
 }

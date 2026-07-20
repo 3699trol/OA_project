@@ -19,3 +19,15 @@ export function getPermissionList() {
 export function getOperationLogs(params) {
   return request.get('/system/log/list', { params })
 }
+
+export function resetPassword(id) {
+  return request.put(`/system/user/${id}/reset-password`)
+}
+
+export function deleteUser(id) {
+  return request.delete(`/system/user/${id}`)
+}
+
+export function restoreUser(id) {
+  return request.put(`/system/user/${id}/restore`)
+}

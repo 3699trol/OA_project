@@ -61,6 +61,9 @@
                   <p class="h-name">{{ userStore.userInfo.nickName || userStore.userInfo.username }}</p>
                   <p class="h-role">{{ roleText }}</p>
                 </div>
+                <el-dropdown-item @click="changePasswordVisible = true">
+                  <el-icon><Lock /></el-icon>修改密码
+                </el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout" class="logout-item">
                   <el-icon><SwitchButton /></el-icon>退出登录
                 </el-dropdown-item>
@@ -134,6 +137,30 @@
         </div>
       </template>
     </el-drawer>
+
+    <!-- 修改密码对话框 -->
+    <el-dialog
+      v-model="changePasswordVisible"
+      title="修改密码"
+      width="420px"
+      destroy-on-close
+    >
+      <el-form :model="pwdForm" :rules="pwdRules" ref="pwdFormRef" label-width="90px">
+        <el-form-item label="原密码" prop="oldPassword">
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="请输入原密码" />
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="请输入新密码（不少于6位）" />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="changePasswordVisible = false">取消</el-button>
+        <el-button type="primary" :loading="pwdSubmitting" @click="handleChangePassword">确认修改</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -144,6 +171,7 @@ import { useUserStore } from '@/stores/user'
 import { useInboxStore } from '@/stores/inbox'
 import { simulateWebSocketPush } from '@/utils/websocket'
 import { ElMessage } from 'element-plus'
+import { changePassword } from '@/api/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -152,6 +180,55 @@ const inboxStore = useInboxStore()
 
 const isMock = ref(localStorage.getItem('use_mock') !== 'false')
 const inboxVisible = ref(false)
+
+// 修改密码
+const changePasswordVisible = ref(false)
+const pwdSubmitting = ref(false)
+const pwdFormRef = ref()
+const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const pwdRules = {
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '新密码不少于6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== pwdForm.value.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+async function handleChangePassword() {
+  const valid = await pwdFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  pwdSubmitting.value = true
+  try {
+    await changePassword({
+      oldPassword: pwdForm.value.oldPassword,
+      newPassword: pwdForm.value.newPassword
+    })
+    ElMessage.success('密码修改成功，请重新登录')
+    changePasswordVisible.value = false
+    setTimeout(() => {
+      userStore.logout()
+      router.push('/login')
+    }, 800)
+  } catch (e) {
+    ElMessage.error(e.message || '密码修改失败')
+  } finally {
+    pwdSubmitting.value = false
+  }
+}
 
 function readMessage(msg) {
   inboxStore.markAsRead(msg.id)

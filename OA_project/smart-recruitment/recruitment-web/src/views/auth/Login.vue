@@ -169,8 +169,12 @@ async function handleLogin() {
 
   loading.value = true
   try {
-    console.log('[Login] 发送请求', { username: form.username, password: form.password })
-    const res = await login({ username: form.username, password: form.password })
+    console.log('[Login] 发送请求', { username: form.username, password: form.password, expectedRole: loginRole.value })
+    const res = await login({ 
+      username: form.username, 
+      password: form.password,
+      expectedRole: loginRole.value
+    })
     console.log('[Login] 收到响应', JSON.parse(JSON.stringify(res)))
 
     // 防御性安全提取
@@ -180,9 +184,17 @@ async function handleLogin() {
     const tokenVal = dataObj.token || res?.token || ''
     console.log('[Login] userInfo', userInfoObj, 'token长度', tokenVal.length)
 
-    // 强制写入一致的角色
-    if (userInfoObj) {
-      userInfoObj.role = loginRole.value
+    // 使用后端返回的真实角色
+    const actualRole = userInfoObj.role
+    if (!actualRole) {
+      ElMessage.error('登录失败：未获取到用户角色信息')
+      return
+    }
+    
+    // 验证角色是否匹配（双重验证）
+    if (actualRole !== loginRole.value) {
+      ElMessage.error('角色类型不匹配，请选择正确的角色登录')
+      return
     }
 
     if (!tokenVal) {
@@ -199,9 +211,9 @@ async function handleLogin() {
       duration: 2000
     })
     
-    // 延时跳转，动画更自然
+    // 延时跳转，使用实际角色进行路由
     setTimeout(() => {
-      router.push(roleRedirects[loginRole.value] || '/candidate')
+      router.push(roleRedirects[actualRole] || '/candidate')
     }, 400)
   } catch (e) {
     console.error('[Login] 异常', e)

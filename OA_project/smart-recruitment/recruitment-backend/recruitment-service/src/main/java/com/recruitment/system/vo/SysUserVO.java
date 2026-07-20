@@ -23,4 +23,5 @@ public class SysUserVO {
     private LocalDateTime lastLoginTime;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private Integer deleted;
 }

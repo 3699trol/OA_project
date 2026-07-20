@@ -17,13 +17,16 @@
 | 退出 | POST | /api/auth/logout | 退出登录 | ✅ |
 | 当前用户 | GET | /api/auth/current-user | 获取当前用户信息 | ⬜ |
 | 刷新Token | POST | /api/auth/refresh-token | 刷新JWT | ⬜ |
-| 修改密码 | POST | /api/auth/change-password | 修改密码 | ⬜ |
+| 修改密码 | POST | /api/auth/change-password | 当前用户修改自己的密码 | ✅ |
 
 ## 系统管理接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 用户列表 | GET | /api/system/user/list | 查询用户列表 | ✅ |
-| 用户详情 | GET | /api/system/user/{id} | 根据ID查询用户 | ⬜ |
+| 用户列表 | GET | /api/system/user/list | 查询用户列表（包含已删除） | ✅ |
+| 用户详情 | GET | /api/system/user/{id} | 根据ID查询用户 | ✅ |
+| 重置密码 | PUT | /api/system/user/{id}/reset-password | 重置用户密码为123456 | ✅ |
+| 删除用户 | DELETE | /api/system/user/{id} | 删除用户（逻辑删除） | ✅ |
+| 恢复用户 | PUT | /api/system/user/{id}/restore | 恢复已删除的用户 | ✅ |
 | 角色列表 | GET | /api/system/role/list | 查询角色列表 | ✅️ |
 | 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ⬜ |
 | 操作日志 | GET | /api/system/log/list | 查询操作日志（支持关键字、时间范围） | ⬜ |

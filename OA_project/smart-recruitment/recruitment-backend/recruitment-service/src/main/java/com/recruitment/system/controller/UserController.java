@@ -6,6 +6,7 @@ import com.recruitment.common.core.model.Result;
 import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.service.SysUserService;
 import com.recruitment.system.vo.SysUserVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 /**
  * 用户管理控制器
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/system/user")
 public class UserController {
@@ -38,7 +40,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public Result<SysUserVO> getById(@PathVariable Long id) {
+    public Result<SysUserVO> getById(@PathVariable("id") Long id) {
         if (sysUserService == null) return Result.success();
         SysUser user = sysUserService.getById(id);
         if (user == null) {
@@ -47,5 +49,56 @@ public class UserController {
         SysUserVO vo = new SysUserVO();
         BeanUtils.copyProperties(user, vo);
         return Result.success(vo);
+    }
+
+    @PutMapping("/{id}/reset-password")
+    public Result<Void> resetPassword(@PathVariable("id") Long id) {
+        log.info("重置密码请求，用户ID: {}", id);
+        if (sysUserService == null) {
+            log.error("SysUserService 未注入，无法执行重置密码操作");
+            return Result.error(500, "用户服务未初始化");
+        }
+        try {
+            sysUserService.resetPassword(id);
+            log.info("用户 {} 密码重置成功", id);
+            return Result.success();
+        } catch (Exception e) {
+            log.error("重置密码失败，用户ID: {}", id, e);
+            throw e;
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public Result<Void> deleteUser(@PathVariable("id") Long id) {
+        log.info("删除用户请求，用户ID: {}", id);
+        if (sysUserService == null) {
+            log.error("SysUserService 未注入，无法执行删除操作");
+            return Result.error(500, "用户服务未初始化");
+        }
+        try {
+            sysUserService.deleteUser(id);
+            log.info("用户 {} 删除成功", id);
+            return Result.success();
+        } catch (Exception e) {
+            log.error("删除用户失败，用户ID: {}", id, e);
+            throw e;
+        }
+    }
+
+    @PutMapping("/{id}/restore")
+    public Result<Void> restoreUser(@PathVariable("id") Long id) {
+        log.info("恢复用户请求，用户ID: {}", id);
+        if (sysUserService == null) {
+            log.error("SysUserService 未注入，无法执行恢复操作");
+            return Result.error(500, "用户服务未初始化");
+        }
+        try {
+            sysUserService.restoreUser(id);
+            log.info("用户 {} 恢复成功", id);
+            return Result.success();
+        } catch (Exception e) {
+            log.error("恢复用户失败，用户ID: {}", id, e);
+            throw e;
+        }
     }
 }
