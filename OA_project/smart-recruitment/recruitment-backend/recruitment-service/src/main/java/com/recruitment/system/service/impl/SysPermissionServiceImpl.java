@@ -5,17 +5,15 @@ import com.recruitment.system.entity.SysPermission;
 import com.recruitment.system.mapper.SysPermissionMapper;
 import com.recruitment.system.service.SysPermissionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 /**
- * 权限服务实现（仅在非 local 环境下生效）
+ * 权限服务实现
  */
 @Service
 @RequiredArgsConstructor
-@Profile("!local")
 public class SysPermissionServiceImpl implements SysPermissionService {
 
     private final SysPermissionMapper sysPermissionMapper;

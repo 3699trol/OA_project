@@ -37,17 +37,11 @@ async function fetchJobs() {
     const res = await getJobList({ 
       page: page.value, 
       size: 10, 
-      title: filters.keyword,
-      ...filters 
+      keyword: filters.keyword
     })
     if (res && res.data) {
-      if (Array.isArray(res.data)) {
-        jobList.value = res.data
-        total.value = res.data.length
-      } else {
-        jobList.value = res.data.list || res.data.records || []
-        total.value = res.data.total || jobList.value.length
-      }
+      jobList.value = res.data.records || []
+      total.value = res.data.total || jobList.value.length
     }
   } catch (error) {
     console.error('获取职位列表失败:', error)

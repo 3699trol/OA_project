@@ -111,10 +111,10 @@ const quickCards = [
 async function fetchJobs() {
   loading.value = true
   try {
-    const res = await getJobList({ status: 'PUBLISHED' })
+    const res = await getJobList({ status: 1 })
     if (res.code === 200) {
       // 选取前 4 个已发布的职位作为推荐
-      recommendedJobs.value = res.data.list.slice(0, 4)
+      recommendedJobs.value = res.data.records.slice(0, 4)
     }
   } catch (e) {
     console.error('加载推荐职位失败', e)

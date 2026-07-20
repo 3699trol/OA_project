@@ -6,16 +6,14 @@ import com.recruitment.system.entity.OperationLog;
 import com.recruitment.system.mapper.OperationLogMapper;
 import com.recruitment.system.service.OperationLogService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 /**
- * 操作日志服务实现（仅在非 local 环境下生效）
+ * 操作日志服务实现
  */
 @Service
 @RequiredArgsConstructor
-@Profile("!local")
 public class OperationLogServiceImpl implements OperationLogService {
 
     private final OperationLogMapper operationLogMapper;

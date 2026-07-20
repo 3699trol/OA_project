@@ -6,7 +6,6 @@ import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.mapper.SysUserMapper;
 import com.recruitment.system.service.SysUserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -15,7 +14,6 @@ import org.springframework.util.StringUtils;
  */
 @Service
 @RequiredArgsConstructor
-@Profile("!local")
 public class SysUserServiceImpl implements SysUserService {
 
     private final SysUserMapper sysUserMapper;

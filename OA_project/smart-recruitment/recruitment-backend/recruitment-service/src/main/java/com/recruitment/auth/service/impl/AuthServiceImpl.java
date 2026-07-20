@@ -10,18 +10,16 @@ import com.recruitment.common.security.jwt.JwtUtil;
 import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 /**
- * 认证服务实现（仅在非 local 环境下生效）
+ * 认证服务实现
  */
 @Service
 @RequiredArgsConstructor
-@Profile("!local")
 public class AuthServiceImpl implements AuthService {
 
     private final SysUserMapper sysUserMapper;
