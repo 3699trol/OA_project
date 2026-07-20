@@ -370,9 +370,9 @@ onMounted(async () => {
 
 async function loadJobs() {
   try {
-    const res = await getJobList({ status: 'PUBLISHED' })
+    const res = await getJobList({ status: 1 })
     if (res && res.data) {
-      jobOptions.value = res.data.list || res.data.records || (Array.isArray(res.data) ? res.data : [])
+      jobOptions.value = res.data.records || (Array.isArray(res.data) ? res.data : [])
       if (jobOptions.value.length > 0) {
         config.jobId = jobOptions.value[0].id // 默认选择第一个
       }

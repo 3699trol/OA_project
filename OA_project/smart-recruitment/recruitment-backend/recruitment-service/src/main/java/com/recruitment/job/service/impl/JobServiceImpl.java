@@ -6,18 +6,16 @@ import com.recruitment.job.entity.Job;
 import com.recruitment.job.mapper.JobMapper;
 import com.recruitment.job.service.JobService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
 /**
- * 职位服务实现（仅在非 local 环境下生效）
+ * 职位服务实现
  */
 @Service
 @RequiredArgsConstructor
-@Profile("!local")
 public class JobServiceImpl implements JobService {
 
     private final JobMapper jobMapper;

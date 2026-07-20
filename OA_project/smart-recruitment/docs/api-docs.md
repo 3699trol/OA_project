@@ -7,6 +7,7 @@
 - 统一响应结构: `Result<T>` = `{ code, message, data }`，`code === 200` 表示成功，其余（401 未登录、403 无权限、500 服务错误等）均为失败并携带 `message`
 - 统一分页约定：所有 `/list` 接口查询参数固定为 `page`（从1开始，默认1）与 `size`（默认10），可附加业务筛选参数（如 `keyword`、`status`）；返回统一为 `Result<PageResult<T>>`，`PageResult` 结构为 `{ records, total, pageNum, pageSize }`
 - 统一路径风格：资源集合用 `/list` 查询，单资源用 `/{id}`；创建用 `POST`（无 id），更新用 `PUT /{id}`，删除用 `DELETE /{id}`，状态切换用 `PUT /{id}/status`
+- 接口文档状态：✅️为已开发测试通过，❓️为开发过但存在问题，⬜为未开发。
 
 ## 认证接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
@@ -22,20 +23,20 @@
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
 | 用户列表 | GET | /api/system/user/list | 查询用户列表 | ✅ |
-| 用户详情 | GET | /api/system/user/{id} | 根据ID查询用户 | ✅ |
-| 角色列表 | GET | /api/system/role/list | 查询角色列表 | ✅ |
-| 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ✅ |
-| 操作日志 | GET | /api/system/log/list | 查询操作日志（支持关键字、时间范围） | ✅ |
+| 用户详情 | GET | /api/system/user/{id} | 根据ID查询用户 | ⬜ |
+| 角色列表 | GET | /api/system/role/list | 查询角色列表 | ✅️ |
+| 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ⬜ |
+| 操作日志 | GET | /api/system/log/list | 查询操作日志（支持关键字、时间范围） | ⬜ |
 
 ## 职位接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 职位列表 | GET | /api/job/list | 查询职位列表（支持关键字、状态） | ✅ |
-| 职位详情 | GET | /api/job/{id} | 查询职位详情 | ✅ |
+| 职位列表 | GET | /api/job/list | 查询职位列表（支持关键字、状态） | ✅️ |
+| 职位详情 | GET | /api/job/{id} | 查询职位详情 | ✅️ |
 | 创建职位 | POST | /api/job | HR创建职位 | ✅ |
-| 更新职位 | PUT | /api/job/{id} | 更新职位信息 | ✅ |
-| 发布职位 | POST | /api/job/{id}/publish | 发布职位 | ✅ |
-| 下架职位 | POST | /api/job/{id}/unpublish | 下架职位 | ✅ |
+| 更新职位 | PUT | /api/job/{id} | 更新职位信息 | ✅️ |
+| 发布职位 | POST | /api/job/{id}/publish | 发布职位 | ✅️ |
+| 下架职位 | POST | /api/job/{id}/unpublish | 下架职位 | ✅️ |
 | 分类列表 | GET | /api/job/category/list | 查询职位分类列表 | ⬜ |
 | 新增分类 | POST | /api/job/category | 新增职位分类 | ⬜ |
 | 更新分类 | PUT | /api/job/category/{id} | 更新职位分类 | ⬜ |

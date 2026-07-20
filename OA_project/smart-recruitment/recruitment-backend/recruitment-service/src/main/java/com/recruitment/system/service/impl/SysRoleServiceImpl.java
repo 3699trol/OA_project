@@ -5,17 +5,15 @@ import com.recruitment.system.entity.SysRole;
 import com.recruitment.system.mapper.SysRoleMapper;
 import com.recruitment.system.service.SysRoleService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 /**
- * 角色服务实现（仅在非 local 环境下生效）
+ * 角色服务实现
  */
 @Service
 @RequiredArgsConstructor
-@Profile("!local")
 public class SysRoleServiceImpl implements SysRoleService {
 
     private final SysRoleMapper sysRoleMapper;

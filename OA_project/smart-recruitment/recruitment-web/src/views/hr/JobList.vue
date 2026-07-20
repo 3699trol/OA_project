@@ -92,7 +92,7 @@
               编辑
             </el-button>
             <el-button 
-              v-if="row.status === 'DRAFT' || row.status === 'UNPUBLISHED'" 
+              v-if="row.status === 0 || row.status === 2" 
               size="small" 
               type="success" 
               link
@@ -102,7 +102,7 @@
               发布
             </el-button>
             <el-button 
-              v-if="row.status === 'PUBLISHED'" 
+              v-if="row.status === 1" 
               size="small" 
               type="warning" 
               link
@@ -147,35 +147,43 @@ const filterForm = reactive({
 
 function statusType(s) {
   const mapping = {
-    PUBLISHED: 'success',
-    DRAFT: 'warning',
-    UNPUBLISHED: 'danger'
+    1: 'success',
+    0: 'warning',
+    2: 'danger'
   }
   return mapping[s] || 'info'
 }
 
 function statusLabel(s) {
   const mapping = {
-    PUBLISHED: '已发布',
-    DRAFT: '草稿',
-    UNPUBLISHED: '已下架'
+    1: '已发布',
+    0: '草稿',
+    2: '已下架'
   }
   return mapping[s] || s
+}
+
+function statusToNum(s) {
+  const mapping = {
+    PUBLISHED: 1,
+    DRAFT: 0,
+    UNPUBLISHED: 2
+  }
+  return mapping[s] ?? s
 }
 
 async function fetchJobs() {
   loading.value = true
   try {
     const params = {
-      title: filterForm.title || undefined,
-      category: filterForm.category || undefined,
-      status: activeTab.value === 'ALL' ? undefined : activeTab.value,
+      keyword: filterForm.title || undefined,
+      status: activeTab.value === 'ALL' ? undefined : statusToNum(activeTab.value),
       page: page.value,
       size: 10
     }
     const res = await getJobList(params)
     if (res.code === 200) {
-      jobs.value = res.data.list
+      jobs.value = res.data.records
       total.value = res.data.total
     }
   } catch (e) {
