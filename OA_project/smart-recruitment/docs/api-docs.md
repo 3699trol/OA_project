@@ -25,10 +25,13 @@
 |------|------|------|------|:--:|
 | 用户列表 | GET | /api/system/user/list | 管理员分页查询用户，支持字段搜索和状态筛选（包含已删除） | ✅ |
 | 用户详情 | GET | /api/system/user/{id} | 根据ID查询用户 | ✅ |
+| 更新用户 | PUT | /api/system/user/{id} | 管理员更新用户信息（姓名、角色、手机、邮箱、状态等） | ✅ |
 | 重置密码 | PUT | /api/system/user/{id}/reset-password | 重置用户密码为123456 | ✅ |
 | 删除用户 | DELETE | /api/system/user/{id} | 删除用户（逻辑删除） | ✅ |
 | 恢复用户 | PUT | /api/system/user/{id}/restore | 恢复已删除的用户 | ✅ |
-| 角色列表 | GET | /api/system/role/list | 查询角色列表 | ✅️ |
+| 角色列表 | GET | /api/system/role/list | 查询角色列表 | ✅ |
+| 角色详情 | GET | /api/system/role/{id} | 根据ID查询角色 | ✅ |
+| 更新角色 | PUT | /api/system/role/{id} | 更新角色信息（名称、编码、描述、状态） | ✅ |
 | 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ⬜ |
 | 操作日志 | GET | /api/system/log/list | 查询操作日志（支持关键字、时间范围） | ⬜ |
 
@@ -81,7 +84,7 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 |------|------|------|------|:--:|
 | 投递 | POST | /api/application | 投递职位 | ✅️ |
 | 投递记录 | GET | /api/application/list | 查询投递记录（支持职位、状态筛选） | ✅️ |
-| 修改状态 | PUT | /api/application/{id}/status | 修改投递状态 | ❓️ |
+| 修改状态 | PUT | /api/application/{id}/status | 修改投递状态 | ✅️ |
 
 ## 面试接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |

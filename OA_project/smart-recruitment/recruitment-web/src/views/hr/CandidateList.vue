@@ -8,6 +8,8 @@
       <el-tabs v-model="activeTab">
         <el-tab-pane label="全部" name="all" /><el-tab-pane label="初筛中" name="screening" />
         <el-tab-pane label="面试中" name="interviewing" />
+        <el-tab-pane label="已录用" name="hired" />
+        <el-tab-pane label="不合适" name="rejected" />
       </el-tabs>
       <el-table :data="candidates" v-loading="loading" stripe>
         <el-table-column prop="name" label="姓名" width="80" />
@@ -23,7 +25,7 @@
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="$router.push(`/hr/candidates/detail/${row.id}`)">简历详情</el-button>
-            <el-button size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}`)">安排面试</el-button>
+            <el-button v-if="row.status === '面试中' || row.status === '已录用'" size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}`)">安排面试</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -41,7 +43,7 @@ const candidates = ref([])
 
 function statusType(s) { return { '初筛中': 'warning', '面试中': 'primary', '已录用': 'success', '不合适': 'info' }[s] || '' }
 
-const tabStatusMap = { all: undefined, screening: 0, interviewing: 1 }
+const tabStatusMap = { all: undefined, screening: 0, interviewing: 1, hired: 2, rejected: 3 }
 function mapStatus(code) {
   if (code === 0) return '初筛中'
   if (code === 1) return '面试中'

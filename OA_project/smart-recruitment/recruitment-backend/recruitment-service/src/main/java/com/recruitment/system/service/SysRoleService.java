@@ -13,4 +13,14 @@ public interface SysRoleService {
      * 查询所有角色
      */
     List<SysRole> listAll();
+
+    /**
+     * 根据ID查询角色
+     */
+    SysRole getById(Long id);
+
+    /**
+     * 更新角色
+     */
+    boolean updateRole(SysRole sysRole);
 }

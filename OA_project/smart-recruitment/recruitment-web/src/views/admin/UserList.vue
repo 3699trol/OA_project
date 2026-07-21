@@ -73,7 +73,7 @@
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <template v-if="row.deleted === 0">
-              <el-button size="small" type="primary" link>编辑</el-button>
+              <el-button size="small" type="primary" link @click="handleEdit(row)">编辑</el-button>
               <el-button size="small" type="warning" link @click="handleResetPassword(row)">重置密码</el-button>
               <el-button size="small" type="danger" link @click="handleDelete(row)">删除</el-button>
             </template>
@@ -93,19 +93,65 @@
         class="pagination"
       />
     </el-card>
+
+    <!-- 编辑用户对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      title="编辑用户"
+      width="520px"
+      :close-on-click-modal="false"
+      @close="resetForm"
+    >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" status-icon>
+        <el-form-item label="用户名">
+          <el-input :model-value="form.username" disabled />
+        </el-form-item>
+        <el-form-item label="姓名" prop="realName">
+          <el-input v-model="form.realName" placeholder="请输入姓名" />
+        </el-form-item>
+        <el-form-item label="角色" prop="userType">
+          <el-select v-model="form.userType" placeholder="请选择角色" style="width: 100%">
+            <el-option label="管理员" :value="1" />
+            <el-option label="HR" :value="2" />
+            <el-option label="面试官" :value="3" />
+            <el-option label="求职者" :value="4" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="form.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="form.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio :value="1">启用</el-radio>
+            <el-radio :value="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUserList, resetPassword, deleteUser, restoreUser } from '@/api/user'
+import { getUserList, resetPassword, deleteUser, restoreUser, updateUser } from '@/api/user'
 
 const pageSize = 10
 const loading = ref(false)
 const page = ref(1)
 const total = ref(0)
 const users = ref([])
+const dialogVisible = ref(false)
+const submitting = ref(false)
+const formRef = ref(null)
+
 const filters = reactive({
   searchField: 'all',
   keyword: '',
@@ -113,6 +159,32 @@ const filters = reactive({
   status: null,
   deleted: null
 })
+
+const form = reactive({
+  id: null,
+  username: '',
+  realName: '',
+  userType: null,
+  phone: '',
+  email: '',
+  status: 1
+})
+
+const rules = {
+  realName: [
+    { required: true, message: '请输入姓名', trigger: 'blur' },
+    { max: 50, message: '姓名不能超过50个字符', trigger: 'blur' }
+  ],
+  userType: [
+    { required: true, message: '请选择角色', trigger: 'change' }
+  ],
+  phone: [
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+  ],
+  email: [
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  ]
+}
 
 const userTypeMap = { 1: '管理员', 2: 'HR', 3: '面试官', 4: '求职者' }
 const searchPlaceholderMap = {
@@ -167,6 +239,56 @@ function handleReset() {
   handleSearch()
 }
 
+// ──────────── 编辑用户 ────────────
+function handleEdit(row) {
+  form.id = row.id
+  form.username = row.username
+  form.realName = row.realName
+  form.userType = row.userType
+  form.phone = row.phone || ''
+  form.email = row.email || ''
+  form.status = row.status
+  dialogVisible.value = true
+}
+
+function resetForm() {
+  form.id = null
+  form.username = ''
+  form.realName = ''
+  form.userType = null
+  form.phone = ''
+  form.email = ''
+  form.status = 1
+  if (formRef.value) {
+    formRef.value.resetFields()
+  }
+}
+
+async function handleSubmit() {
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  submitting.value = true
+  try {
+    await updateUser({
+      id: form.id,
+      realName: form.realName,
+      userType: form.userType,
+      phone: form.phone,
+      email: form.email,
+      status: form.status
+    })
+    ElMessage.success('用户更新成功')
+    dialogVisible.value = false
+    fetchUsers()
+  } catch (e) {
+    ElMessage.error(e.message || '更新用户失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+// ──────────── 重置密码 ────────────
 async function handleResetPassword(user) {
   try {
     await ElMessageBox.confirm(
@@ -187,6 +309,7 @@ async function handleResetPassword(user) {
   }
 }
 
+// ──────────── 删除用户 ────────────
 async function handleDelete(user) {
   try {
     await ElMessageBox.confirm(
@@ -208,6 +331,7 @@ async function handleDelete(user) {
   }
 }
 
+// ──────────── 恢复用户 ────────────
 async function handleRestore(user) {
   try {
     await ElMessageBox.confirm(

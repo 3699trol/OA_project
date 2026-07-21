@@ -62,6 +62,18 @@ public class InterviewServiceImpl implements InterviewService {
             throw new RuntimeException("投递记录不存在");
         }
 
+        // 校验投递状态：只有"面试中(1)"或"已录用(2)"的投递才能安排面试
+        Integer appStatus = application.getStatus();
+        if (appStatus == null || appStatus == 0) {
+            throw new RuntimeException("该候选人尚未通过初筛，无法安排面试");
+        }
+        if (appStatus == 3) {
+            throw new RuntimeException("该候选人已被标记为不合适，无法安排面试");
+        }
+        if (appStatus == 4) {
+            throw new RuntimeException("该候选人的投递已撤回，无法安排面试");
+        }
+
         // 解析面试时间
         LocalDateTime interviewTime;
         try {

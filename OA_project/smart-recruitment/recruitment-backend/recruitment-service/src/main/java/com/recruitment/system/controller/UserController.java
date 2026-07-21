@@ -108,4 +108,22 @@ public class UserController {
             throw e;
         }
     }
+
+    @PutMapping("/{id}")
+    public Result<Void> updateUser(@PathVariable("id") Long id, @RequestBody SysUser user) {
+        log.info("更新用户请求，用户ID: {}", id);
+        if (sysUserService == null) {
+            log.error("SysUserService 未注入，无法执行更新操作");
+            return Result.error(500, "用户服务未初始化");
+        }
+        user.setId(id);
+        try {
+            sysUserService.updateUser(user);
+            log.info("用户 {} 更新成功", id);
+            return Result.success();
+        } catch (Exception e) {
+            log.error("更新用户失败，用户ID: {}", id, e);
+            throw e;
+        }
+    }
 }

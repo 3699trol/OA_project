@@ -25,4 +25,15 @@ public class SysRoleServiceImpl implements SysRoleService {
                         .eq(SysRole::getStatus, 1)
                         .orderByAsc(SysRole::getId));
     }
+
+    @Override
+    public SysRole getById(Long id) {
+        return sysRoleMapper.selectById(id);
+    }
+
+    @Override
+    public boolean updateRole(SysRole sysRole) {
+        sysRole.setUpdateTime(java.time.LocalDateTime.now());
+        return sysRoleMapper.updateById(sysRole) > 0;
+    }
 }

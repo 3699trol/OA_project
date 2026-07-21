@@ -98,8 +98,12 @@ async function onCandidateChange(userId) {
   try {
     const res = await getCandidateApplications(userId)
     if (res && res.data) {
-      applications.value = res.data
-      // 如果只有一个投递记录，自动选中
+      // 只保留"面试中(1)"和"已录用(2)"的投递记录，其他状态不允许安排面试
+      applications.value = res.data.filter(a => a.status === 1 || a.status === 2)
+      if (applications.value.length === 0) {
+        ElMessage.warning('该候选人暂无可安排面试的投递记录（需初筛通过后才可安排面试）')
+      }
+      // 如果只有一个可安排的投递记录，自动选中
       if (applications.value.length === 1) {
         form.applicationId = applications.value[0].id
       }

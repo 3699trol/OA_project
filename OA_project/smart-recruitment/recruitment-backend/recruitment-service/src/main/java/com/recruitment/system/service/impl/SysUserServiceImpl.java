@@ -112,4 +112,35 @@ public class SysUserServiceImpl implements SysUserService {
             throw new BusinessException("用户不存在或已处于正常状态");
         }
     }
+
+    @Override
+    public void updateUser(SysUser user) {
+        log.info("开始更新用户信息，用户ID: {}", user.getId());
+        SysUser existing = sysUserMapper.selectById(user.getId());
+        if (existing == null) {
+            throw new BusinessException("用户不存在");
+        }
+        // 仅允许更新这些非敏感字段，防止覆盖密码等敏感数据
+        if (org.springframework.util.StringUtils.hasText(user.getRealName())) {
+            existing.setRealName(user.getRealName());
+        }
+        if (user.getUserType() != null) {
+            existing.setUserType(user.getUserType());
+        }
+        if (user.getGender() != null) {
+            existing.setGender(user.getGender());
+        }
+        if (user.getPhone() != null) {
+            existing.setPhone(user.getPhone());
+        }
+        if (user.getEmail() != null) {
+            existing.setEmail(user.getEmail());
+        }
+        if (user.getStatus() != null) {
+            existing.setStatus(user.getStatus());
+        }
+        existing.setUpdateTime(java.time.LocalDateTime.now());
+        sysUserMapper.updateById(existing);
+        log.info("用户 {} 信息更新成功", user.getId());
+    }
 }
