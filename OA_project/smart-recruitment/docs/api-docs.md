@@ -117,7 +117,8 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 ## 仪表板接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 统计数据 | GET | /api/dashboard/stats | HR工作台统计 | ⬜ |
+| HR统计数据 | GET | /api/dashboard/stats | HR工作台统计 | ✅ |
+| 面试官统计数据 | GET | /api/dashboard/interviewer-stats | 面试官工作台统计 | ✅ |
 
 ## 文件接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
