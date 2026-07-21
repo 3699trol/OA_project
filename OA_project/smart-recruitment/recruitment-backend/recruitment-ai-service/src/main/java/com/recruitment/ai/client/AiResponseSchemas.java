@@ -9,6 +9,16 @@ public final class AiResponseSchemas {
     }
 
     public static Map<String, Object> resumeParse() {
+        Map<String, Object> educationExperience = object(
+                Map.of(
+                        "school", nullable("string"),
+                        "major", nullable("string"),
+                        "degree", nullable("string"),
+                        "startDate", nullable("string"),
+                        "endDate", nullable("string")
+                ),
+                List.of("school", "major", "degree", "startDate", "endDate"));
+
         Map<String, Object> workExperience = object(
                 Map.of(
                         "company", nullable("string"),
@@ -27,6 +37,7 @@ public final class AiResponseSchemas {
                         Map.entry("education", nullable("string")),
                         Map.entry("school", nullable("string")),
                         Map.entry("major", nullable("string")),
+                        Map.entry("educationExperiences", array(educationExperience)),
                         Map.entry("workYears", nullable("integer")),
                         Map.entry("skills", array(Map.of("type", "string"))),
                         Map.entry("summary", nullable("string")),
@@ -38,7 +49,7 @@ public final class AiResponseSchemas {
                         Map.entry("suggestions", array(Map.of("type", "string"))),
                         Map.entry("optimizedSummary", nullable("string"))
                 ),
-                List.of("name", "email", "phone", "education", "school", "major", "workYears",
+                List.of("name", "email", "phone", "education", "school", "major", "educationExperiences", "workYears",
                         "skills", "summary", "workExperiences", "overallScore", "evaluation",
                         "strengths", "issues", "suggestions", "optimizedSummary"));
     }

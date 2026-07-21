@@ -42,6 +42,15 @@ export function aiParseResume(data) {
   return request.post('/ai/resume/parse', data, { timeout: AI_REQUEST_TIMEOUT })
 }
 
+export function aiParseResumeFile(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/ai/resume/parse-file', formData, {
+    timeout: AI_REQUEST_TIMEOUT,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 export function aiEvaluateResume(resumeContent) {
   return request.post('/ai/resume/evaluate', resumeContent)
 }

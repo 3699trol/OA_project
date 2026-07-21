@@ -14,6 +14,7 @@ public class AiResumeParseResponse {
     private String education;
     private String school;
     private String major;
+    private List<EducationExperience> educationExperiences;
     private Integer workYears;
     private List<String> skills;
     private String summary;
@@ -24,6 +25,15 @@ public class AiResumeParseResponse {
     private List<String> issues;
     private List<String> suggestions;
     private String optimizedSummary;
+
+    @Data
+    public static class EducationExperience {
+        private String school;
+        private String major;
+        private String degree;
+        private String startDate;
+        private String endDate;
+    }
 
     @Data
     public static class WorkExperience {

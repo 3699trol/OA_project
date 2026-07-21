@@ -201,9 +201,19 @@
 
     <!-- 上传简历文件弹窗 -->
     <el-dialog v-model="uploadVisible" title="上传简历文件" width="480px">
-      <el-upload drag :auto-upload="false" accept=".pdf,.doc,.docx">
+      <el-upload
+        ref="resumeUploadRef"
+        drag
+        :auto-upload="false"
+        :limit="1"
+        accept=".pdf,.doc,.docx"
+        :on-change="handleResumeFileChange"
+        :on-remove="handleResumeFileRemove"
+        :on-exceed="handleResumeFileExceed"
+      >
         <el-icon class="el-icon--upload" size="48"><UploadFilled /></el-icon>
         <div class="el-upload__text">拖拽文件或<em>点击上传</em></div>
+        <template #tip><div class="el-upload__tip">支持 PDF、DOC、DOCX，大小不超过 10MB</div></template>
       </el-upload>
       <template #footer>
         <el-button @click="uploadVisible = false">取消</el-button>
@@ -318,9 +328,11 @@ import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMyResume, saveMyResume } from '@/api/resume'
 import { getCurrentUser } from '@/api/auth'
-import { aiParseResume } from '@/api/ai'
+import { aiParseResume, aiParseResumeFile } from '@/api/ai'
 
 const uploadVisible = ref(false)
+const resumeUploadRef = ref()
+const selectedResumeFile = ref(null)
 const aiResultVisible = ref(false)
 const aiParsing = ref(false)
 const aiResult = ref(null)
@@ -417,6 +429,7 @@ onMounted(async () => {
 })
 
 const normalizedAiSkills = computed(() => normalizeSkills(aiResult.value?.skills))
+const normalizedAiEducations = computed(() => normalizeAiEducations(aiResult.value?.educationExperiences))
 const normalizedAiExperiences = computed(() => normalizeAiExperiences(aiResult.value?.workExperiences))
 const aiStrengths = computed(() => normalizeTextList(aiResult.value?.strengths))
 const aiIssues = computed(() => normalizeTextList(aiResult.value?.issues))
@@ -692,7 +705,21 @@ function normalizeAiDate(date) {
   if (!date) return ''
   const value = String(date).trim()
   if (/^(至今|现在|present|current)$/i.test(value)) return '至今'
-  return value.replace(/-(\d{1,2})(?:-\d{1,2})?$/, '.$1')
+  return value.replace(/[年月]/g, '.').replace(/[/-](\d{1,2})(?:[/-]\d{1,2})?$/, '.$1').replace(/\.$/, '')
+}
+
+function normalizeAiEducations(educations) {
+  if (!Array.isArray(educations)) return []
+  return educations.map(education => {
+    const start = normalizeAiDate(education.startDate)
+    const end = normalizeAiDate(education.endDate)
+    return {
+      school: education.school || '',
+      major: education.major || '',
+      degree: education.degree || '',
+      time: start && end ? `${start} - ${end}` : start || end
+    }
+  }).filter(education => education.school || education.major || education.degree || education.time)
 }
 
 function normalizeAiExperiences(experiences) {
@@ -729,7 +756,9 @@ function applyAiResult() {
   if (normalizedAiExperiences.value.length) {
     form.experiences = normalizedAiExperiences.value.map(experience => ({ ...experience, details: [...experience.details] }))
   }
-  if (data.school || data.major || data.education) {
+  if (normalizedAiEducations.value.length) {
+    form.educations = normalizedAiEducations.value.map(education => ({ ...education }))
+  } else if (data.school || data.major || data.education) {
     form.educations = [{
       school: data.school || '',
       major: data.major || '',
@@ -742,10 +771,50 @@ function applyAiResult() {
   ElMessage.success('解析结果已应用，请检查后保存简历')
 }
 
+function handleResumeFileChange(uploadFile) {
+  selectedResumeFile.value = uploadFile.raw || null
+}
+
+function handleResumeFileRemove() {
+  selectedResumeFile.value = null
+}
+
+function handleResumeFileExceed() {
+  ElMessage.warning('一次只能上传一个简历文件')
+}
+
 async function handleUpload() {
-  ElMessage.success('上传简历文件成功，已触发自动AI解析')
-  uploadVisible.value = false
-  await handleAiParse()
+  if (!selectedResumeFile.value) {
+    ElMessage.warning('请先选择简历文件')
+    return
+  }
+  const file = selectedResumeFile.value
+  const extension = file.name.split('.').pop()?.toLowerCase()
+  if (!['pdf', 'doc', 'docx'].includes(extension)) {
+    ElMessage.error('仅支持 PDF、DOC、DOCX 文件')
+    return
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.error('文件大小不能超过 10MB')
+    return
+  }
+
+  aiParsing.value = true
+  try {
+    const res = await aiParseResumeFile(file)
+    if (res?.data) {
+      aiResult.value = res.data
+      aiResultVisible.value = true
+      uploadVisible.value = false
+      resumeUploadRef.value?.clearFiles()
+      selectedResumeFile.value = null
+      ElMessage.success('简历上传并解析完成，请确认解析结果')
+    }
+  } catch (error) {
+    console.error('简历文件解析失败:', error)
+  } finally {
+    aiParsing.value = false
+  }
 }
 </script>
 
