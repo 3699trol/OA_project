@@ -1,28 +1,63 @@
 <template>
   <div class="page">
-    <div class="page-header"><h2>📜 面试历史</h2></div>
+    <div class="page-header"><h2>面试历史</h2></div>
     <el-card shadow="never" class="section-card">
       <el-table :data="history" v-loading="loading" stripe>
-        <el-table-column prop="candidate" label="候选人" />
-        <el-table-column prop="jobTitle" label="职位" />
-        <el-table-column prop="date" label="日期" width="120" sortable />
-        <el-table-column prop="score" label="评分" width="100" align="center">
-          <template #default="{ row }"><el-rate :model-value="row.score" :max="5" disabled show-score /></template>
+        <el-table-column prop="candidateName" label="候选人" width="100" />
+        <el-table-column prop="jobName" label="职位" min-width="150" />
+        <el-table-column prop="interviewTime" label="日期" width="160" sortable />
+        <el-table-column label="评分" width="120" align="center">
+          <template #default="{ row }">
+            <span v-if="row.evaluation">{{ row.evaluation.overallScore || '-' }}分</span>
+            <span v-else>-</span>
+          </template>
         </el-table-column>
-        <el-table-column prop="recommendation" label="建议" width="90" align="center" />
-        <el-table-column label="操作" width="120"><template #default><el-button type="primary" link size="small">查看</el-button></template></el-table-column>
+        <el-table-column label="建议" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.evaluation" :type="row.evaluation.result === 2 ? 'success' : row.evaluation.result === 1 ? 'warning' : 'danger'" size="small">
+              {{ row.evaluation.resultLabel }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="$router.push(`/interviewer/tasks/${row.id}`)">查看</el-button>
+          </template>
+        </el-table-column>
       </el-table>
-      <el-pagination v-model:current-page="page" :page-size="10" :total="total" layout="prev, pager, next" background style="margin-top:16px;justify-content:center;" />
+      <el-pagination v-model:current-page="page" :page-size="10" :total="total" layout="prev, pager, next, total" background style="margin-top:16px;justify-content:center;" />
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-// import { getInterviewHistory } from '@/api/interview'
+import { ref, onMounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getInterviewerTasks } from '@/api/interview'
 
-const loading = ref(false); const page = ref(1); const total = ref(0); const history = ref([])
-onMounted(async () => { /* TODO: const res = await getInterviewHistory({ page: page.value }) */ })
+const loading = ref(false)
+const page = ref(1)
+const total = ref(0)
+const history = ref([])
+
+async function fetchHistory() {
+  loading.value = true
+  try {
+    const res = await getInterviewerTasks({ page: page.value, size: 10, status: 1 })
+    if (res && res.data) {
+      history.value = res.data.records || []
+      total.value = res.data.total || 0
+    }
+  } catch (e) {
+    ElMessage.error('加载面试历史失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchHistory)
+watch(page, fetchHistory)
 </script>
 
 <style scoped>

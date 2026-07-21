@@ -23,7 +23,7 @@
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="$router.push(`/hr/candidates/detail/${row.id}`)">简历详情</el-button>
-            <el-button size="small" type="success" link>安排面试</el-button>
+            <el-button size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}`)">安排面试</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -58,6 +58,7 @@ async function fetchCandidates() {
     const res = await getApplicationList(params)
     candidates.value = (res.data.records || []).map(a => ({
       id: a.id,
+      userId: a.userId,
       name: a.candidateName || a.userName || '候选人',
       jobTitle: a.jobName || a.jobTitle || '',
       matchScore: a.aiMatchScore || 0,

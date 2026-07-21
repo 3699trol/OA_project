@@ -86,14 +86,14 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 ## 面试接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 创建面试 | POST | /api/interview | 创建面试任务 | ⬜ |
-| 面试列表 | GET | /api/interview/list | 查询面试列表（支持状态筛选） | ⬜ |
-| 面试详情 | GET | /api/interview/{id} | 查询面试详情 | ⬜ |
+| 创建面试 | POST | /api/interview | 创建面试任务 | ✅️ |
+| 面试列表 | GET | /api/interview/list | 查询面试列表（支持状态筛选） | ✅️ |
+| 面试详情 | GET | /api/interview/{id} | 查询面试详情 | ✅️ |
 | 生成面试题 | POST | /api/interview/question/generate | AI生成面试题 | ⬜ |
 | 保存正式面试题 | POST | /api/interview/question | 保存面试官确认的面试题 | ⬜ |
 | 查询面试题 | GET | /api/interview/question/{interviewId} | 根据面试ID查询面试题 | ⬜ |
-| 保存评价 | POST | /api/interview/evaluation | 填写面试评价 | ⬜ |
-| 查询评价 | GET | /api/interview/evaluation/{interviewId} | 根据面试ID查询评价 | ⬜ |
+| 保存评价 | POST | /api/interview/evaluation | 填写面试评价 | ✅️ |
+| 查询评价 | GET | /api/interview/evaluation/{interviewId} | 根据面试ID查询评价 | ✅️ |
 
 ## AI服务接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |

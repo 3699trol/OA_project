@@ -44,6 +44,7 @@ const routes = [
       { path: 'candidates/detail/:id', name: 'CandidateDetail', component: () => import('@/views/hr/CandidateDetail.vue'), meta: { title: '候选人才详情' } },
       { path: 'interviews', name: 'InterviewList', component: () => import('@/views/hr/InterviewList.vue'), meta: { title: '日常面试安排' } },
       { path: 'interviews/create', name: 'InterviewCreate', component: () => import('@/views/hr/InterviewCreate.vue'), meta: { title: '发起面试邀约' } },
+      { path: 'interviews/detail/:id', name: 'HrInterviewDetail', component: () => import('@/views/hr/InterviewDetail.vue'), meta: { title: '面试详情' } },
       { path: 'match', name: 'MatchAnalysis', component: () => import('@/views/hr/MatchAnalysis.vue'), meta: { title: 'AI 双向人岗匹配分析' } },
     ]
   },

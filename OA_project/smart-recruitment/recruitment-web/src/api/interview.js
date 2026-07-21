@@ -12,6 +12,18 @@ export function getInterviewDetail(id) {
   return request.get(`/interview/${id}`)
 }
 
+export function getInterviewerTasks(params) {
+  return request.get('/interview/my-tasks', { params })
+}
+
+export function getInterviewOptions() {
+  return request.get('/interview/options')
+}
+
+export function getCandidateApplications(userId) {
+  return request.get('/interview/candidate-applications', { params: { userId } })
+}
+
 export function generateQuestions(data) {
   return request.post('/interview/question/generate', data)
 }
@@ -30,4 +42,12 @@ export function saveEvaluation(data) {
 
 export function getEvaluationByInterview(interviewId) {
   return request.get(`/interview/evaluation/${interviewId}`)
+}
+
+export function cancelInterview(id) {
+  return request.post(`/interview/${id}/cancel`)
+}
+
+export function processInterviewResult(id, hireDecision) {
+  return request.post(`/interview/${id}/process`, { hireDecision })
 }
