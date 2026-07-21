@@ -223,6 +223,7 @@
 import { ref, reactive, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMyResume, saveMyResume } from '@/api/resume'
+import { getCurrentUser } from '@/api/auth'
 import { aiParseResume } from '@/api/ai'
 
 const uploadVisible = ref(false)
@@ -249,56 +250,72 @@ const form = reactive({
 })
 
 onMounted(async () => {
-  try {
-    const res = await getMyResume()
-    if (res && res.data) {
-      const data = res.data
-      form.name = data.name || ''
-      form.gender = data.gender || '男'
-      form.birth = data.birth || ''
-      form.phone = data.phone || ''
-      form.email = data.email || ''
-      form.city = data.city || ''
-      form.summary = data.summary || data.evaluation || ''
-      
-      if (Array.isArray(data.skills)) {
-        form.skills = [...data.skills]
-      } else if (typeof data.skills === 'string') {
-        form.skills = data.skills.split(',').map(s => s.trim()).filter(Boolean)
-      } else {
-        form.skills = []
-      }
+  const [resumeResult, userResult] = await Promise.allSettled([
+    getMyResume(),
+    getCurrentUser()
+  ])
 
-      if (Array.isArray(data.educations) && data.educations.length > 0) {
-        form.educations = [...data.educations]
-      } else if (data.education) {
-        const parts = data.education.split('·').map(s => s.trim())
-        const school = parts[0] || ''
-        const major = parts[1] || ''
-        const degreeParts = parts[2] ? parts[2].split(' ') : []
-        const degree = degreeParts[0] || ''
-        const time = degreeParts[1] ? degreeParts[1].replace(/[()]/g, '') : ''
-        form.educations = [{ school, major, degree, time }]
-      } else {
-        form.educations = []
-      }
+  if (resumeResult.status === 'rejected') {
+    console.error('加载个人简历失败:', resumeResult.reason)
+    return
+  }
 
-      if (Array.isArray(data.experiences) && data.experiences.length > 0) {
-        form.experiences = [...data.experiences]
-      } else if (data.experience) {
-        const lines = data.experience.split('\n')
-        const firstLineParts = lines[0].split('|').map(s => s.trim())
-        const time = firstLineParts[0] || ''
-        const company = firstLineParts[1] || ''
-        const role = firstLineParts[2] || ''
-        const details = lines.slice(1).map(l => l.trim().replace(/^\d+\.\s*/, '')).filter(Boolean)
-        form.experiences = [{ company, role, time, details }]
-      } else {
-        form.experiences = []
-      }
-    }
-  } catch (error) {
-    console.error('加载个人简历失败:', error)
+  const resumeData = resumeResult.value?.data || {}
+  const userData = userResult.status === 'fulfilled' ? userResult.value?.data || {} : {}
+  const hasResumeField = field => Object.prototype.hasOwnProperty.call(resumeData, field)
+  const data = {
+    ...resumeData,
+    name: hasResumeField('name') ? resumeData.name : userData.realName ?? '',
+    phone: hasResumeField('phone') ? resumeData.phone : userData.phone ?? '',
+    email: hasResumeField('email') ? resumeData.email : userData.email ?? ''
+  }
+
+  if (userResult.status === 'rejected') {
+    console.error('加载个人资料失败:', userResult.reason)
+  }
+
+  form.name = data.name ?? ''
+  form.gender = data.gender ?? '男'
+  form.birth = data.birth ?? ''
+  form.phone = data.phone ?? ''
+  form.email = data.email ?? ''
+  form.city = data.city ?? ''
+  form.summary = data.summary ?? data.evaluation ?? ''
+
+  if (Array.isArray(data.skills)) {
+    form.skills = [...data.skills]
+  } else if (typeof data.skills === 'string') {
+    form.skills = data.skills.split(',').map(s => s.trim()).filter(Boolean)
+  } else {
+    form.skills = []
+  }
+
+  if (Array.isArray(data.educations) && data.educations.length > 0) {
+    form.educations = [...data.educations]
+  } else if (data.education) {
+    const parts = data.education.split('·').map(s => s.trim())
+    const school = parts[0] || ''
+    const major = parts[1] || ''
+    const degreeParts = parts[2] ? parts[2].split(' ') : []
+    const degree = degreeParts[0] || ''
+    const time = degreeParts[1] ? degreeParts[1].replace(/[()]/g, '') : ''
+    form.educations = [{ school, major, degree, time }]
+  } else {
+    form.educations = []
+  }
+
+  if (Array.isArray(data.experiences) && data.experiences.length > 0) {
+    form.experiences = [...data.experiences]
+  } else if (data.experience) {
+    const lines = data.experience.split('\n')
+    const firstLineParts = lines[0].split('|').map(s => s.trim())
+    const time = firstLineParts[0] || ''
+    const company = firstLineParts[1] || ''
+    const role = firstLineParts[2] || ''
+    const details = lines.slice(1).map(l => l.trim().replace(/^\d+\.\s*/, '')).filter(Boolean)
+    form.experiences = [{ company, role, time, details }]
+  } else {
+    form.experiences = []
   }
 })
 
