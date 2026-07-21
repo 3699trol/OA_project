@@ -84,7 +84,7 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 |------|------|------|------|:--:|
 | 投递 | POST | /api/application | 投递职位 | ✅️ |
 | 投递记录 | GET | /api/application/list | 查询投递记录（支持职位、状态筛选） | ✅️ |
-| 修改状态 | PUT | /api/application/{id}/status | 修改投递状态 | ❓️ |
+| 修改状态 | PUT | /api/application/{id}/status | 修改投递状态 | ✅️ |
 
 ## 面试接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
