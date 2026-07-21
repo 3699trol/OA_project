@@ -17,7 +17,7 @@ logs/
 *.tmp
 *.temp
 
-# Env secrets (do not ignore application.yml / bootstrap.yml)
+# Environment files (do not ignore application.yml / bootstrap.yml)
 .env
 .env.*
 !.env.example

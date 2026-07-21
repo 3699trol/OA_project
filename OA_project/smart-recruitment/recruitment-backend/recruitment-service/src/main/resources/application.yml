@@ -21,6 +21,12 @@ spring:
         enabled: false
         import-check:
           enabled: false
+    openfeign:
+      client:
+        config:
+          recruitment-ai-service:
+            connectTimeout: 10000
+            readTimeout: 120000
 
 jwt:
   secret: recruitment-system-secret-key-must-be-at-least-256-bits

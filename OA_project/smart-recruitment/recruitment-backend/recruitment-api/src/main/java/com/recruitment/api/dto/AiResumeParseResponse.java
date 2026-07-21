@@ -18,6 +18,12 @@ public class AiResumeParseResponse {
     private List<String> skills;
     private String summary;
     private List<WorkExperience> workExperiences;
+    private Integer overallScore;
+    private String evaluation;
+    private List<String> strengths;
+    private List<String> issues;
+    private List<String> suggestions;
+    private String optimizedSummary;
 
     @Data
     public static class WorkExperience {

@@ -2,6 +2,7 @@ package com.recruitment.ai.question.controller;
 
 import com.recruitment.api.dto.AiQuestionRequest;
 import com.recruitment.api.dto.AiQuestionResponse;
+import com.recruitment.ai.question.service.QuestionService;
 import com.recruitment.common.core.model.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +15,10 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class QuestionController {
 
+    private final QuestionService questionService;
+
     @PostMapping("/generate")
     public Result<AiQuestionResponse> generate(@RequestBody AiQuestionRequest request) {
-        // TODO: AI生成面试题
-        return Result.success();
+        return Result.success(questionService.generate(request));
     }
 }

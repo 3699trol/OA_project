@@ -3,7 +3,7 @@
     <div class="page-header">
       <h2>📄 我的智能简历</h2>
       <div class="header-actions">
-        <el-button type="success" icon="MagicStick" @click="handleAiParse">🤖 AI智能解析</el-button>
+        <el-button type="success" icon="MagicStick" :loading="aiParsing" @click="handleAiParse">AI智能解析</el-button>
         <el-button type="primary" icon="Upload" @click="uploadVisible = true">📤 上传简历文件</el-button>
       </div>
     </div>
@@ -104,6 +104,100 @@
     <div class="form-actions">
       <el-button type="primary" size="large" icon="Check" @click="handleSave">保存简历</el-button>
     </div>
+
+    <!-- AI 解析结果预览 -->
+    <el-dialog v-model="aiResultVisible" title="AI 简历解析结果" width="min(720px, 92vw)" destroy-on-close>
+      <div v-if="aiResult" class="ai-result">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="姓名">{{ displayAiValue(aiResult.name) }}</el-descriptions-item>
+          <el-descriptions-item label="工作年限">
+            {{ aiResult.workYears == null ? '未识别' : `${aiResult.workYears} 年` }}
+          </el-descriptions-item>
+          <el-descriptions-item label="手机号">{{ displayAiValue(aiResult.phone) }}</el-descriptions-item>
+          <el-descriptions-item label="邮箱">{{ displayAiValue(aiResult.email) }}</el-descriptions-item>
+          <el-descriptions-item label="学校">{{ displayAiValue(aiResult.school) }}</el-descriptions-item>
+          <el-descriptions-item label="专业">{{ displayAiValue(aiResult.major) }}</el-descriptions-item>
+          <el-descriptions-item label="教育背景" :span="2">{{ displayAiValue(aiResult.education) }}</el-descriptions-item>
+        </el-descriptions>
+
+        <section class="ai-result-section ai-diagnosis">
+          <div class="ai-section-heading">
+            <h4>AI 简历诊断</h4>
+            <strong v-if="aiResult.overallScore != null" class="ai-score">{{ aiScore }} 分</strong>
+          </div>
+          <el-progress
+            v-if="aiResult.overallScore != null"
+            :percentage="aiScore"
+            :stroke-width="10"
+            :color="scoreColor"
+          />
+          <p v-if="aiResult.evaluation" class="ai-summary">{{ aiResult.evaluation }}</p>
+          <span v-else class="ai-empty">暂无综合评价</span>
+
+          <div class="ai-diagnosis-grid">
+            <div class="ai-diagnosis-column is-strength">
+              <h5>简历优势</h5>
+              <ul v-if="aiStrengths.length">
+                <li v-for="item in aiStrengths" :key="item">{{ item }}</li>
+              </ul>
+              <span v-else class="ai-empty">暂无</span>
+            </div>
+            <div class="ai-diagnosis-column is-issue">
+              <h5>存在问题</h5>
+              <ul v-if="aiIssues.length">
+                <li v-for="item in aiIssues" :key="item">{{ item }}</li>
+              </ul>
+              <span v-else class="ai-empty">暂无</span>
+            </div>
+            <div class="ai-diagnosis-column is-suggestion">
+              <h5>修改建议</h5>
+              <ul v-if="aiSuggestions.length">
+                <li v-for="item in aiSuggestions" :key="item">{{ item }}</li>
+              </ul>
+              <span v-else class="ai-empty">暂无</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="ai-result-section">
+          <h4>专业技能</h4>
+          <div v-if="normalizedAiSkills.length" class="ai-skill-list">
+            <el-tag v-for="skill in normalizedAiSkills" :key="skill" effect="plain">{{ skill }}</el-tag>
+          </div>
+          <span v-else class="ai-empty">未识别</span>
+        </section>
+
+        <section class="ai-result-section">
+          <h4>个人摘要</h4>
+          <p v-if="aiResult.summary" class="ai-summary">{{ aiResult.summary }}</p>
+          <span v-else class="ai-empty">未识别</span>
+        </section>
+
+        <section v-if="aiResult.optimizedSummary" class="ai-result-section ai-optimized-summary">
+          <h4>AI 优化后的个人摘要</h4>
+          <p class="ai-summary">{{ aiResult.optimizedSummary }}</p>
+        </section>
+
+        <section class="ai-result-section">
+          <h4>工作经历</h4>
+          <div v-if="normalizedAiExperiences.length" class="ai-experience-list">
+            <div v-for="(experience, index) in normalizedAiExperiences" :key="index" class="ai-experience-item">
+              <div class="ai-experience-heading">
+                <strong>{{ experience.company || '未识别公司' }}</strong>
+                <span>{{ experience.role || '未识别职位' }}</span>
+                <time>{{ experience.time || '时间未识别' }}</time>
+              </div>
+              <p v-for="(detail, detailIndex) in experience.details" :key="detailIndex">{{ detail }}</p>
+            </div>
+          </div>
+          <span v-else class="ai-empty">未识别</span>
+        </section>
+      </div>
+      <template #footer>
+        <el-button @click="aiResultVisible = false">关闭</el-button>
+        <el-button type="primary" icon="Check" @click="applyAiResult">应用提取及优化结果</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 上传简历文件弹窗 -->
     <el-dialog v-model="uploadVisible" title="上传简历文件" width="480px">
@@ -220,13 +314,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick, onMounted } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMyResume, saveMyResume } from '@/api/resume'
 import { getCurrentUser } from '@/api/auth'
 import { aiParseResume } from '@/api/ai'
 
 const uploadVisible = ref(false)
+const aiResultVisible = ref(false)
+const aiParsing = ref(false)
+const aiResult = ref(null)
 const tagVisible = ref(false)
 const tagValue = ref('')
 const tagInput = ref()
@@ -317,6 +414,18 @@ onMounted(async () => {
   } else {
     form.experiences = []
   }
+})
+
+const normalizedAiSkills = computed(() => normalizeSkills(aiResult.value?.skills))
+const normalizedAiExperiences = computed(() => normalizeAiExperiences(aiResult.value?.workExperiences))
+const aiStrengths = computed(() => normalizeTextList(aiResult.value?.strengths))
+const aiIssues = computed(() => normalizeTextList(aiResult.value?.issues))
+const aiSuggestions = computed(() => normalizeTextList(aiResult.value?.suggestions))
+const aiScore = computed(() => Math.min(100, Math.max(0, Number(aiResult.value?.overallScore) || 0)))
+const scoreColor = computed(() => {
+  if (aiScore.value >= 80) return '#38a169'
+  if (aiScore.value >= 60) return '#d69e2e'
+  return '#e53e3e'
 })
 
 // 时间字符串解析工具：把 "2022.09 - 2026.06" 转为起止年月
@@ -536,24 +645,101 @@ async function handleSave() {
 }
 
 async function handleAiParse() {
+  if (aiParsing.value) return
+  aiParsing.value = true
   try {
-    ElMessage.info('AI 开始解析...')
-    const res = await aiParseResume({})
+    const res = await aiParseResume({
+      resumeContent: JSON.stringify(form),
+      fileType: 'json'
+    })
     if (res && res.data) {
-      const data = res.data
-      form.name = data.name || form.name
-      form.gender = data.gender || form.gender
-      form.phone = data.phone || form.phone
-      form.email = data.email || form.email
-      form.summary = data.evaluation || form.summary
-      if (data.skills) {
-        form.skills = typeof data.skills === 'string' ? data.skills.split(',').map(s => s.trim()) : data.skills
-      }
-      ElMessage.success('AI 智能解析填充成功')
+      aiResult.value = res.data
+      aiResultVisible.value = true
+      ElMessage.success('AI 解析完成，请确认解析结果')
     }
   } catch (error) {
-    ElMessage.error('AI 解析失败')
+    console.error('AI 解析失败:', error)
+  } finally {
+    aiParsing.value = false
   }
+}
+
+function displayAiValue(value) {
+  return value == null || String(value).trim() === '' ? '未识别' : value
+}
+
+function normalizeSkills(skills) {
+  if (Array.isArray(skills)) {
+    return skills.map(skill => String(skill).trim()).filter(Boolean)
+  }
+  if (typeof skills === 'string') {
+    return skills.split(/[,，]/).map(skill => skill.trim()).filter(Boolean)
+  }
+  return []
+}
+
+function normalizeTextList(value) {
+  if (Array.isArray(value)) {
+    return value.map(item => String(item).trim()).filter(Boolean)
+  }
+  if (typeof value === 'string') {
+    return value.split(/\r?\n/).map(item => item.trim().replace(/^[-•]\s*/, '')).filter(Boolean)
+  }
+  return []
+}
+
+function normalizeAiDate(date) {
+  if (!date) return ''
+  const value = String(date).trim()
+  if (/^(至今|现在|present|current)$/i.test(value)) return '至今'
+  return value.replace(/-(\d{1,2})(?:-\d{1,2})?$/, '.$1')
+}
+
+function normalizeAiExperiences(experiences) {
+  if (!Array.isArray(experiences)) return []
+  return experiences.map(experience => {
+    const start = normalizeAiDate(experience.startDate)
+    const end = normalizeAiDate(experience.endDate)
+    const details = String(experience.description || '')
+      .split(/\r?\n/)
+      .map(detail => detail.trim().replace(/^[-•]\s*/, ''))
+      .filter(Boolean)
+
+    return {
+      company: experience.company || '',
+      role: experience.position || '',
+      time: start && end ? `${start} - ${end}` : start || end,
+      details
+    }
+  }).filter(experience => experience.company || experience.role || experience.time || experience.details.length)
+}
+
+function applyAiResult() {
+  const data = aiResult.value
+  if (!data) return
+
+  form.name = data.name || form.name
+  form.phone = data.phone || form.phone
+  form.email = data.email || form.email
+  form.summary = data.optimizedSummary || data.summary || form.summary
+
+  if (normalizedAiSkills.value.length) {
+    form.skills = [...normalizedAiSkills.value]
+  }
+  if (normalizedAiExperiences.value.length) {
+    form.experiences = normalizedAiExperiences.value.map(experience => ({ ...experience, details: [...experience.details] }))
+  }
+  if (data.school || data.major || data.education) {
+    form.educations = [{
+      school: data.school || '',
+      major: data.major || '',
+      degree: data.education || '',
+      time: ''
+    }]
+  }
+
+  aiResultVisible.value = false
+  ElMessage.success('解析结果已应用，请检查后保存简历')
 }
 
 async function handleUpload() {
@@ -593,11 +779,41 @@ async function handleUpload() {
 .skill-tag { margin-right: 4px; }
 .form-actions { margin-top: 32px; display: flex; gap: 12px; justify-content: center; }
 
+.ai-result-section { margin-top: 20px; }
+.ai-result-section h4 { margin: 0 0 10px; color: #2d3748; font-size: 15px; }
+.ai-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ai-section-heading h4 { margin-bottom: 0; }
+.ai-score { color: #303133; font-size: 18px; white-space: nowrap; }
+.ai-diagnosis > .ai-summary { margin-top: 12px; }
+.ai-diagnosis-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.ai-diagnosis-column { padding-left: 12px; border-left: 3px solid #cbd5e0; min-width: 0; }
+.ai-diagnosis-column.is-strength { border-color: #38a169; }
+.ai-diagnosis-column.is-issue { border-color: #e53e3e; }
+.ai-diagnosis-column.is-suggestion { border-color: #3182ce; }
+.ai-diagnosis-column h5 { margin: 0 0 8px; color: #303133; font-size: 14px; }
+.ai-diagnosis-column ul { margin: 0; padding-left: 18px; color: #4a5568; line-height: 1.6; }
+.ai-diagnosis-column li + li { margin-top: 6px; }
+.ai-optimized-summary { padding: 14px; background: #f0f9ff; border-left: 3px solid #3182ce; }
+.ai-skill-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-summary { margin: 0; color: #4a5568; line-height: 1.7; white-space: pre-wrap; }
+.ai-empty { color: #909399; font-size: 14px; }
+.ai-experience-list { border-top: 1px solid #ebeef5; }
+.ai-experience-item { padding: 14px 0; border-bottom: 1px solid #ebeef5; }
+.ai-experience-heading { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto; gap: 12px; align-items: baseline; }
+.ai-experience-heading span { color: #606266; }
+.ai-experience-heading time { color: #909399; font-size: 13px; }
+.ai-experience-item p { margin: 8px 0 0; color: #4a5568; line-height: 1.6; }
+.ai-result :deep(.el-descriptions__content) { overflow-wrap: anywhere; }
+
 /* 年月下拉框样式 */
 .time-select-row { display: flex; align-items: center; gap: 8px; width: 100%; }
 .time-part-item { display: flex; align-items: center; gap: 8px; flex: 1; }
 .time-sep { color: #718096; font-size: 13px; font-weight: bold; }
+@media (max-width: 768px) {
+  .ai-diagnosis-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 480px) {
   .wrap-mobile { flex-wrap: wrap; }
+  .ai-experience-heading { grid-template-columns: 1fr; gap: 4px; }
 }
 </style>

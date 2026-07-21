@@ -98,15 +98,26 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 ## AI服务接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 简历解析 | POST | /api/ai/resume/parse | AI简历结构化解析 | ⬜ |
+| 简历解析与诊断 | POST | /api/ai/resume/parse | AI简历结构化解析、质量评分、问题诊断与优化建议（需配置 API Key） | ✅ |
 | 简历评估 | POST | /api/ai/resume/evaluate | AI简历质量评估 | ⬜ |
 | 简历优化建议 | POST | /api/ai/resume/optimize | AI简历优化建议 | ⬜ |
-| 人岗匹配 | POST | /api/ai/match | AI人岗匹配分析 | ⬜ |
-| 面试题生成 | POST | /api/ai/question/generate | AI生成面试题 | ⬜ |
+| 人岗匹配 | POST | /api/ai/match | AI人岗匹配分析（需配置 API Key） | ❓️ |
+| 面试题生成 | POST | /api/ai/question/generate | AI生成面试题（需配置 API Key） | ❓️ |
 | 模拟面试生成 | POST | /api/ai/mock-interview/generate | 生成模拟面试题 | ⬜ |
 | 模拟面试答题记录 | POST | /api/ai/mock-interview/record | 记录用户回答 | ⬜ |
 | 模拟追问 | POST | /api/ai/mock-interview/follow-up | AI追问 | ⬜ |
 | 模拟面试报告 | GET | /api/ai/mock-interview/report/{sessionId} | 生成模拟面试报告 | ⬜ |
+
+### AI 服务团队配置
+
+团队共享开发配置位于：
+
+`recruitment-backend/recruitment-ai-service/application-secrets.properties`
+
+该文件随代码提交，包含团队开发环境使用的 API Key、Base URL 和模型参数；成员无需额外创建配置文件。
+操作系统中的同名 `OPENAI_*` 环境变量可以覆盖共享默认值。代理配置作为直连失败时的回退路由。
+分别启动
+`recruitment-ai-service`（8081）和 `recruitment-service`（8080）后即可调用。
 
 ## 搜索接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |

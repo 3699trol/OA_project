@@ -476,12 +476,23 @@ mvn spring-boot:run
 mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-可选环境变量（AI 联调）：
+AI 服务的团队开发配置位于：
+
+`recruitment-backend/recruitment-ai-service/application-secrets.properties`
+
+仓库已提供团队共享的开发模型、Base URL 和 API Key。成员克隆代码后，从
+`recruitment-ai-service` 目录执行 `mvn spring-boot:run`，Spring Boot 会自动读取该文件，
+无需再复制或填写配置。共享配置中的本地代理仅作为回退路由，请求会优先尝试直连；
+因此没有运行该代理的成员在网络可直连时不受影响。
+
+如需使用个人 Key、不同模型或本地代理，可以通过环境变量覆盖仓库默认值：
 
 ```powershell
 # Windows PowerShell 示例
 $env:OPENAI_API_KEY="your-key"
 $env:OPENAI_BASE_URL="https://api.openai.com"
+$env:OPENAI_MODEL="gpt-4o-mini"
+$env:OPENAI_REASONING_EFFORT=""
 ```
 
 ### 6.5 启动前端
@@ -578,7 +589,7 @@ AI 服务：Spring Boot + Spring AI + Redis Stack
 
 本项目用于课程/团队实训开发。提交代码前请确认：
 
-1. 未提交 API Key、密码等敏感信息  
+1. 除已批准的团队开发 AI Key 外，不提交生产 Key、密码等敏感信息  
 2. 角色权限边界正确（尤其是 AI 出题接口）  
 3. 前后端字段命名与接口文档一致  
 4. 本地可启动并通过基础联调
