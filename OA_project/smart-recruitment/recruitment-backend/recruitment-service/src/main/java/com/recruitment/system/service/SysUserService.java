@@ -9,9 +9,10 @@ import com.recruitment.system.entity.SysUser;
 public interface SysUserService {
 
     /**
-     * 分页查询用户列表，支持关键字筛选
+     * 分页查询用户列表，支持指定字段搜索及角色、状态筛选
      */
-    Page<SysUser> listByPage(long pageNum, long pageSize, String keyword);
+    Page<SysUser> listByPage(long pageNum, long pageSize, String keyword, String searchField,
+                             Integer userType, Integer status, Integer deleted);
 
     /**
      * 根据ID查询用户

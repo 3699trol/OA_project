@@ -9,6 +9,7 @@ import com.recruitment.system.vo.SysUserVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("/api/system/user")
+@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
     @Autowired(required = false)
@@ -28,9 +30,14 @@ public class UserController {
     @GetMapping("/list")
     public Result<PageResult<SysUserVO>> list(@RequestParam(name = "page", defaultValue = "1") long page,
                                                @RequestParam(name = "size", defaultValue = "10") long size,
-                                               @RequestParam(name = "keyword", required = false) String keyword) {
+                                               @RequestParam(name = "keyword", required = false) String keyword,
+                                               @RequestParam(name = "searchField", defaultValue = "all") String searchField,
+                                               @RequestParam(name = "userType", required = false) Integer userType,
+                                               @RequestParam(name = "status", required = false) Integer status,
+                                               @RequestParam(name = "deleted", required = false) Integer deleted) {
         if (sysUserService == null) return Result.success(PageResult.empty(page, size));
-        Page<SysUser> userPage = sysUserService.listByPage(page, size, keyword);
+        Page<SysUser> userPage = sysUserService.listByPage(
+                page, size, keyword, searchField, userType, status, deleted);
         List<SysUserVO> voList = userPage.getRecords().stream().map(user -> {
             SysUserVO vo = new SysUserVO();
             BeanUtils.copyProperties(user, vo);

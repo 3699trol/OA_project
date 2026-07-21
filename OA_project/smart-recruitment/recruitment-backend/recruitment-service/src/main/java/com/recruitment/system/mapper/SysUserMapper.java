@@ -19,15 +19,29 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
             "SELECT * FROM sys_user " +
             "<where>" +
             "<if test='keyword != null and keyword != \"\"'>" +
-            "(username LIKE CONCAT('%',#{keyword},'%') " +
+            "<choose>" +
+            "<when test='searchField == \"username\"'>username LIKE CONCAT('%',#{keyword},'%')</when>" +
+            "<when test='searchField == \"realName\"'>real_name LIKE CONCAT('%',#{keyword},'%')</when>" +
+            "<when test='searchField == \"phone\"'>phone LIKE CONCAT('%',#{keyword},'%')</when>" +
+            "<when test='searchField == \"email\"'>email LIKE CONCAT('%',#{keyword},'%')</when>" +
+            "<otherwise>(username LIKE CONCAT('%',#{keyword},'%') " +
             "OR real_name LIKE CONCAT('%',#{keyword},'%') " +
             "OR phone LIKE CONCAT('%',#{keyword},'%') " +
-            "OR email LIKE CONCAT('%',#{keyword},'%'))" +
+            "OR email LIKE CONCAT('%',#{keyword},'%'))</otherwise>" +
+            "</choose>" +
             "</if>" +
+            "<if test='userType != null'> AND user_type = #{userType}</if>" +
+            "<if test='status != null'> AND status = #{status}</if>" +
+            "<if test='deleted != null'> AND deleted = #{deleted}</if>" +
             "</where>" +
-            "ORDER BY deleted ASC, create_time DESC" +
+            " ORDER BY deleted ASC, create_time DESC" +
             "</script>")
-    Page<SysUser> selectPageIncludeDeleted(Page<SysUser> page, @Param("keyword") String keyword);
+    Page<SysUser> selectPageIncludeDeleted(Page<SysUser> page,
+                                            @Param("keyword") String keyword,
+                                            @Param("searchField") String searchField,
+                                            @Param("userType") Integer userType,
+                                            @Param("status") Integer status,
+                                            @Param("deleted") Integer deleted);
 
     /**
      * 手写 SQL 恢复用户（将 deleted 置为 0），完全绕开逻辑删除的自动过滤条件

@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.util.Set;
 
 /**
  * 用户服务实现
@@ -18,15 +21,49 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SysUserServiceImpl implements SysUserService {
 
+    private static final Set<String> SEARCH_FIELDS = Set.of(
+            "all", "username", "realName", "phone", "email");
+
     private final SysUserMapper sysUserMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public Page<SysUser> listByPage(long pageNum, long pageSize, String keyword) {
+    public Page<SysUser> listByPage(long pageNum, long pageSize, String keyword, String searchField,
+                                    Integer userType, Integer status, Integer deleted) {
+        validateListParameters(pageNum, pageSize, searchField, userType, status, deleted);
+
+        String normalizedKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+        String normalizedSearchField = StringUtils.hasText(searchField) ? searchField.trim() : "all";
+
         // 使用手写 SQL 查询，完全绕开 MyBatis-Plus 自动追加的逻辑删除过滤条件，
         // 确保已删除用户也能被查询出来（用于前端灰显 + 恢复）
         Page<SysUser> page = new Page<>(pageNum, pageSize);
-        return sysUserMapper.selectPageIncludeDeleted(page, keyword);
+        return sysUserMapper.selectPageIncludeDeleted(
+                page, normalizedKeyword, normalizedSearchField, userType, status, deleted);
+    }
+
+    private void validateListParameters(long pageNum, long pageSize, String searchField,
+                                        Integer userType, Integer status, Integer deleted) {
+        if (pageNum < 1) {
+            throw new BusinessException(400, "页码必须大于等于 1");
+        }
+        if (pageSize < 1 || pageSize > 100) {
+            throw new BusinessException(400, "每页数量必须在 1 到 100 之间");
+        }
+
+        String normalizedSearchField = StringUtils.hasText(searchField) ? searchField.trim() : "all";
+        if (!SEARCH_FIELDS.contains(normalizedSearchField)) {
+            throw new BusinessException(400, "不支持的用户搜索字段");
+        }
+        if (userType != null && (userType < 1 || userType > 4)) {
+            throw new BusinessException(400, "用户类型必须为 1 到 4");
+        }
+        if (status != null && status != 0 && status != 1) {
+            throw new BusinessException(400, "账号状态必须为 0 或 1");
+        }
+        if (deleted != null && deleted != 0 && deleted != 1) {
+            throw new BusinessException(400, "删除状态必须为 0 或 1");
+        }
     }
 
     @Override

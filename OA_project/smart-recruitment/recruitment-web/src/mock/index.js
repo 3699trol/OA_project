@@ -532,22 +532,53 @@ addRoute('GET', '/api/ai/mock-interview/report/:id', (req) => {
 // ==================== 8. 用户、角色、日志、系统配置等管理模块 ====================
 // 用户管理
 addRoute('GET', '/api/system/user/list', (req) => {
-  const { keyword } = req.params || {}
+  const {
+    keyword = '',
+    searchField = 'all',
+    userType,
+    status,
+    deleted,
+    page = 1,
+    size = 10
+  } = req.params || {}
   let users = [
-    { id: 1, username: 'admin', realName: '系统管理员', userType: 1, status: 1, email: 'admin@example.com', phone: '13800000001', createTime: '2026-01-01' },
-    { id: 2, username: 'lijingli', realName: '李经理', userType: 2, status: 1, email: 'lijingli@example.com', phone: '13800000002', createTime: '2026-01-02' },
-    { id: 3, username: 'wanggong', realName: '王工', userType: 3, status: 1, email: 'wanggong@example.com', phone: '13800000003', createTime: '2026-01-03' },
-    { id: 4, username: 'zhangsan', realName: '张三', userType: 4, status: 1, email: 'zhangsan@example.com', phone: '13800000004', createTime: '2026-01-04' }
+    { id: 1, username: 'admin', realName: '系统管理员', userType: 1, status: 1, deleted: 0, email: 'admin@example.com', phone: '13800000001', createTime: '2026-01-01' },
+    { id: 2, username: 'lijingli', realName: '李经理', userType: 2, status: 1, deleted: 0, email: 'lijingli@example.com', phone: '13800000002', createTime: '2026-01-02' },
+    { id: 3, username: 'wanggong', realName: '王工', userType: 3, status: 1, deleted: 0, email: 'wanggong@example.com', phone: '13800000003', createTime: '2026-01-03' },
+    { id: 4, username: 'zhangsan', realName: '张三', userType: 4, status: 1, deleted: 0, email: 'zhangsan@example.com', phone: '13800000004', createTime: '2026-01-04' },
+    { id: 5, username: 'olduser', realName: '历史用户', userType: 4, status: 0, deleted: 1, email: 'olduser@example.com', phone: '13800000005', createTime: '2025-12-01' }
   ]
+
   if (keyword) {
-    users = users.filter(u => 
-      u.username.includes(keyword) || 
-      u.realName.includes(keyword) || 
-      (u.email && u.email.includes(keyword)) ||
-      (u.phone && u.phone.includes(keyword))
-    )
+    const fields = ['username', 'realName', 'phone', 'email']
+    const selectedFields = fields.includes(searchField) ? [searchField] : fields
+    const normalizedKeyword = String(keyword).trim().toLowerCase()
+    users = users.filter(user => selectedFields.some(field =>
+      String(user[field] || '').toLowerCase().includes(normalizedKeyword)
+    ))
   }
-  return { code: 200, message: '获取成功', data: { records: users, total: users.length } }
+
+  if (userType !== undefined && userType !== null && userType !== '') {
+    users = users.filter(user => user.userType === Number(userType))
+  }
+  if (status !== undefined && status !== null && status !== '') {
+    users = users.filter(user => user.status === Number(status))
+  }
+  if (deleted !== undefined && deleted !== null && deleted !== '') {
+    users = users.filter(user => user.deleted === Number(deleted))
+  }
+
+  users.sort((a, b) => a.deleted - b.deleted || b.createTime.localeCompare(a.createTime))
+  const pageNum = Math.max(1, Number(page) || 1)
+  const pageSize = Math.max(1, Number(size) || 10)
+  const total = users.length
+  const records = users.slice((pageNum - 1) * pageSize, pageNum * pageSize)
+
+  return {
+    code: 200,
+    message: '获取成功',
+    data: { records, total, pageNum, pageSize }
+  }
 })
 
 addRoute('GET', '/api/system/user/:id', (req) => {

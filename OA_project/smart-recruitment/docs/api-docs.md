@@ -22,7 +22,7 @@
 ## 系统管理接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 用户列表 | GET | /api/system/user/list | 查询用户列表（包含已删除） | ✅ |
+| 用户列表 | GET | /api/system/user/list | 管理员分页查询用户，支持字段搜索和状态筛选（包含已删除） | ✅ |
 | 用户详情 | GET | /api/system/user/{id} | 根据ID查询用户 | ✅ |
 | 重置密码 | PUT | /api/system/user/{id}/reset-password | 重置用户密码为123456 | ✅ |
 | 删除用户 | DELETE | /api/system/user/{id} | 删除用户（逻辑删除） | ✅ |
@@ -30,6 +30,26 @@
 | 角色列表 | GET | /api/system/role/list | 查询角色列表 | ✅️ |
 | 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ⬜ |
 | 操作日志 | GET | /api/system/log/list | 查询操作日志（支持关键字、时间范围） | ⬜ |
+
+### 用户列表查询参数
+
+`GET /api/system/user/list` 仅允许管理员调用。未指定筛选条件时返回全部用户（包括逻辑删除用户），正常用户优先、已删除用户靠后，同组内按创建时间倒序排列。
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|:---:|------|------|
+| page | Long | 否 | 1 | 页码，从 1 开始 |
+| size | Long | 否 | 10 | 每页数量，范围 1–100 |
+| keyword | String | 否 | - | 搜索关键词，自动去除首尾空格，使用包含匹配 |
+| searchField | String | 否 | all | 搜索字段：`all`、`username`、`realName`、`phone`、`email` |
+| userType | Integer | 否 | - | 用户类型：1 管理员、2 HR、3 面试官、4 求职者 |
+| status | Integer | 否 | - | 账号状态：1 正常、0 禁用 |
+| deleted | Integer | 否 | - | 删除状态：0 未删除、1 已删除 |
+
+示例：查询未删除且正常的 HR，并按姓名搜索“李”：
+
+```http
+GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userType=2&status=1&deleted=0
+```
 
 ## 职位接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
