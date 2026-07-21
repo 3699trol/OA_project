@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 认证服务实现
@@ -33,20 +34,26 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        // 查询用户
-        SysUser user = sysUserMapper.selectOne(
+        String loginAccount = request.getUsername().trim();
+        List<SysUser> matchedUsers = sysUserMapper.selectList(
                 new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, request.getUsername()));
-        if (user == null) {
-            throw new BusinessException("用户名或密码错误");
+                        .and(wrapper -> wrapper
+                                .eq(SysUser::getUsername, loginAccount)
+                                .or()
+                                .eq(SysUser::getEmail, loginAccount))
+                        .eq(SysUser::getDeleted, 0)
+                        .last("LIMIT 2"));
+        if (matchedUsers.size() != 1) {
+            throw new BusinessException("用户名、邮箱或密码错误");
         }
+        SysUser user = matchedUsers.get(0);
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw new BusinessException("账号已被禁用");
         }
 
         // 验证密码
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BusinessException("用户名或密码错误");
+            throw new BusinessException("用户名、邮箱或密码错误");
         }
 
         // 生成 JWT
