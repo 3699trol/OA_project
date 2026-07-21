@@ -3,6 +3,7 @@ package com.recruitment.auth.controller;
 import com.recruitment.auth.dto.ChangePasswordRequest;
 import com.recruitment.auth.dto.LoginRequest;
 import com.recruitment.auth.dto.RegisterRequest;
+import com.recruitment.auth.dto.UpdateProfileRequest;
 import com.recruitment.auth.service.AuthService;
 import com.recruitment.auth.vo.LoginResponse;
 import com.recruitment.common.core.model.Result;
@@ -40,8 +41,24 @@ public class AuthController {
     }
 
     @GetMapping("/current-user")
-    public Result<?> getCurrentUser() {
-        return Result.success();
+    public Result<?> getCurrentUser(HttpServletRequest httpRequest) {
+        if (authService == null) return Result.success();
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        if (userId == null) {
+            return Result.error(401, "未登录或登录已失效");
+        }
+        return Result.success(authService.getCurrentUser(userId));
+    }
+
+    @PutMapping("/profile")
+    public Result<?> updateProfile(@RequestBody UpdateProfileRequest request,
+                                    HttpServletRequest httpRequest) {
+        if (authService == null) return Result.success();
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        if (userId == null) {
+            return Result.error(401, "未登录或登录已失效");
+        }
+        return Result.success(authService.updateProfile(userId, request));
     }
 
     @PostMapping("/refresh-token")

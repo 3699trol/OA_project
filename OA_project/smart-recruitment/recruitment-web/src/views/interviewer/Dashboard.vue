@@ -23,16 +23,29 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
-// import { getInterviewerDashboard } from '@/api/dashboard'
+import { getInterviewerStats } from '@/api/dashboard'
 
 const userStore = useUserStore()
-const stats = [
+const stats = ref([
   { label: '待面试', value: 0, icon: 'Calendar', color: '#E6A23C', bg: '#fef9f0' },
   { label: '已完成', value: 0, icon: 'Checked', color: '#67C23A', bg: '#e8f8e8' },
   { label: '本月面试', value: 0, icon: 'TrendCharts', color: '#409EFF', bg: '#ecf5ff' },
   { label: '通过率', value: '-', icon: 'DataAnalysis', color: '#ED8936', bg: '#fdf4e8' }
-]
-onMounted(async () => { /* TODO: fetch dashboard stats */ })
+])
+onMounted(async () => {
+  try {
+    const res = await getInterviewerStats()
+    if (res.code === 200 && res.data) {
+      const d = res.data
+      stats.value[0].value = d.interviewing || 0
+      stats.value[1].value = d.activeJobs || 0
+      stats.value[2].value = d.totalApplications || 0
+      stats.value[3].value = d.onboardingThisMonth != null ? d.onboardingThisMonth + '%' : '-'
+    }
+  } catch (e) {
+    console.error('获取面试官看板数据失败', e)
+  }
+})
 </script>
 
 <style scoped>

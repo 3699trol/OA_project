@@ -61,6 +61,9 @@
                   <p class="h-name">{{ userStore.userInfo.nickName || userStore.userInfo.username }}</p>
                   <p class="h-role">{{ roleText }}</p>
                 </div>
+                <el-dropdown-item @click="openProfileDialog">
+                  <el-icon><User /></el-icon>个人资料
+                </el-dropdown-item>
                 <el-dropdown-item @click="changePasswordVisible = true">
                   <el-icon><Lock /></el-icon>修改密码
                 </el-dropdown-item>
@@ -138,6 +141,33 @@
       </template>
     </el-drawer>
 
+    <!-- 个人资料对话框 -->
+    <el-dialog
+      v-model="profileVisible"
+      title="个人资料"
+      width="440px"
+      destroy-on-close
+    >
+      <el-form :model="profileForm" :rules="profileRules" ref="profileFormRef" label-width="90px" v-loading="profileLoading">
+        <el-form-item label="用户名">
+          <el-input :model-value="userStore.userInfo.username" disabled />
+        </el-form-item>
+        <el-form-item label="真实姓名" prop="realName">
+          <el-input v-model="profileForm.realName" placeholder="请输入真实姓名" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="profileVisible = false">取消</el-button>
+        <el-button type="primary" :loading="profileSubmitting" @click="handleUpdateProfile">保存</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 修改密码对话框 -->
     <el-dialog
       v-model="changePasswordVisible"
@@ -171,7 +201,7 @@ import { useUserStore } from '@/stores/user'
 import { useInboxStore } from '@/stores/inbox'
 import { simulateWebSocketPush } from '@/utils/websocket'
 import { ElMessage } from 'element-plus'
-import { changePassword } from '@/api/auth'
+import { changePassword, getCurrentUser, updateProfile } from '@/api/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -180,6 +210,64 @@ const inboxStore = useInboxStore()
 
 const isMock = ref(localStorage.getItem('use_mock') !== 'false')
 const inboxVisible = ref(false)
+
+// 个人资料
+const profileVisible = ref(false)
+const profileLoading = ref(false)
+const profileSubmitting = ref(false)
+const profileFormRef = ref()
+const profileForm = ref({ realName: '', phone: '', email: '' })
+const profileRules = {
+  realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+  ],
+  email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }]
+}
+
+async function openProfileDialog() {
+  profileVisible.value = true
+  profileLoading.value = true
+  try {
+    const res = await getCurrentUser()
+    const data = res?.data || res || {}
+    profileForm.value = {
+      realName: data.realName || '',
+      phone: data.phone || '',
+      email: data.email || ''
+    }
+  } catch (e) {
+    ElMessage.error(e.message || '获取个人资料失败')
+  } finally {
+    profileLoading.value = false
+  }
+}
+
+async function handleUpdateProfile() {
+  const valid = await profileFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  profileSubmitting.value = true
+  try {
+    await updateProfile({
+      realName: profileForm.value.realName,
+      phone: profileForm.value.phone,
+      email: profileForm.value.email
+    })
+    // 同步更新本地用户信息（昵称等）
+    userStore.setUserInfo({
+      ...userStore.userInfo,
+      nickName: profileForm.value.realName
+    })
+    ElMessage.success('个人资料更新成功')
+    profileVisible.value = false
+  } catch (e) {
+    ElMessage.error(e.message || '个人资料更新失败')
+  } finally {
+    profileSubmitting.value = false
+  }
+}
 
 // 修改密码
 const changePasswordVisible = ref(false)

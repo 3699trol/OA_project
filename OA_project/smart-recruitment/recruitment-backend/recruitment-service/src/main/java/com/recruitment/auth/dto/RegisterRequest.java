@@ -14,6 +14,9 @@ public class RegisterRequest {
 
     private String realName;
     private String email;
+
+    @NotBlank(message = "手机号不能为空")
     private String phone;
+
     private Integer userType;
 }
