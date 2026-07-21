@@ -12,6 +12,14 @@ export function getRoleList() {
   return request.get('/system/role/list')
 }
 
+export function getRoleById(id) {
+  return request.get(`/system/role/${id}`)
+}
+
+export function updateRole(data) {
+  return request.put(`/system/role/${data.id}`, data)
+}
+
 export function getPermissionList() {
   return request.get('/system/permission/list')
 }
@@ -30,4 +38,8 @@ export function deleteUser(id) {
 
 export function restoreUser(id) {
   return request.put(`/system/user/${id}/restore`)
+}
+
+export function updateUser(data) {
+  return request.put(`/system/user/${data.id}`, data)
 }

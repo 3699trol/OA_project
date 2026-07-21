@@ -37,7 +37,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     @Transactional
-    public Map<String, Object> apply(Long userId, Long jobId) {
+    public Map<String, Object> apply(Long userId, Long jobId, Long resumeId) {
         // 检查职位是否存在
         Job job = jobMapper.selectById(jobId);
         if (job == null) {
@@ -57,19 +57,22 @@ public class ApplicationServiceImpl implements ApplicationService {
             throw new RuntimeException("您已投递过该职位，请勿重复投递");
         }
 
-        // 查找用户简历
-        LambdaQueryWrapper<Resume> resumeWrapper = new LambdaQueryWrapper<>();
-        resumeWrapper.eq(Resume::getUserId, userId)
-                     .eq(Resume::getDeleted, 0)
-                     .orderByDesc(Resume::getCreateTime)
-                     .last("LIMIT 1");
-        Resume resume = resumeMapper.selectOne(resumeWrapper);
+        // 未指定简历时，自动查找用户最新简历
+        if (resumeId == null) {
+            LambdaQueryWrapper<Resume> resumeWrapper = new LambdaQueryWrapper<>();
+            resumeWrapper.eq(Resume::getUserId, userId)
+                         .eq(Resume::getDeleted, 0)
+                         .orderByDesc(Resume::getCreateTime)
+                         .last("LIMIT 1");
+            Resume resume = resumeMapper.selectOne(resumeWrapper);
+            resumeId = resume != null ? resume.getId() : null;
+        }
 
         // 创建投递记录
         JobApplication application = new JobApplication();
         application.setJobId(jobId);
         application.setUserId(userId);
-        application.setResumeId(resume != null ? resume.getId() : null);
+        application.setResumeId(resumeId);
         application.setApplyTime(LocalDateTime.now());
         application.setStatus(0); // 待筛选
         application.setDeleted(0);

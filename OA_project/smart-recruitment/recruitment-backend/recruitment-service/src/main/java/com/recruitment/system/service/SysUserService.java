@@ -33,4 +33,9 @@ public interface SysUserService {
      * 恢复已删除的用户
      */
     void restoreUser(Long id);
+
+    /**
+     * 更新用户信息（仅允许更新姓名、角色、性别、手机、邮箱、状态等非敏感字段）
+     */
+    void updateUser(SysUser user);
 }

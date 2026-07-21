@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS job_application (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     job_id BIGINT NOT NULL COMMENT '职位ID',
     user_id BIGINT NOT NULL COMMENT '求职者ID',
-    resume_id BIGINT NOT NULL COMMENT '简历ID',
+    resume_id BIGINT DEFAULT NULL COMMENT '简历ID',
     apply_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '投递时间',
     status TINYINT DEFAULT 0 COMMENT '0 待筛选 1 面试中 2 录用 3 淘汰 4 撤回',
     remark VARCHAR(255) DEFAULT NULL COMMENT '备注',
@@ -310,3 +310,4 @@ INSERT INTO sys_role (role_code, role_name, description) VALUES
 -- 初始化管理员账号（密码: admin123）
 INSERT INTO sys_user (username, password, real_name, user_type, status)
 VALUES ('admin', '$2b$10$8vKAcLuJEFFCK6mIdbKNUOes8EvMJk.s7p6AWN.dlj6BXcXGYmC96', '系统管理员', 1, 1);
+ALTER TABLE job_application MODIFY COLUMN resume_id BIGINT DEFAULT NULL COMMENT '简历ID';

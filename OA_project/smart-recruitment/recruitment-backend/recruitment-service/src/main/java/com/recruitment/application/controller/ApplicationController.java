@@ -37,7 +37,12 @@ public class ApplicationController {
             return Result.error(400, "职位ID不能为空");
         }
         Long jobId = Long.valueOf(jobIdObj.toString());
-        Map<String, Object> result = applicationService.apply(userId, jobId);
+        // resumeId 可选，前端未传时自动查找用户最新简历
+        Long resumeId = null;
+        if (body.get("resumeId") != null) {
+            resumeId = Long.valueOf(body.get("resumeId").toString());
+        }
+        Map<String, Object> result = applicationService.apply(userId, jobId, resumeId);
         return Result.success(result);
     }
 

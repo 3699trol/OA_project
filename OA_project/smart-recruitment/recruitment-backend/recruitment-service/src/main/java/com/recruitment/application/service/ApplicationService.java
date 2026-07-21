@@ -13,9 +13,10 @@ public interface ApplicationService {
      * 投递职位
      * @param userId 求职者ID
      * @param jobId 职位ID
+     * @param resumeId 简历ID（可选，为 null 时自动查找最新简历）
      * @return 投递记录
      */
-    Map<String, Object> apply(Long userId, Long jobId);
+    Map<String, Object> apply(Long userId, Long jobId, Long resumeId);
 
     /**
      * 查询投递记录列表
