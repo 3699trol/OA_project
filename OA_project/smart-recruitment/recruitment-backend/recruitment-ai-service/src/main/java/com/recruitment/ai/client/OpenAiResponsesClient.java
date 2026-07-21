@@ -47,6 +47,9 @@ public class OpenAiResponsesClient {
         body.put("input", input);
         body.put("store", false);
         body.put("text", Map.of("format", format));
+        if (properties.getMaxOutputTokens() > 0) {
+            body.put("max_output_tokens", properties.getMaxOutputTokens());
+        }
         if (StringUtils.hasText(properties.getReasoningEffort())) {
             body.put("reasoning", Map.of("effort", properties.getReasoningEffort().trim()));
         }

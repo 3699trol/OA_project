@@ -476,6 +476,23 @@ mvn spring-boot:run
 mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
+核心服务默认通过 `http://127.0.0.1:8081` 直连 AI 服务，不依赖 Nacos 发现。
+当 AI 服务端口或所在主机不同时，通过 `AI_SERVICE_URL` 覆盖：
+
+```powershell
+# AI 服务仍在本机，但端口改为 18081
+$env:AI_SERVICE_URL="http://127.0.0.1:18081"
+
+# AI 服务运行在局域网其他电脑
+$env:AI_SERVICE_URL="http://192.168.1.20:8081"
+
+cd recruitment-service
+mvn spring-boot:run
+```
+
+使用局域网地址时，AI 服务所在电脑需要放行对应端口。Spring Boot 默认监听所有网卡，
+如启动参数覆盖过监听地址，请设置 `SERVER_ADDRESS=0.0.0.0`。
+
 AI 服务的团队开发配置位于：
 
 `recruitment-backend/recruitment-ai-service/application-secrets.properties`
@@ -492,7 +509,8 @@ AI 服务的团队开发配置位于：
 $env:OPENAI_API_KEY="your-key"
 $env:OPENAI_BASE_URL="https://api.openai.com"
 $env:OPENAI_MODEL="gpt-4o-mini"
-$env:OPENAI_REASONING_EFFORT=""
+$env:OPENAI_REASONING_EFFORT="low"
+$env:OPENAI_MAX_OUTPUT_TOKENS="2500"
 ```
 
 ### 6.5 启动前端

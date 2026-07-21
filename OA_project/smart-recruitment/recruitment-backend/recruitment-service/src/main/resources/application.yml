@@ -34,7 +34,8 @@ jwt:
 
 ai:
   service:
-    url: http://localhost:8081
+    # 非空 URL 时 OpenFeign 直接调用 AI 服务，不经过 Nacos 服务发现。
+    url: "${AI_SERVICE_URL:http://127.0.0.1:8081}"
 
 # 文件上传配置
 file:
