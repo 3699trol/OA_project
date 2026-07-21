@@ -29,6 +29,13 @@ public interface ApplicationService {
     PageResult<Map<String, Object>> listApplications(long pageNum, long pageSize, Long userId, Integer status, String keyword);
 
     /**
+     * 获取候选人详情（HR查看）
+     * @param applicationId 投递记录ID
+     * @return 候选人信息 + 简历数据
+     */
+    Map<String, Object> getCandidateDetail(Long applicationId);
+
+    /**
      * 修改投递状态
      * @param id 投递记录ID
      * @param status 新状态

@@ -4,6 +4,7 @@ import com.recruitment.application.service.ApplicationService;
 import com.recruitment.common.core.model.PageResult;
 import com.recruitment.common.core.model.Result;
 import com.recruitment.common.security.model.LoginUser;
+import com.recruitment.resume.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
+    private final ResumeService resumeService;
 
     /**
      * 投递职位
@@ -41,20 +43,36 @@ public class ApplicationController {
 
     /**
      * 查询投递记录列表
+     * @param role 角色：hr-HR查看所有候选人，candidate-候选人查看自己的（默认）
      */
     @GetMapping("/list")
     public Result<PageResult<Map<String, Object>>> list(
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "10") long size,
             @RequestParam(required = false) Integer status,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "candidate") String role) {
         Long userId = getCurrentUserId();
         if (userId == null) {
             return Result.error(401, "未登录");
         }
-        // 候选人只能查看自己的投递记录
-        PageResult<Map<String, Object>> result = applicationService.listApplications(page, size, userId, status, keyword);
+        // HR查看所有候选人投递，不限制userId；候选人只看自己的
+        Long filterUserId = "hr".equalsIgnoreCase(role) ? null : userId;
+        PageResult<Map<String, Object>> result = applicationService.listApplications(page, size, filterUserId, status, keyword);
         return Result.success(result);
+    }
+
+    /**
+     * 获取候选人详情（HR查看）
+     */
+    @GetMapping("/{id}/detail")
+    public Result<Map<String, Object>> getCandidateDetail(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return Result.error(401, "未登录");
+        }
+        Map<String, Object> detail = applicationService.getCandidateDetail(id);
+        return Result.success(detail);
     }
 
     /**

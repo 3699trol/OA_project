@@ -22,7 +22,7 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="$router.push('/hr/candidates/detail')">简历详情</el-button>
+            <el-button size="small" type="primary" link @click="$router.push(`/hr/candidates/detail/${row.id}`)">简历详情</el-button>
             <el-button size="small" type="success" link>安排面试</el-button>
           </template>
         </el-table-column>
@@ -53,7 +53,7 @@ function mapStatus(code) {
 async function fetchCandidates() {
   loading.value = true
   try {
-    const params = { page: page.value, size: 10, status: tabStatusMap[activeTab.value] }
+    const params = { page: page.value, size: 10, role: 'hr', status: tabStatusMap[activeTab.value] }
     if (searchKeyword.value) params.keyword = searchKeyword.value
     const res = await getApplicationList(params)
     candidates.value = (res.data.records || []).map(a => ({

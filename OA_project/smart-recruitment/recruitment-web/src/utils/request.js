@@ -92,7 +92,14 @@ request.interceptors.response.use(
       })
     }
 
-    ElMessage.error(error.message || '网络错误')
+    // 尝试从后端返回的 JSON 中提取错误信息
+    const data = error.response?.data
+    const msg = data?.message || error.message || '网络错误'
+    ElMessage.error(msg)
+    if (data?.code === 401) {
+      localStorage.removeItem('token')
+      router.push('/login')
+    }
     return Promise.reject(error)
   }
 )

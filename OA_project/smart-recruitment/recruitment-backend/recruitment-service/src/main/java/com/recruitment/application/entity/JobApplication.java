@@ -1,8 +1,10 @@
 package com.recruitment.application.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -19,6 +21,7 @@ public class JobApplication {
     private Long id;
     private Long jobId;
     private Long userId;
+    @TableField(insertStrategy = FieldStrategy.ALWAYS)
     private Long resumeId;
     private LocalDateTime applyTime;
     private Integer status; // 0-待筛选 1-面试中 2-录用 3-淘汰 4-撤回

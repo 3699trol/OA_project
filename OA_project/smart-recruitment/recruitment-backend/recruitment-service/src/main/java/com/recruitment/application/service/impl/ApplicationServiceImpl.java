@@ -9,6 +9,7 @@ import com.recruitment.job.entity.Job;
 import com.recruitment.job.mapper.JobMapper;
 import com.recruitment.resume.entity.Resume;
 import com.recruitment.resume.mapper.ResumeMapper;
+import com.recruitment.resume.service.ResumeService;
 import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobApplicationMapper applicationMapper;
     private final JobMapper jobMapper;
     private final ResumeMapper resumeMapper;
+    private final ResumeService resumeService;
     private final SysUserMapper userMapper;
 
     @Override
@@ -133,6 +135,73 @@ public class ApplicationServiceImpl implements ApplicationService {
         }).collect(Collectors.toList());
 
         return new PageResult<>(records, resultPage.getTotal(), pageNum, pageSize);
+    }
+
+    @Override
+    public Map<String, Object> getCandidateDetail(Long applicationId) {
+        JobApplication application = applicationMapper.selectById(applicationId);
+        if (application == null || application.getDeleted() == 1) {
+            throw new RuntimeException("投递记录不存在");
+        }
+
+        Map<String, Object> detail = new HashMap<>();
+
+        // 投递信息
+        detail.put("id", application.getId());
+        detail.put("jobId", application.getJobId());
+        detail.put("userId", application.getUserId());
+        detail.put("resumeId", application.getResumeId());
+        detail.put("status", application.getStatus());
+        detail.put("applyTime", application.getApplyTime());
+        detail.put("aiMatchScore", application.getAiMatchScore());
+        detail.put("aiMatchReason", application.getAiMatchReason());
+
+        // 职位信息
+        Job job = jobMapper.selectById(application.getJobId());
+        if (job != null) {
+            detail.put("jobName", job.getJobName());
+            detail.put("department", job.getDepartment());
+            detail.put("category", job.getCategory());
+        }
+
+        // 候选人用户信息
+        SysUser user = userMapper.selectById(application.getUserId());
+        if (user != null) {
+            detail.put("candidateName", user.getRealName() != null ? user.getRealName() : user.getUsername());
+            detail.put("username", user.getUsername());
+            detail.put("email", user.getEmail());
+            detail.put("phone", user.getPhone());
+            detail.put("avatarUrl", user.getAvatarUrl());
+        }
+
+        // 简历数据
+        if (application.getResumeId() != null) {
+            Resume resume = resumeMapper.selectById(application.getResumeId());
+            if (resume != null) {
+                detail.put("resumeFileUrl", resume.getFileUrl());
+                detail.put("selfEvaluation", resume.getSelfEvaluation());
+                // 解析JSON格式的简历内容
+                if (resume.getParsedContent() != null) {
+                    try {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        Map<String, Object> parsedData = mapper.readValue(resume.getParsedContent(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                        detail.put("resume", parsedData);
+                    } catch (Exception e) {
+                        detail.put("resume", null);
+                    }
+                }
+            }
+        } else if (application.getUserId() != null) {
+            // 没有关联简历记录，尝试通过userId获取
+            try {
+                Map<String, Object> resumeData = resumeService.getMyResume(application.getUserId());
+                detail.put("resume", resumeData);
+            } catch (Exception e) {
+                detail.put("resume", null);
+            }
+        }
+
+        return detail;
     }
 
     @Override
