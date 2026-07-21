@@ -144,9 +144,22 @@ addRoute('GET', '/api/auth/current-user', (req) => {
     data: {
       username,
       role: roleMapping[username] || 'CANDIDATE',
+      realName: nameMapping[username] || username,
       nickName: nameMapping[username] || username,
-      email: `${username}@example.com`
+      email: `${username}@example.com`,
+      phone: '13800000000',
+      avatarUrl: ''
     }
+  }
+})
+
+addRoute('PUT', '/api/auth/profile', (req) => {
+  const { realName, email, phone, avatarUrl } = req.body || {}
+  console.log('[Mock] 更新个人资料', req.body)
+  return {
+    code: 200,
+    message: '个人资料更新成功',
+    data: { realName, email, phone, avatarUrl }
   }
 })
 

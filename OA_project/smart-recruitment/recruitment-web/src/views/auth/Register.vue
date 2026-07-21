@@ -12,6 +12,7 @@
           <el-form-item label="密码" prop="password"><el-input v-model="form.password" type="password" prefix-icon="Lock" show-password /></el-form-item>
           <el-form-item label="确认密码" prop="rePassword"><el-input v-model="form.rePassword" type="password" prefix-icon="Lock" show-password /></el-form-item>
           <el-form-item label="真实姓名" prop="realName"><el-input v-model="form.realName" prefix-icon="EditPen" /></el-form-item>
+          <el-form-item label="手机号" prop="phone"><el-input v-model="form.phone" prefix-icon="Iphone" /></el-form-item>
           <el-form-item label="邮箱" prop="email"><el-input v-model="form.email" prefix-icon="Message" /></el-form-item>
           <el-form-item><el-button type="primary" size="large" style="width:100%;" @click="nextStep">下一步</el-button></el-form-item>
         </el-form>
@@ -42,7 +43,7 @@ import { ElMessage } from 'element-plus'
 import { register } from '@/api/auth'
 
 const step = ref(0); const selectedRole = ref(''); const formRef = ref()
-const form = reactive({ username: '', password: '', rePassword: '', realName: '', email: '' })
+const form = reactive({ username: '', password: '', rePassword: '', realName: '', phone: '', email: '' })
 
 const validateRePass = (rule, value, callback) => {
   if (value !== form.password) callback(new Error('两次密码不一致')); else callback()
@@ -52,6 +53,7 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '不少于6位', trigger: 'blur' }],
   rePassword: [{ required: true, message: '请确认密码', trigger: 'blur' }, { validator: validateRePass, trigger: 'blur' }],
   realName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }, { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }],
   email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }, { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }]
 }
 const roles = [
@@ -71,6 +73,7 @@ async function handleRegister() {
       username: form.username,
       password: form.password,
       realName: form.realName,
+      phone: form.phone,
       email: form.email,
       userType: roleTypeMap[selectedRole.value] || 4
     })

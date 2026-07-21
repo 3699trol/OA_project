@@ -15,9 +15,10 @@
 | 注册 | POST | /api/auth/register | 用户注册 | ✅ |
 | 登录 | POST | /api/auth/login | 用户登录 | ✅ |
 | 退出 | POST | /api/auth/logout | 退出登录 | ✅ |
-| 当前用户 | GET | /api/auth/current-user | 获取当前用户信息 | ⬜ |
+| 当前用户 | GET | /api/auth/current-user | 获取当前用户信息 | ✅ |
 | 刷新Token | POST | /api/auth/refresh-token | 刷新JWT | ⬜ |
 | 修改密码 | POST | /api/auth/change-password | 当前用户修改自己的密码 | ✅ |
+| 修改个人资料 | PUT | /api/auth/profile | 当前用户修改自己的真实姓名/手机号/邮箱等资料 | ✅ |
 
 ## 系统管理接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |

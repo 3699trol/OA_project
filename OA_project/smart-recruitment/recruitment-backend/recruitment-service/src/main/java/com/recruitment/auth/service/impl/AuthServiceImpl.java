@@ -4,15 +4,19 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.recruitment.auth.dto.ChangePasswordRequest;
 import com.recruitment.auth.dto.LoginRequest;
 import com.recruitment.auth.dto.RegisterRequest;
+import com.recruitment.auth.dto.UpdateProfileRequest;
 import com.recruitment.auth.service.AuthService;
 import com.recruitment.auth.vo.LoginResponse;
 import com.recruitment.common.core.exception.BusinessException;
 import com.recruitment.common.security.jwt.JwtUtil;
 import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.mapper.SysUserMapper;
+import com.recruitment.system.vo.SysUserVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
@@ -110,6 +114,42 @@ public class AuthServiceImpl implements AuthService {
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         sysUserMapper.updateById(user);
+    }
+
+    @Override
+    public SysUserVO getCurrentUser(Long userId) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        SysUserVO vo = new SysUserVO();
+        BeanUtils.copyProperties(user, vo);
+        return vo;
+    }
+
+    @Override
+    public SysUserVO updateProfile(Long userId, UpdateProfileRequest request) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        if (StringUtils.hasText(request.getRealName())) {
+            user.setRealName(request.getRealName());
+        }
+        if (StringUtils.hasText(request.getEmail())) {
+            user.setEmail(request.getEmail());
+        }
+        if (StringUtils.hasText(request.getPhone())) {
+            user.setPhone(request.getPhone());
+        }
+        if (StringUtils.hasText(request.getAvatarUrl())) {
+            user.setAvatarUrl(request.getAvatarUrl());
+        }
+        sysUserMapper.updateById(user);
+
+        SysUserVO vo = new SysUserVO();
+        BeanUtils.copyProperties(user, vo);
+        return vo;
     }
 
     /**
