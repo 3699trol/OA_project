@@ -114,6 +114,9 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 
 `recruitment-backend/recruitment-ai-service/application-secrets.properties`
 
+相同简历内容的完整解析结果会在 AI 服务进程内缓存 15 分钟，最多保留 200 条；
+内容发生变化或服务重启后会重新调用模型。
+
 该文件随代码提交，包含团队开发环境使用的 API Key、Base URL 和模型参数；成员无需额外创建配置文件。
 操作系统中的同名 `OPENAI_*` 环境变量可以覆盖共享默认值。代理配置作为直连失败时的回退路由。
 分别启动

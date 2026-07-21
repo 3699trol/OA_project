@@ -76,6 +76,7 @@ class OpenAiResponsesClientTest {
         assertTrue(requestBody.get().contains("\"overallScore\""));
         assertTrue(requestBody.get().contains("\"suggestions\""));
         assertTrue(requestBody.get().contains("\"store\":false"));
+        assertTrue(requestBody.get().contains("\"max_output_tokens\":2500"));
         assertTrue(requestBody.get().contains("\"effort\":\"xhigh\""));
     }
 

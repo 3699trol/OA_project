@@ -11,6 +11,7 @@ public class OpenAiProperties {
     private String baseUrl = "https://api.openai.com";
     private String model = "gpt-4o-mini";
     private String reasoningEffort;
+    private int maxOutputTokens = 2500;
     private String proxyHost;
     private int proxyPort;
     private int connectTimeoutSeconds = 10;

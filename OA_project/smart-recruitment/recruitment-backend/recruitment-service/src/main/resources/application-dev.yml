@@ -32,10 +32,10 @@ spring:
         import-check:
           enabled: false
 
-# 默认为空时，OpenFeign 通过 Nacos 按服务名发现 AI 服务；设置后可临时直连指定地址。
+# 默认直连本机 AI 服务；不同端口或主机通过 AI_SERVICE_URL 覆盖。
 ai:
   service:
-    url: "${AI_SERVICE_URL:}"
+    url: "${AI_SERVICE_URL:http://127.0.0.1:8081}"
 
 mybatis-plus:
   mapper-locations: classpath:mapper/**/*.xml
