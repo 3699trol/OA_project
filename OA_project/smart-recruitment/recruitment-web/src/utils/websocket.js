@@ -1,7 +1,10 @@
 import { useInboxStore } from '@/stores/inbox'
 
+const MAX_RECONNECT_ATTEMPTS = 3
+
 let socket = null
 let reconnectTimer = null
+let reconnectAttempts = 0
 let isConnected = false
 
 export function connectWebSocket(username) {
@@ -28,6 +31,7 @@ export function connectWebSocket(username) {
     socket.onopen = () => {
       console.log('[WebSocket] Connection established successfully.')
       isConnected = true
+      reconnectAttempts = 0
       if (reconnectTimer) {
         clearInterval(reconnectTimer)
         reconnectTimer = null
@@ -56,7 +60,7 @@ export function connectWebSocket(username) {
     }
 
     socket.onerror = (err) => {
-      console.error('[WebSocket] Connection error:', err)
+      console.warn('[WebSocket] Connection error (后端可能未部署WebSocket服务):', err.message || err)
       socket.close()
     }
   } catch (error) {
@@ -68,7 +72,14 @@ export function connectWebSocket(username) {
 function scheduleReconnect(username) {
   if (!reconnectTimer) {
     reconnectTimer = setInterval(() => {
-      console.log('[WebSocket] Attempting to reconnect...')
+      if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        console.log('[WebSocket] 已达最大重连次数(' + MAX_RECONNECT_ATTEMPTS + ')，停止重连。后端未部署WebSocket服务，消息推送功能暂不可用。')
+        clearInterval(reconnectTimer)
+        reconnectTimer = null
+        return
+      }
+      reconnectAttempts++
+      console.log('[WebSocket] Attempting to reconnect (attempt ' + reconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS + ')...')
       connectWebSocket(username)
     }, 10000)
   }

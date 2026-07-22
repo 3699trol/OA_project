@@ -54,14 +54,94 @@ public class OpenAiResponsesClient {
             body.put("reasoning", Map.of("effort", properties.getReasoningEffort().trim()));
         }
 
+        String requestJson = null;
+        String responseBody = null;
+        String outputText = null;
         try {
-            String responseBody = executeWithNetworkRetry(objectMapper.writeValueAsString(body));
+            requestJson = objectMapper.writeValueAsString(body);
+            log.debug("AI request (first 300 chars): {}",
+                    requestJson.length() > 300 ? requestJson.substring(0, 300) + "..." : requestJson);
+            responseBody = executeWithNetworkRetry(requestJson);
+            log.debug("AI response (first 500 chars): {}",
+                    responseBody.length() > 500 ? responseBody.substring(0, 500) + "..." : responseBody);
             JsonNode response = objectMapper.readTree(responseBody);
-            String outputText = extractOutputText(response);
+            outputText = extractOutputText(response);
+            log.debug("AI extracted output (first 500 chars): {}",
+                    outputText.length() > 500 ? outputText.substring(0, 500) + "..." : outputText);
             return objectMapper.readValue(outputText, responseType);
         } catch (JsonProcessingException e) {
+            // qwen模型常忽略json_schema返回纯文本，尝试fallback包装
+            if (outputText != null && !outputText.trim().startsWith("{")) {
+                log.warn("AI返回纯文本而非JSON，尝试fallback包装为 {}: text前100字={}",
+                        responseType.getSimpleName(),
+                        outputText.length() > 100 ? outputText.substring(0, 100) + "..." : outputText);
+                return wrapPlainTextFallback(outputText.trim(), responseType);
+            }
+            log.warn("AI JSON解析失败: {} — location={}, outputText={}",
+                    e.getMessage(), e.getLocation(),
+                    outputText != null ? outputText.substring(0, Math.min(500, outputText.length())) : "null");
             throw new BusinessException(502, "AI 模型返回结果解析失败");
+        } catch (BusinessException e) {
+            log.warn("AI 业务异常(code={}): {} — responseBody={}",
+                    e.getCode(), e.getMessage(),
+                    responseBody != null ? responseBody.substring(0, Math.min(500, responseBody.length())) : "null");
+            throw e;
         }
+    }
+
+    /**
+     * qwen模型常忽略json_schema直接返回自然语言。
+     * 智能填充响应DTO：首个String字段填纯文本，同时尝试从文本中提取结构化信息。
+     */
+    private <T> T wrapPlainTextFallback(String plainText, Class<T> responseType) {
+        try {
+            T instance = responseType.getDeclaredConstructor().newInstance();
+            java.util.List<String> extractedQuestions = extractSuggestedQuestions(plainText);
+            String mainText = stripSuggestedQuestions(plainText);
+
+            for (var field : responseType.getDeclaredFields()) {
+                if (field.getType() == String.class) {
+                    // 跳过 id/sessionId 等非内容字段，只填内容字段
+                    String name = field.getName().toLowerCase();
+                    if (name.contains("id") || name.contains("time") || name.contains("duration")
+                            || name.contains("score") || name.contains("title")) {
+                        continue;
+                    }
+                    field.setAccessible(true);
+                    field.set(instance, mainText);
+                } else if (field.getType() == java.util.List.class && !extractedQuestions.isEmpty()) {
+                    field.setAccessible(true);
+                    field.set(instance, extractedQuestions);
+                }
+            }
+            return instance;
+        } catch (Exception ex) {
+            throw new BusinessException(502, "AI 模型返回了纯文本，且无法自动包装为 " + responseType.getSimpleName());
+        }
+    }
+
+    private java.util.List<String> extractSuggestedQuestions(String text) {
+        java.util.List<String> questions = new java.util.ArrayList<>();
+        // 匹配 "【建议反问】" 或 "建议反问：" 后面的编号列表
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                "(?:建议反问|反问建议)[】：:]\\s*(.+?)(?:$|\\Z)",
+                java.util.regex.Pattern.DOTALL).matcher(text);
+        if (m.find()) {
+            String section = m.group(1);
+            java.util.regex.Matcher itemMatcher = java.util.regex.Pattern.compile(
+                    "\\d+[.、)）]\\s*(.+?)(?=(?:\\d+[.、)）])|$)", java.util.regex.Pattern.DOTALL).matcher(section);
+            while (itemMatcher.find()) {
+                String q = itemMatcher.group(1).trim();
+                if (!q.isEmpty()) {
+                    questions.add(q);
+                }
+            }
+        }
+        return questions;
+    }
+
+    private String stripSuggestedQuestions(String text) {
+        return text.replaceAll("\\s*【?建议反问】?[：:]\\s*.+$", "").replaceAll("\\s*【?反问建议】?[：:]\\s*.+$", "");
     }
 
     private String executeWithNetworkRetry(String requestJson) {

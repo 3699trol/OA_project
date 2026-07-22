@@ -82,6 +82,44 @@ public final class AiResponseSchemas {
         return object(Map.of("questions", array(question)), List.of("questions"));
     }
 
+    public static Map<String, Object> mockInterviewStart() {
+        return object(
+                Map.of("welcomeMessage", Map.of("type", "string")),
+                List.of("welcomeMessage"));
+    }
+
+    public static Map<String, Object> mockInterviewChat() {
+        return object(
+                Map.of(
+                        "reply", Map.of("type", "string"),
+                        "suggestedQuestions", array(Map.of("type", "string"))
+                ),
+                List.of("reply", "suggestedQuestions"));
+    }
+
+    public static Map<String, Object> mockInterviewSubmit() {
+        Map<String, Object> scores = object(
+                Map.of(
+                        "base", integer(0, 100),
+                        "framework", integer(0, 100),
+                        "design", integer(0, 100),
+                        "communication", integer(0, 100)
+                ),
+                List.of("base", "framework", "design", "communication"));
+
+        Map<String, Object> reportData = object(
+                Map.of(
+                        "overall", Map.of("type", "string"),
+                        "scores", scores,
+                        "details", Map.of("type", "string")
+                ),
+                List.of("overall", "scores", "details"));
+
+        return object(
+                Map.of("report", reportData),
+                List.of("report"));
+    }
+
     private static Map<String, Object> object(Map<String, Object> properties, List<String> required) {
         return Map.of(
                 "type", "object",

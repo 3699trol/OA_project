@@ -3,15 +3,15 @@ import request from '@/utils/request'
 const AI_REQUEST_TIMEOUT = 120000
 
 export function startMockInterview(data) {
-  return request.post('/ai/mock-interview/start', data)
+  return request.post('/ai/mock-interview/start', data, { timeout: AI_REQUEST_TIMEOUT })
 }
 
 export function chatMockInterview(data) {
-  return request.post('/ai/mock-interview/chat', data)
+  return request.post('/ai/mock-interview/chat', data, { timeout: AI_REQUEST_TIMEOUT })
 }
 
 export function submitMockInterview(data) {
-  return request.post('/ai/mock-interview/submit', data)
+  return request.post('/ai/mock-interview/submit', data, { timeout: AI_REQUEST_TIMEOUT })
 }
 
 export function generateMockInterview(data) {

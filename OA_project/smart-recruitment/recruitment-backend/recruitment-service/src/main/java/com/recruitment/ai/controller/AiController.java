@@ -5,13 +5,22 @@ import com.recruitment.api.dto.AiMatchRequest;
 import com.recruitment.api.dto.AiMatchResponse;
 import com.recruitment.api.dto.AiQuestionRequest;
 import com.recruitment.api.dto.AiQuestionResponse;
+import com.recruitment.api.dto.AiMockInterviewChatRequest;
+import com.recruitment.api.dto.AiMockInterviewChatResponse;
+import com.recruitment.api.dto.AiMockInterviewStartRequest;
+import com.recruitment.api.dto.AiMockInterviewStartResponse;
+import com.recruitment.api.dto.AiMockInterviewSubmitRequest;
+import com.recruitment.api.dto.AiMockInterviewSubmitResponse;
 import com.recruitment.api.dto.AiResumeParseRequest;
 import com.recruitment.api.dto.AiResumeParseResponse;
 import com.recruitment.common.core.model.Result;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +36,7 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
+@Slf4j
 public class AiController {
 
     private final AiServiceClient aiServiceClient;
@@ -73,5 +83,48 @@ public class AiController {
     @PostMapping("/question/generate")
     public Result<AiQuestionResponse> generateQuestions(@RequestBody AiQuestionRequest request) {
         return aiServiceClient.generateQuestions(request);
+    }
+
+    @PostMapping("/mock-interview/start")
+    public Result<AiMockInterviewStartResponse> startMockInterview(@RequestBody AiMockInterviewStartRequest request) {
+        log.info("收到模拟面试启动请求: jobTitle={}", request != null ? request.getJobTitle() : "null");
+        try {
+            Result<AiMockInterviewStartResponse> result = aiServiceClient.startMockInterview(request);
+            log.info("模拟面试启动成功: sessionId={}", result != null && result.getData() != null ? result.getData().getSessionId() : "null");
+            return result;
+        } catch (Exception e) {
+            log.error("转发模拟面试启动请求失败: {}", e.getMessage(), e);
+            return Result.error(503, "AI服务暂不可用，请稍后重试");
+        }
+    }
+
+    @PostMapping("/mock-interview/chat")
+    public Result<AiMockInterviewChatResponse> chatMockInterview(@RequestBody AiMockInterviewChatRequest request) {
+        try {
+            return aiServiceClient.chatMockInterview(request);
+        } catch (Exception e) {
+            log.error("转发模拟面试对话请求失败: {}", e.getMessage(), e);
+            return Result.error(503, "AI服务暂不可用，请稍后重试");
+        }
+    }
+
+    @PostMapping("/mock-interview/submit")
+    public Result<AiMockInterviewSubmitResponse> submitMockInterview(@RequestBody AiMockInterviewSubmitRequest request) {
+        try {
+            return aiServiceClient.submitMockInterview(request);
+        } catch (Exception e) {
+            log.error("转发模拟面试提交请求失败: {}", e.getMessage(), e);
+            return Result.error(503, "AI服务暂不可用，请稍后重试");
+        }
+    }
+
+    @GetMapping("/mock-interview/report/{reportId}")
+    public Result<AiMockInterviewSubmitResponse> getMockInterviewReport(@PathVariable Long reportId) {
+        try {
+            return aiServiceClient.getMockInterviewReport(reportId);
+        } catch (Exception e) {
+            log.error("获取面试报告失败: {}", e.getMessage(), e);
+            return Result.error(503, "AI服务暂不可用，请稍后重试");
+        }
     }
 }

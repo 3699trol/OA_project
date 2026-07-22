@@ -120,14 +120,12 @@ GET /api/system/log/list?page=1&size=10&keyword=用户&startTime=2026-07-01&endT
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
 | 简历解析与诊断 | POST | /api/ai/resume/parse | AI简历结构化解析、质量评分、问题诊断与优化建议（需配置 API Key） | ✅ |
-| 简历评估 | POST | /api/ai/resume/evaluate | AI简历质量评估 | ⬜ |
-| 简历优化建议 | POST | /api/ai/resume/optimize | AI简历优化建议 | ⬜ |
 | 人岗匹配 | POST | /api/ai/match | AI人岗匹配分析（需配置 API Key） | ❓️ |
 | 面试题生成 | POST | /api/ai/question/generate | AI生成面试题（需配置 API Key） | ❓️ |
-| 模拟面试生成 | POST | /api/ai/mock-interview/generate | 生成模拟面试题 | ⬜ |
-| 模拟面试答题记录 | POST | /api/ai/mock-interview/record | 记录用户回答 | ⬜ |
-| 模拟追问 | POST | /api/ai/mock-interview/follow-up | AI追问 | ⬜ |
-| 模拟面试报告 | GET | /api/ai/mock-interview/report/{sessionId} | 生成模拟面试报告 | ⬜ |
+| 模拟面试-开始 | POST | /api/ai/mock-interview/start | AI生成开场白并创建面试会话（需配置 API Key） | ✅ |
+| 模拟面试-对话 | POST | /api/ai/mock-interview/chat | 多轮面试对话，AI面试官追问并给出建议反问（需配置 API Key） | ✅ |
+| 模拟面试-提交 | POST | /api/ai/mock-interview/submit | 结束面试并生成评估报告（含评分、统计、完整对话记录） | ✅ |
+| 模拟面试-报告 | GET | /api/ai/mock-interview/report/{reportId} | 查询已生成的面试评估报告 | ✅ |
 
 ### AI 服务团队配置
 
