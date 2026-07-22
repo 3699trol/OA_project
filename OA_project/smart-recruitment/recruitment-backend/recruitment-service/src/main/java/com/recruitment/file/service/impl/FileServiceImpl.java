@@ -11,9 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
@@ -40,12 +38,13 @@ public class FileServiceImpl implements FileService {
             throw new BusinessException("文件大小不能超过 " + (maxSize / 1024 / 1024) + "MB");
         }
 
-        // 按日期分目录存储
-        String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-        String dir = uploadDir + "/" + fileType + "/" + dateDir;
-        File directory = new File(dir);
-        if (!directory.exists()) {
-            directory.mkdirs();
+        // 将相对路径转为绝对路径，避免被 Tomcat 解析到临时目录下
+        File uploadRoot = new File(uploadDir).getAbsoluteFile();
+
+        // 直接存到 uploads/{fileType}/ 目录下
+        File directory = new File(uploadRoot, fileType != null ? fileType : "other");
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new BusinessException("无法创建上传目录: " + directory.getAbsolutePath());
         }
 
         // 生成唯一文件名
@@ -55,11 +54,11 @@ public class FileServiceImpl implements FileService {
             extension = originalName.substring(originalName.lastIndexOf("."));
         }
         String storedName = UUID.randomUUID().toString().replace("-", "") + extension;
-        String filePath = dir + "/" + storedName;
+        File destFile = new File(directory, storedName);
 
         // 保存文件
         try {
-            file.transferTo(new File(filePath));
+            file.transferTo(destFile.getAbsoluteFile());
         } catch (IOException e) {
             throw new BusinessException("文件上传失败: " + e.getMessage());
         }
@@ -68,7 +67,7 @@ public class FileServiceImpl implements FileService {
         FileRecord record = new FileRecord();
         record.setOriginalName(originalName);
         record.setStoredName(storedName);
-        record.setFilePath(filePath);
+        record.setFilePath(destFile.getAbsolutePath().replace("\\", "/"));
         record.setFileSize(file.getSize());
         record.setContentType(file.getContentType());
         record.setFileType(fileType != null ? fileType : "other");

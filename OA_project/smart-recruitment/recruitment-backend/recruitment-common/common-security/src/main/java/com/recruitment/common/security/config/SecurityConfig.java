@@ -51,6 +51,7 @@ public class SecurityConfig {
                 } else {
                     auth.requestMatchers(new AntPathRequestMatcher("/api/auth/**")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/public/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/uploads/**")).permitAll()
                         .anyRequest().authenticated();
                 }
             })

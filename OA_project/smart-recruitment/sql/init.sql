@@ -285,6 +285,22 @@ CREATE TABLE IF NOT EXISTS ai_analysis (
     CONSTRAINT fk_ai_analysis_user FOREIGN KEY (user_id) REFERENCES sys_user (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'AI分析记录表';
 
+-- 文件记录表
+CREATE TABLE IF NOT EXISTS file_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    original_name VARCHAR(255) NOT NULL COMMENT '原始文件名',
+    stored_name VARCHAR(255) NOT NULL COMMENT '存储文件名',
+    file_path VARCHAR(500) NOT NULL COMMENT '文件存储路径',
+    file_size BIGINT DEFAULT 0 COMMENT '文件大小(字节)',
+    content_type VARCHAR(100) DEFAULT NULL COMMENT '文件MIME类型',
+    file_type VARCHAR(50) DEFAULT 'other' COMMENT '文件分类: resume/avatar/other',
+    uploader_id BIGINT DEFAULT NULL COMMENT '上传人ID',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    KEY idx_file_record_uploader (uploader_id),
+    KEY idx_file_record_type (file_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '文件记录表';
+
 -- 操作日志表
 CREATE TABLE IF NOT EXISTS operation_log (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

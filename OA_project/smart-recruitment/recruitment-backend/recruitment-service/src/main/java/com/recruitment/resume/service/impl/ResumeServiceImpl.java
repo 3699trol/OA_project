@@ -68,6 +68,7 @@ public class ResumeServiceImpl implements ResumeService {
         result.put("selfEvaluation", resume.getSelfEvaluation());
         result.put("aiScore", resume.getAiScore());
         result.put("aiAnalysis", resume.getAiAnalysis());
+        result.put("fileUrl", resume.getFileUrl());
 
         return result;
     }
@@ -101,6 +102,11 @@ public class ResumeServiceImpl implements ResumeService {
             resume.setSelfEvaluation(String.valueOf(data.get("evaluation")));
         } else if (data.containsKey("summary")) {
             resume.setSelfEvaluation(String.valueOf(data.get("summary")));
+        }
+
+        // 保存简历文件地址
+        if (data.containsKey("fileUrl") && data.get("fileUrl") != null) {
+            resume.setFileUrl(String.valueOf(data.get("fileUrl")));
         }
 
         resume.setUpdateTime(LocalDateTime.now());

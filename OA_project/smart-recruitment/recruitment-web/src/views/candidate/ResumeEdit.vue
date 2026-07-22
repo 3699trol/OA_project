@@ -35,6 +35,22 @@
       </el-form>
     </el-card>
 
+    <!-- 简历文件 -->
+    <el-card shadow="never" class="section-card">
+      <div class="card-title-row">
+        <h3 class="card-title">简历文件</h3>
+      </div>
+      <div v-if="form.fileName" class="file-item">
+        <el-icon class="file-icon"><Document /></el-icon>
+        <span class="file-name" :title="form.fileName">{{ form.fileName }}</span>
+        <div class="file-actions">
+          <el-button type="primary" link icon="Download" size="small" @click="handleDownloadFile">下载</el-button>
+          <el-button type="danger" link icon="Delete" size="small" @click="handleRemoveFile">移除</el-button>
+        </div>
+      </div>
+      <div v-else class="empty-subtext">暂未上传简历文件，点击右上角「上传简历文件」可上传 PDF/DOC/DOCX</div>
+    </el-card>
+
     <!-- 教育背景 -->
     <el-card shadow="never" class="section-card">
       <div class="card-title-row">
@@ -328,7 +344,8 @@ import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMyResume, saveMyResume } from '@/api/resume'
 import { getCurrentUser } from '@/api/auth'
-import { aiParseResume, aiParseResumeFile } from '@/api/ai'
+import { aiParseResume } from '@/api/ai'
+import { uploadFile, getFileUrl, downloadFile, getFileInfo } from '@/api/file'
 
 const uploadVisible = ref(false)
 const resumeUploadRef = ref()
@@ -355,7 +372,8 @@ const expForm = reactive({ company: '', role: '', startYear: '', startMonth: '',
 
 const form = reactive({
   name: '', gender: '男', birth: '', phone: '', email: '', city: '',
-  educations: [], experiences: [], skills: [], summary: ''
+  educations: [], experiences: [], skills: [], summary: '',
+  fileId: null, fileName: '', fileUrl: ''
 })
 
 onMounted(async () => {
@@ -390,6 +408,25 @@ onMounted(async () => {
   form.email = data.email ?? ''
   form.city = data.city ?? ''
   form.summary = data.summary ?? data.evaluation ?? ''
+  form.fileId = data.fileId ?? null
+  form.fileName = data.fileName ?? ''
+  form.fileUrl = data.fileUrl ?? ''
+
+  // 如果 fileUrl 存在但 fileId/fileName 缺失，从 fileUrl 反查文件信息
+  if (form.fileUrl && (!form.fileId || !form.fileName)) {
+    const match = form.fileUrl.match(/\/download\/(\d+)/)
+    if (match) {
+      form.fileId = Number(match[1])
+      try {
+        const info = await getFileInfo(form.fileId)
+        if (info?.data) {
+          form.fileName = info.data.originalName || ''
+        }
+      } catch (e) {
+        console.error('获取文件信息失败:', e)
+      }
+    }
+  }
 
   if (Array.isArray(data.skills)) {
     form.skills = [...data.skills]
@@ -647,7 +684,10 @@ async function handleSave() {
       ...form,
       education: educationStr,
       experience: experienceStr,
-      evaluation: form.summary
+      evaluation: form.summary,
+      fileId: form.fileId,
+      fileName: form.fileName,
+      fileUrl: form.fileUrl
     }
     
     await saveMyResume(submitData)
@@ -799,22 +839,66 @@ async function handleUpload() {
     return
   }
 
-  aiParsing.value = true
   try {
-    const res = await aiParseResumeFile(file)
-    if (res?.data) {
-      aiResult.value = res.data
-      aiResultVisible.value = true
+    const uploadRes = await uploadFile(file, 'resume')
+    if (uploadRes?.data) {
+      form.fileId = uploadRes.data.id
+      form.fileName = uploadRes.data.originalName || file.name
+      form.fileUrl = getFileUrl(uploadRes.data.id)
       uploadVisible.value = false
       resumeUploadRef.value?.clearFiles()
       selectedResumeFile.value = null
-      ElMessage.success('简历上传并解析完成，请确认解析结果')
+
+      // 自动保存到后端，确保持久化 fileUrl
+      await persistFileUrl()
+
+      ElMessage.success('简历文件已保存到服务器')
     }
   } catch (error) {
-    console.error('简历文件解析失败:', error)
-  } finally {
-    aiParsing.value = false
+    console.error('简历文件上传失败:', error)
   }
+}
+
+async function persistFileUrl() {
+  try {
+    const submitData = {
+      ...form,
+      evaluation: form.summary,
+      fileId: form.fileId,
+      fileName: form.fileName,
+      fileUrl: form.fileUrl
+    }
+    await saveMyResume(submitData)
+  } catch (e) {
+    console.error('自动保存简历文件信息失败:', e)
+  }
+}
+
+async function handleDownloadFile() {
+  if (!form.fileId) return
+  try {
+    const res = await downloadFile(form.fileId)
+    const blob = new Blob([res], { type: 'application/octet-stream' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = form.fileName || 'resume.pdf'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('文件下载失败:', error)
+    ElMessage.error('文件下载失败')
+  }
+}
+
+async function handleRemoveFile() {
+  form.fileId = null
+  form.fileName = ''
+  form.fileUrl = ''
+  await persistFileUrl()
+  ElMessage.info('已移除简历文件关联')
 }
 </script>
 
@@ -843,6 +927,11 @@ async function handleUpload() {
 .exp-bullet-list li { margin-bottom: 4px; }
 
 .empty-subtext { font-size: 13px; color: #cbd5e0; text-align: center; padding: 16px 0; font-style: italic; }
+
+.file-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #f8fafc; border-radius: 10px; border: 1px solid #edf2f7; }
+.file-icon { font-size: 24px; color: #3182ce; flex-shrink: 0; }
+.file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #2d3748; font-size: 14px; font-weight: 500; }
+.file-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
 .skill-input { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .skill-tag { margin-right: 4px; }

@@ -31,22 +31,9 @@ export function getFileInfo(id) {
 }
 
 /**
- * 获取文件下载URL（用于直接链接）
+ * 获取文件下载URL（用于直接链接/a标签下载）
  * @param {number} id - 文件记录ID
  */
 export function getFileUrl(id) {
   return `/api/file/download/${id}`
-}
-import request from '@/utils/request'
-
-export function uploadFile(file) {
-  const formData = new FormData()
-  formData.append('file', file)
-  return request.post('/file/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-}
-
-export function downloadFile(id) {
-  return request.get(`/file/download/${id}`, { responseType: 'blob' })
 }
