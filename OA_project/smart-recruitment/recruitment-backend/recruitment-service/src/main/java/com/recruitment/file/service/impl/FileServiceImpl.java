@@ -4,6 +4,7 @@ import com.recruitment.common.core.exception.BusinessException;
 import com.recruitment.file.entity.FileRecord;
 import com.recruitment.file.mapper.FileRecordMapper;
 import com.recruitment.file.service.FileService;
+import com.recruitment.file.support.FileStoragePathResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -22,9 +24,7 @@ import java.util.UUID;
 public class FileServiceImpl implements FileService {
 
     private final FileRecordMapper fileRecordMapper;
-
-    @Value("${file.upload-dir:./uploads}")
-    private String uploadDir;
+    private final FileStoragePathResolver pathResolver;
 
     @Value("${file.max-size:10485760}")
     private long maxSize;
@@ -39,10 +39,10 @@ public class FileServiceImpl implements FileService {
         }
 
         // 将相对路径转为绝对路径，避免被 Tomcat 解析到临时目录下
-        File uploadRoot = new File(uploadDir).getAbsoluteFile();
+        Path uploadRoot = pathResolver.getUploadRoot();
 
         // 直接存到 uploads/{fileType}/ 目录下
-        File directory = new File(uploadRoot, fileType != null ? fileType : "other");
+        File directory = uploadRoot.resolve(fileType != null ? fileType : "other").toFile();
         if (!directory.exists() && !directory.mkdirs()) {
             throw new BusinessException("无法创建上传目录: " + directory.getAbsolutePath());
         }
@@ -67,7 +67,7 @@ public class FileServiceImpl implements FileService {
         FileRecord record = new FileRecord();
         record.setOriginalName(originalName);
         record.setStoredName(storedName);
-        record.setFilePath(destFile.getAbsolutePath().replace("\\", "/"));
+        record.setFilePath(pathResolver.toRecordPath(destFile.toPath()));
         record.setFileSize(file.getSize());
         record.setContentType(file.getContentType());
         record.setFileType(fileType != null ? fileType : "other");
@@ -93,7 +93,7 @@ public class FileServiceImpl implements FileService {
 
         // 删除磁盘文件
         if (record.getFilePath() != null) {
-            File file = new File(record.getFilePath());
+            File file = pathResolver.resolveRecordPath(record.getFilePath()).toFile();
             if (file.exists() && !file.delete()) {
                 // 文件删除失败只记日志，不阻断流程
                 // 可考虑 log.warn(...)

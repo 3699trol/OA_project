@@ -54,7 +54,7 @@
 
             <el-form-item>
               <div class="form-extra">
-                <el-checkbox v-model="rememberMe" class="remember-checkbox">记住登录密码</el-checkbox>
+                <el-checkbox v-model="rememberMe" class="remember-checkbox" @change="handleRememberChange">记住登录密码</el-checkbox>
                 <el-link type="primary" underline="never" class="forget-link">忘记密码？</el-link>
               </div>
             </el-form-item>
@@ -99,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/auth'
@@ -110,6 +110,7 @@ const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
 const rememberMe = ref(false)
+const REMEMBER_LOGIN_KEY = 'remember_login_credentials'
 
 const form = reactive({ username: '', password: '' })
 const rules = {
@@ -137,6 +138,51 @@ const roleRedirects = {
   HR: '/hr',
   INTERVIEWER: '/interviewer',
   ADMIN: '/admin/users'
+}
+
+onMounted(() => {
+  const remembered = readRememberedLogin()
+  if (!remembered) return
+
+  rememberMe.value = true
+  form.username = remembered.username || ''
+  form.password = remembered.password || ''
+})
+
+function encodeRememberedLogin(data) {
+  return window.btoa(encodeURIComponent(JSON.stringify(data)))
+}
+
+function decodeRememberedLogin(value) {
+  try {
+    return JSON.parse(decodeURIComponent(window.atob(value)))
+  } catch (e) {
+    localStorage.removeItem(REMEMBER_LOGIN_KEY)
+    return null
+  }
+}
+
+function readRememberedLogin() {
+  const saved = localStorage.getItem(REMEMBER_LOGIN_KEY)
+  return saved ? decodeRememberedLogin(saved) : null
+}
+
+function syncRememberedLogin() {
+  if (!rememberMe.value) {
+    localStorage.removeItem(REMEMBER_LOGIN_KEY)
+    return
+  }
+
+  localStorage.setItem(REMEMBER_LOGIN_KEY, encodeRememberedLogin({
+    username: form.username,
+    password: form.password
+  }))
+}
+
+function handleRememberChange(value) {
+  if (!value) {
+    localStorage.removeItem(REMEMBER_LOGIN_KEY)
+  }
 }
 
 function quickLogin(r) {
@@ -175,6 +221,7 @@ async function handleLogin() {
       ElMessage.error('登录失败：未获取到 Token，请检查后端服务是否正常')
       return
     }
+    syncRememberedLogin()
     // 保存至 Pinia 和 LocalStorage
     userStore.setToken(tokenVal)
     if (refreshTokenVal) {

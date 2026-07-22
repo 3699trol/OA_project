@@ -4,6 +4,7 @@ import com.recruitment.common.core.model.Result;
 import com.recruitment.common.security.model.LoginUser;
 import com.recruitment.file.entity.FileRecord;
 import com.recruitment.file.service.FileService;
+import com.recruitment.file.support.FileStoragePathResolver;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
@@ -28,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 public class FileController {
 
     private final FileService fileService;
+    private final FileStoragePathResolver pathResolver;
 
     /**
      * 上传文件
@@ -53,7 +55,7 @@ public class FileController {
             throw new RuntimeException("文件不存在");
         }
 
-        File file = new File(record.getFilePath());
+        File file = pathResolver.resolveRecordPath(record.getFilePath()).toFile();
         if (!file.exists()) {
             throw new RuntimeException("文件已丢失");
         }

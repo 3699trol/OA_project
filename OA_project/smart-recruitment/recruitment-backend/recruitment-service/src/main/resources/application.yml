@@ -40,7 +40,7 @@ ai:
 
 # 文件上传配置
 file:
-  upload-dir: c:/JavaCode/OA_project/OA_project/smart-recruitment/uploads
+  upload-dir: ${FILE_UPLOAD_DIR:uploads}
   max-size: 10485760
 
 logging:
