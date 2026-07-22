@@ -28,16 +28,8 @@
         <el-card class="login-card" shadow="always">
           <div class="card-header">
             <h2>欢迎登录</h2>
-            <p>请选择角色并输入您的凭证</p>
+            <p>输入账号和密码，系统将自动进入您的工作台</p>
           </div>
-
-          <!-- 角色快速切换 -->
-          <el-radio-group v-model="loginRole" class="role-switch" size="default">
-            <el-radio-button value="CANDIDATE">求职者</el-radio-button>
-            <el-radio-button value="HR">HR经理</el-radio-button>
-            <el-radio-button value="INTERVIEWER">面试官</el-radio-button>
-            <el-radio-button value="ADMIN">管理员</el-radio-button>
-          </el-radio-group>
 
           <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
             <el-form-item prop="username">
@@ -118,7 +110,6 @@ const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
 const rememberMe = ref(false)
-const loginRole = ref('CANDIDATE')
 
 const form = reactive({ username: '', password: '' })
 const rules = {
@@ -136,10 +127,9 @@ const features = [
 ]
 
 const quickRoles = [
-  { role: 'CANDIDATE', label: '🧑‍💼 张三 (求职者)', type: 'success' },
-  { role: 'HR', label: '👩‍💼 李经理 (HR)', type: 'warning' },
-  { role: 'INTERVIEWER', label: '👨‍🏫 王工 (面试官)', type: 'primary' },
-  { role: 'ADMIN', label: '🛡️ Admin (管理员)', type: 'danger' }
+  { role: 'CANDIDATE', label: '求职者体验', username: 'zhangsan', type: 'success' },
+  { role: 'HR', label: 'HR 体验', username: 'lijingli', type: 'warning' },
+  { role: 'INTERVIEWER', label: '面试官体验', username: 'wanggong', type: 'primary' }
 ]
 
 const roleRedirects = {
@@ -150,13 +140,7 @@ const roleRedirects = {
 }
 
 function quickLogin(r) {
-  loginRole.value = r.role
-  form.username = {
-    CANDIDATE: 'zhangsan',
-    HR: 'lijingli',
-    INTERVIEWER: 'wanggong',
-    ADMIN: 'admin'
-  }[r.role]
+  form.username = r.username
   form.password = '123456'
   
   // 填充后自动触发登录
@@ -169,20 +153,15 @@ async function handleLogin() {
 
   loading.value = true
   try {
-    console.log('[Login] 发送请求', { username: form.username, password: form.password, expectedRole: loginRole.value })
     const res = await login({ 
       username: form.username, 
-      password: form.password,
-      expectedRole: loginRole.value
+      password: form.password
     })
-    console.log('[Login] 收到响应', JSON.parse(JSON.stringify(res)))
 
     // 防御性安全提取
     const dataObj = res?.data || res || {}
-    console.log('[Login] dataObj', dataObj)
     const userInfoObj = dataObj.userInfo || res?.userInfo || {}
     const tokenVal = dataObj.token || res?.token || ''
-    console.log('[Login] userInfo', userInfoObj, 'token长度', tokenVal.length)
 
     // 使用后端返回的真实角色
     const actualRole = userInfoObj.role
@@ -191,12 +170,6 @@ async function handleLogin() {
       return
     }
     
-    // 验证角色是否匹配（双重验证）
-    if (actualRole !== loginRole.value) {
-      ElMessage.error('角色类型不匹配，请选择正确的角色登录')
-      return
-    }
-
     if (!tokenVal) {
       ElMessage.error('登录失败：未获取到 Token，请检查后端服务是否正常')
       return
@@ -217,7 +190,6 @@ async function handleLogin() {
     }, 400)
   } catch (e) {
     console.error('[Login] 异常', e)
-    console.log('[Login] 异常详情: name=', e.name, 'message=', e.message, 'response=', e.response?.data)
     ElMessage.error(e.message || '登录失败，请检查账号密码')
   } finally {
     loading.value = false
@@ -348,38 +320,6 @@ async function handleLogin() {
 .card-header p {
   color: #718096;
   font-size: 14px;
-}
-
-.role-switch {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
-}
-
-/* 覆盖 ElementPlus RadioButton 为更高级的设计 */
-.role-switch :deep(.el-radio-button__inner) {
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  margin: 0 4px;
-  font-size: 13px;
-  font-weight: 500;
-  background: #ffffff;
-  color: #4a5568;
-  box-shadow: none !important;
-  transition: all 0.2s;
-}
-
-.role-switch :deep(.el-radio-button:first-child .el-radio-button__inner),
-.role-switch :deep(.el-radio-button:last-child .el-radio-button__inner) {
-  border-radius: 6px;
-}
-
-.role-switch :deep(.el-radio-button__orig-radio:checked + .el-radio-button__inner) {
-  background: #e76f51;
-  border-color: #e76f51;
-  color: #ffffff;
-  font-weight: 600;
 }
 
 .login-form {
