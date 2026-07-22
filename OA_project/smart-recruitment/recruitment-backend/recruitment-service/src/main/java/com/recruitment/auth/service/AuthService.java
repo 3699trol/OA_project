@@ -18,6 +18,11 @@ public interface AuthService {
     LoginResponse login(LoginRequest request);
 
     /**
+     * 使用刷新令牌轮换访问令牌和刷新令牌
+     */
+    LoginResponse refreshToken(String refreshToken);
+
+    /**
      * 用户注册
      */
     void register(RegisterRequest request);

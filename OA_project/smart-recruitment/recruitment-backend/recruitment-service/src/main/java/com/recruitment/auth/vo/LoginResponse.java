@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class LoginResponse {
     private String token;
+    private String refreshToken;
     private UserInfo userInfo;
 
     @Data

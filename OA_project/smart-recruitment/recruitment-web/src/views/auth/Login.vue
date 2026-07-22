@@ -162,6 +162,7 @@ async function handleLogin() {
     const dataObj = res?.data || res || {}
     const userInfoObj = dataObj.userInfo || res?.userInfo || {}
     const tokenVal = dataObj.token || res?.token || ''
+    const refreshTokenVal = dataObj.refreshToken || res?.refreshToken || ''
 
     // 使用后端返回的真实角色
     const actualRole = userInfoObj.role
@@ -174,9 +175,13 @@ async function handleLogin() {
       ElMessage.error('登录失败：未获取到 Token，请检查后端服务是否正常')
       return
     }
-    
     // 保存至 Pinia 和 LocalStorage
     userStore.setToken(tokenVal)
+    if (refreshTokenVal) {
+      userStore.setRefreshToken(refreshTokenVal)
+    } else {
+      localStorage.removeItem('refreshToken')
+    }
     userStore.setUserInfo(userInfoObj)
     
     ElMessage.success({

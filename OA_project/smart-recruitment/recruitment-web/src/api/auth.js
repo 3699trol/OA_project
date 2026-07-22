@@ -16,8 +16,8 @@ export function getCurrentUser() {
   return request.get('/auth/current-user')
 }
 
-export function refreshToken() {
-  return request.post('/auth/refresh-token')
+export function refreshToken(data) {
+  return request.post('/auth/refresh-token', data)
 }
 
 export function changePassword(data) {

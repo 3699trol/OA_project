@@ -2,6 +2,7 @@ package com.recruitment.auth.controller;
 
 import com.recruitment.auth.dto.ChangePasswordRequest;
 import com.recruitment.auth.dto.LoginRequest;
+import com.recruitment.auth.dto.RefreshTokenRequest;
 import com.recruitment.auth.dto.RegisterRequest;
 import com.recruitment.auth.dto.UpdateProfileRequest;
 import com.recruitment.auth.service.AuthService;
@@ -62,8 +63,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    public Result<?> refreshToken() {
-        return Result.success();
+    public Result<LoginResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        if (authService == null) return Result.success();
+        return Result.success(authService.refreshToken(request.getRefreshToken()));
     }
 
     @PostMapping("/change-password")

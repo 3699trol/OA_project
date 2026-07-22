@@ -1,6 +1,9 @@
 package com.recruitment.common.security.config;
 
 import com.recruitment.common.security.filter.JwtAuthenticationFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.recruitment.common.core.model.Result;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +29,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectMapper objectMapper;
 
     @Value("${recruitment.security.permit-all:false}")
     private boolean permitAll;
@@ -35,6 +39,12 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, exception) -> {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setCharacterEncoding("UTF-8");
+                response.setContentType("application/json;charset=UTF-8");
+                objectMapper.writeValue(response.getWriter(), Result.error(401, "登录已失效，请重新登录"));
+            }))
             .authorizeHttpRequests(auth -> {
                 if (permitAll) {
                     auth.anyRequest().permitAll();

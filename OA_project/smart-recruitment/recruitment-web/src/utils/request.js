@@ -2,11 +2,14 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { handleMockRequest } from '@/mock'
+import { useUserStore } from '@/stores/user'
 
 // --- Mock 总开关（代码级）---
 // 若希望在代码层面彻底关闭 Mock（不受用户在页面上切换或 localStorage 影响），
 // 将下方常量改为 true 即可：此时无论 localStorage.use_mock 是什么值，都会强制走真实后端。
 const FORCE_DISABLE_MOCK = true
+const REFRESH_TOKEN_PATH = '/auth/refresh-token'
+let refreshPromise = null
 
 // Keep all frontend transports on the same mode. A demo token cannot be
 // authenticated by the real Spring Security filter chain.
@@ -15,6 +18,7 @@ if (FORCE_DISABLE_MOCK) {
   const token = localStorage.getItem('token') || ''
   if (token.startsWith('demo-token-')) {
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('userInfo')
   }
 }
@@ -23,6 +27,71 @@ const request = axios.create({
   baseURL: '/api',
   timeout: 30000
 })
+
+function clearSession() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('userInfo')
+}
+
+function redirectToLogin() {
+  clearSession()
+  if (router.currentRoute.value.path !== '/login') {
+    router.push('/login')
+  }
+}
+
+async function renewSession() {
+  const storedRefreshToken = localStorage.getItem('refreshToken')
+  if (!storedRefreshToken) {
+    throw new Error('登录已过期，请重新登录')
+  }
+
+  const response = await axios.post(
+    `/api${REFRESH_TOKEN_PATH}`,
+    { refreshToken: storedRefreshToken },
+    { timeout: 30000 }
+  )
+  const result = response.data
+  const data = result?.data
+  if (result?.code !== 200 || !data?.token || !data?.refreshToken) {
+    throw new Error(result?.message || '登录已过期，请重新登录')
+  }
+
+  localStorage.setItem('token', data.token)
+  localStorage.setItem('refreshToken', data.refreshToken)
+  const userStore = useUserStore()
+  userStore.setToken(data.token)
+  userStore.setRefreshToken(data.refreshToken)
+  if (data.userInfo) {
+    localStorage.setItem('userInfo', JSON.stringify(data.userInfo))
+  }
+  return data.token
+}
+
+async function retryAfterRefresh(config) {
+  const cannotRetry = !config || config._retry || config.url === REFRESH_TOKEN_PATH
+  if (cannotRetry || !localStorage.getItem('refreshToken')) {
+    redirectToLogin()
+    throw new Error('登录已过期，请重新登录')
+  }
+
+  config._retry = true
+  try {
+    if (!refreshPromise) {
+      refreshPromise = renewSession().finally(() => {
+        refreshPromise = null
+      })
+    }
+    const newToken = await refreshPromise
+    config.headers = config.headers || {}
+    config.headers.Authorization = `Bearer ${newToken}`
+    return request(config)
+  } catch (error) {
+    redirectToLogin()
+    throw error
+  }
+}
 
 // 请求拦截器
 request.interceptors.request.use(
@@ -61,11 +130,10 @@ request.interceptors.response.use(
   response => {
     const res = response.data
     if (res.code !== 200) {
-      ElMessage.error(res.message || '请求失败')
       if (res.code === 401) {
-        localStorage.removeItem('token')
-        router.push('/login')
+        return retryAfterRefresh(response.config)
       }
+      ElMessage.error(res.message || '请求失败')
       return Promise.reject(new Error(res.message))
     }
     return res
@@ -94,12 +162,11 @@ request.interceptors.response.use(
 
     // 尝试从后端返回的 JSON 中提取错误信息
     const data = error.response?.data
+    if (error.response?.status === 401 || data?.code === 401) {
+      return retryAfterRefresh(error.config)
+    }
     const msg = data?.message || error.message || '网络错误'
     ElMessage.error(msg)
-    if (data?.code === 401) {
-      localStorage.removeItem('token')
-      router.push('/login')
-    }
     return Promise.reject(error)
   }
 )

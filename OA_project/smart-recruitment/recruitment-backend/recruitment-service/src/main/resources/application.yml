@@ -30,7 +30,8 @@ spring:
 
 jwt:
   secret: recruitment-system-secret-key-must-be-at-least-256-bits
-  expiration: 86400000
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 ai:
   service:

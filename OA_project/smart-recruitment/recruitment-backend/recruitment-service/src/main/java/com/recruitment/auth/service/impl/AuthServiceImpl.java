@@ -56,7 +56,6 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("用户名、邮箱或密码错误");
         }
 
-        // 生成 JWT
         String role = resolveRole(user.getUserType());
         
         // 验证角色是否匹配
@@ -65,23 +64,29 @@ public class AuthServiceImpl implements AuthService {
                 throw new BusinessException("角色类型不匹配，请选择正确的角色登录");
             }
         }
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), role);
-
         // 更新最后登录时间
         user.setLastLoginTime(LocalDateTime.now());
         sysUserMapper.updateById(user);
 
-        // 构造响应
-        LoginResponse response = new LoginResponse();
-        response.setToken(token);
-        response.setUserInfo(new LoginResponse.UserInfo(
-                user.getId(),
-                user.getUsername(),
-                role,
-                user.getRealName() != null ? user.getRealName() : user.getUsername(),
-                user.getAvatarUrl() != null ? user.getAvatarUrl() : ""
-        ));
-        return response;
+        return issueTokens(user, role);
+    }
+
+    @Override
+    public LoginResponse refreshToken(String refreshToken) {
+        if (!jwtUtil.validateRefreshToken(refreshToken)) {
+            throw new BusinessException(401, "刷新令牌无效或已过期，请重新登录");
+        }
+
+        Long userId = jwtUtil.getUserId(refreshToken);
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null || Integer.valueOf(1).equals(user.getDeleted())) {
+            throw new BusinessException(401, "用户不存在或已被删除，请重新登录");
+        }
+        if (Integer.valueOf(0).equals(user.getStatus())) {
+            throw new BusinessException(401, "账号已被禁用");
+        }
+
+        return issueTokens(user, resolveRole(user.getUserType()));
     }
 
     @Override
@@ -170,5 +175,19 @@ public class AuthServiceImpl implements AuthService {
             case 3 -> "INTERVIEWER";
             default -> "CANDIDATE";
         };
+    }
+
+    private LoginResponse issueTokens(SysUser user, String role) {
+        LoginResponse response = new LoginResponse();
+        response.setToken(jwtUtil.generateToken(user.getId(), user.getUsername(), role));
+        response.setRefreshToken(jwtUtil.generateRefreshToken(user.getId(), user.getUsername(), role));
+        response.setUserInfo(new LoginResponse.UserInfo(
+                user.getId(),
+                user.getUsername(),
+                role,
+                user.getRealName() != null ? user.getRealName() : user.getUsername(),
+                user.getAvatarUrl() != null ? user.getAvatarUrl() : ""
+        ));
+        return response;
     }
 }
