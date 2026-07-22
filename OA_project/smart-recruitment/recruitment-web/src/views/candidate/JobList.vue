@@ -5,7 +5,7 @@
       <el-form :inline="true" :model="filters">
         <el-form-item label="关键词"><el-input v-model="filters.keyword" placeholder="职位/技能" prefix-icon="Search" clearable style="width:200px;" /></el-form-item>
         <el-form-item label="地点"><el-select v-model="filters.location" placeholder="不限" clearable style="width:140px;"><el-option label="北京" value="北京" /><el-option label="上海" value="上海" /><el-option label="深圳" value="深圳" /><el-option label="杭州" value="杭州" /></el-select></el-form-item>
-        <el-form-item label="类别"><el-select v-model="filters.category" placeholder="不限" clearable style="width:140px;"><el-option label="技术研发" value="技术研发" /><el-option label="产品设计" value="产品设计" /></el-select></el-form-item>
+        <el-form-item label="类别"><el-select v-model="filters.category" placeholder="不限" clearable style="width:140px;"><el-option v-for="c in categories" :key="c" :label="c" :value="c" /></el-select></el-form-item>
         <el-form-item label="排序"><el-select v-model="filters.sortBy" placeholder="默认" clearable style="width:120px;" @change="fetchJobs"><el-option label="发布时间" value="createTime" /><el-option label="薪资水平" value="salary" /></el-select></el-form-item>
         <el-form-item label="方式" v-if="filters.sortBy"><el-select v-model="filters.sortOrder" style="width:100px;" @change="fetchJobs"><el-option label="降序" value="desc" /><el-option label="升序" value="asc" /></el-select></el-form-item>
         <el-form-item><el-button type="primary" icon="Search" @click="fetchJobs">搜索</el-button><el-button @click="resetFilters">重置</el-button></el-form-item>
@@ -29,11 +29,19 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getJobList } from '@/api/job'
+import { getJobList, getActiveCategoryNames } from '@/api/job'
 
 const loading = ref(false); const page = ref(1); const total = ref(0)
 const jobList = ref([])
+const categories = ref([])
 const filters = reactive({ keyword: '', location: '', category: '', sortBy: '', sortOrder: 'desc' })
+
+async function fetchCategories() {
+  try {
+    const res = await getActiveCategoryNames()
+    categories.value = res.data || []
+  } catch (e) { /* ignore */ }
+}
 
 async function fetchJobs() {
   loading.value = true
@@ -41,7 +49,8 @@ async function fetchJobs() {
     const res = await getJobList({ 
       page: page.value, 
       size: 10, 
-      keyword: filters.keyword
+      keyword: filters.keyword || undefined,
+      category: filters.category || undefined
     })
     if (res && res.data) {
       jobList.value = res.data.records || []
@@ -60,7 +69,7 @@ function resetFilters() {
   fetchJobs() 
 }
 
-onMounted(() => fetchJobs())
+onMounted(() => { fetchCategories(); fetchJobs() })
 </script>
 
 <style scoped>

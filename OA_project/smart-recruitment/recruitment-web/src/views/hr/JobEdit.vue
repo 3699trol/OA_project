@@ -8,7 +8,7 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="职位名称" prop="title"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="职位类别" prop="category">
-          <el-select v-model="form.category" style="width:100%;"><el-option label="技术研发" value="技术研发" /><el-option label="产品设计" value="产品设计" /><el-option label="数据科学" value="数据科学" /></el-select>
+          <el-select v-model="form.category" style="width:100%;"><el-option v-for="c in categories" :key="c" :label="c" :value="c" /></el-select>
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12"><el-form-item label="工作地点" prop="location"><el-input v-model="form.location" /></el-form-item></el-col>
@@ -42,12 +42,13 @@
 import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { createJob, updateJob, getJobDetail, publishJob } from '@/api/job'
+import { createJob, updateJob, getJobDetail, publishJob, getActiveCategoryNames } from '@/api/job'
 
 const route = useRoute()
 const router = useRouter()
 const isEdit = computed(() => !!route.params.id)
 const formRef = ref(); const tagVisible = ref(false); const tagValue = ref(''); const tagInput = ref(); const saving = ref(false)
+const categories = ref([])
 
 const form = reactive({ title: '', category: '', location: '', headcount: 1, salaryMin: 0, salaryMax: 0, education: '本科', experience: '3-5年', description: '', requirements: '', skills: [] })
 
@@ -60,6 +61,12 @@ function addTag() { const v = tagValue.value.trim(); if (v && !form.skills.inclu
 function showTagInput() { tagVisible.value = true; nextTick(() => tagInput.value?.input?.focus()) }
 
 onMounted(async () => {
+  // 加载分类列表
+  try {
+    const res = await getActiveCategoryNames()
+    categories.value = res.data || []
+  } catch (e) { /* ignore */ }
+
   if (isEdit.value) {
     try {
       const res = await getJobDetail(route.params.id)

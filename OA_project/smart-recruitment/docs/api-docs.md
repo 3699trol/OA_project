@@ -33,7 +33,7 @@
 | 角色详情 | GET | /api/system/role/{id} | 根据ID查询角色 | ✅ |
 | 更新角色 | PUT | /api/system/role/{id} | 更新角色信息（名称、编码、描述、状态） | ✅ |
 | 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ⬜ |
-| 操作日志 | GET | /api/system/log/list | 管理员分页查询操作日志（支持关键字、时间范围） | ✅ |
+| 操作日志 | GET | /api/system/log/list | 查询操作日志（支持关键字、时间范围） | ⬜ |
 
 ### 用户列表查询参数
 
@@ -55,24 +55,6 @@
 GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userType=2&status=1&deleted=0
 ```
 
-### 操作日志查询参数
-
-`GET /api/system/log/list` 仅允许管理员调用，结果按操作时间和日志 ID 倒序排列。
-
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
-|------|------|:---:|------|------|
-| page | Long | 否 | 1 | 页码，从 1 开始 |
-| size | Long | 否 | 10 | 每页数量，范围 1-100 |
-| keyword | String | 否 | - | 匹配模块、操作描述或操作人，自动去除首尾空格 |
-| startTime | String | 否 | - | 开始日期（含），格式 `yyyy-MM-dd` |
-| endTime | String | 否 | - | 结束日期（含），格式 `yyyy-MM-dd`，不能早于开始日期 |
-
-```http
-GET /api/system/log/list?page=1&size=10&keyword=用户&startTime=2026-07-01&endTime=2026-07-21
-```
-
-返回的 `data` 使用统一分页结构：`{ records, total, pageNum, pageSize }`。
-
 ## 职位接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
@@ -82,11 +64,11 @@ GET /api/system/log/list?page=1&size=10&keyword=用户&startTime=2026-07-01&endT
 | 更新职位 | PUT | /api/job/{id} | 更新职位信息 | ✅️ |
 | 发布职位 | POST | /api/job/{id}/publish | 发布职位 | ✅️ |
 | 下架职位 | POST | /api/job/{id}/unpublish | 下架职位 | ✅️ |
-| 分类列表 | GET | /api/job/category/list | 查询职位分类列表 | ⬜ |
-| 新增分类 | POST | /api/job/category | 新增职位分类 | ⬜ |
-| 更新分类 | PUT | /api/job/category/{id} | 更新职位分类 | ⬜ |
-| 删除分类 | DELETE | /api/job/category/{id} | 删除职位分类 | ⬜ |
-| 切换分类状态 | PUT | /api/job/category/{id}/status | 启用/停用职位分类 | ⬜ |
+| 分类列表 | GET | /api/job/category/list | 查询职位分类列表 | ✅️ |
+| 新增分类 | POST | /api/job/category | 新增职位分类 | ✅️ |
+| 更新分类 | PUT | /api/job/category/{id} | 更新职位分类 | ✅️ |
+| 删除分类 | DELETE | /api/job/category/{id} | 删除职位分类 | ✅️ |
+| 切换分类状态 | PUT | /api/job/category/{id}/status | 启用/停用职位分类 | ✅️ |
 
 ## 简历接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
@@ -120,12 +102,14 @@ GET /api/system/log/list?page=1&size=10&keyword=用户&startTime=2026-07-01&endT
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
 | 简历解析与诊断 | POST | /api/ai/resume/parse | AI简历结构化解析、质量评分、问题诊断与优化建议（需配置 API Key） | ✅ |
+| 简历评估 | POST | /api/ai/resume/evaluate | AI简历质量评估 | ⬜ |
+| 简历优化建议 | POST | /api/ai/resume/optimize | AI简历优化建议 | ⬜ |
 | 人岗匹配 | POST | /api/ai/match | AI人岗匹配分析（需配置 API Key） | ❓️ |
 | 面试题生成 | POST | /api/ai/question/generate | AI生成面试题（需配置 API Key） | ❓️ |
-| 模拟面试-开始 | POST | /api/ai/mock-interview/start | AI生成开场白并创建面试会话（需配置 API Key） | ✅ |
-| 模拟面试-对话 | POST | /api/ai/mock-interview/chat | 多轮面试对话，AI面试官追问并给出建议反问（需配置 API Key） | ✅ |
-| 模拟面试-提交 | POST | /api/ai/mock-interview/submit | 结束面试并生成评估报告（含评分、统计、完整对话记录） | ✅ |
-| 模拟面试-报告 | GET | /api/ai/mock-interview/report/{reportId} | 查询已生成的面试评估报告 | ✅ |
+| 模拟面试生成 | POST | /api/ai/mock-interview/generate | 生成模拟面试题 | ⬜ |
+| 模拟面试答题记录 | POST | /api/ai/mock-interview/record | 记录用户回答 | ⬜ |
+| 模拟追问 | POST | /api/ai/mock-interview/follow-up | AI追问 | ⬜ |
+| 模拟面试报告 | GET | /api/ai/mock-interview/report/{sessionId} | 生成模拟面试报告 | ⬜ |
 
 ### AI 服务团队配置
 

@@ -28,6 +28,10 @@ export function getJobCategories(params) {
   return request.get('/job/category/list', { params })
 }
 
+export function getActiveCategoryNames() {
+  return request.get('/job/category/active-names')
+}
+
 export function createJobCategory(data) {
   return request.post('/job/category', data)
 }
