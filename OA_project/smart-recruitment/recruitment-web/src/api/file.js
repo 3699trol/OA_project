@@ -37,3 +37,11 @@ export function getFileInfo(id) {
 export function getFileUrl(id) {
   return `/api/file/download/${id}`
 }
+
+/**
+ * 删除文件（同时删除磁盘文件和数据库记录）
+ * @param {number} id - 文件记录ID
+ */
+export function deleteFile(id) {
+  return request.delete(`/file/${id}`)
+}

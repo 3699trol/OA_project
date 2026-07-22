@@ -16,6 +16,10 @@ export function saveMyResume(data) {
   return request.put('/resume/my', data)
 }
 
+export function deleteMyResume() {
+  return request.delete('/resume/my')
+}
+
 export function updateResume(id, data) {
   return request.put(`/resume/${id}`, data)
 }

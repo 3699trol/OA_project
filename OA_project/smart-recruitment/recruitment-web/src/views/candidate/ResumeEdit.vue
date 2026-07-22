@@ -5,6 +5,7 @@
       <div class="header-actions">
         <el-button type="success" icon="MagicStick" :loading="aiParsing" @click="handleAiParse">AI智能解析</el-button>
         <el-button type="primary" icon="Upload" @click="uploadVisible = true">📤 上传简历文件</el-button>
+        <el-button type="danger" icon="Delete" plain @click="handleDeleteResume">删除简历</el-button>
       </div>
     </div>
     
@@ -162,6 +163,16 @@
       </template>
 
       <div v-if="aiResult" class="ai-result">
+        <!-- 字段选择区 -->
+        <div class="ai-field-selection">
+          <span class="ai-field-selection-label">选择要应用的字段：</span>
+          <el-checkbox v-model="aiFieldSelection.basic">基本信息</el-checkbox>
+          <el-checkbox v-model="aiFieldSelection.education">教育背景</el-checkbox>
+          <el-checkbox v-model="aiFieldSelection.experience">工作经历</el-checkbox>
+          <el-checkbox v-model="aiFieldSelection.skills">专业技能</el-checkbox>
+          <el-checkbox v-model="aiFieldSelection.summary">个人摘要</el-checkbox>
+        </div>
+
         <section class="ai-result-section ai-profile-section">
           <div class="ai-section-heading">
             <el-icon><User /></el-icon>
@@ -285,7 +296,7 @@
       </div>
       <template #footer>
         <el-button @click="aiResultVisible = false">暂不应用</el-button>
-        <el-button type="primary" icon="Check" @click="applyAiResult">应用到我的简历</el-button>
+        <el-button type="primary" icon="Check" @click="applyAiResult">应用勾选字段</el-button>
       </template>
     </el-dialog>
 
@@ -416,10 +427,10 @@
 <script setup>
 import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMyResume, saveMyResume } from '@/api/resume'
+import { getMyResume, saveMyResume, deleteMyResume } from '@/api/resume'
 import { getCurrentUser } from '@/api/auth'
-import { aiParseResume } from '@/api/ai'
-import { uploadFile, getFileUrl, downloadFile, getFileInfo } from '@/api/file'
+import { aiParseResume, aiParseResumeFile } from '@/api/ai'
+import { uploadFile, getFileUrl, downloadFile, getFileInfo, deleteFile } from '@/api/file'
 
 const uploadVisible = ref(false)
 const resumeUploadRef = ref()
@@ -435,6 +446,15 @@ let lastAiRequestContent = ''
 const tagVisible = ref(false)
 const tagValue = ref('')
 const tagInput = ref()
+
+// AI 解析结果字段勾选：用户可选择只应用部分字段
+const aiFieldSelection = reactive({
+  basic: true,       // 姓名、手机、邮箱
+  education: true,   // 教育背景
+  experience: true,  // 工作经历
+  skills: true,      // 专业技能
+  summary: true      // 个人摘要
+})
 
 const eduDialogVisible = ref(false)
 const expDialogVisible = ref(false)
@@ -782,6 +802,39 @@ async function handleSave() {
   }
 }
 
+async function handleDeleteResume() {
+  try {
+    await ElMessageBox.confirm(
+      '删除后将同时清除简历所有信息、教育/工作经历及上传的简历文件，且不可恢复。确认删除？',
+      '删除简历',
+      { confirmButtonText: '确认删除', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    await deleteMyResume()
+    // 清空表单
+    form.name = ''
+    form.gender = '男'
+    form.birth = ''
+    form.phone = ''
+    form.email = ''
+    form.city = ''
+    form.summary = ''
+    form.educations = []
+    form.experiences = []
+    form.skills = []
+    form.fileId = null
+    form.fileName = ''
+    form.fileUrl = ''
+    ElMessage.success('简历已删除')
+  } catch (e) {
+    ElMessage.error(e.message || '删除失败')
+  }
+}
+
 const aiWaitingStatus = computed(() => {
   return aiElapsedMs.value < 30000
     ? '正在等待 AI 服务返回解析结果'
@@ -928,30 +981,39 @@ function applyAiResult() {
   const data = aiResult.value
   if (!data) return
 
-  form.name = data.name || form.name
-  form.phone = data.phone || form.phone
-  form.email = data.email || form.email
-  form.summary = data.optimizedSummary || data.summary || form.summary
+  if (aiFieldSelection.basic) {
+    form.name = data.name || form.name
+    form.phone = data.phone || form.phone
+    form.email = data.email || form.email
+  }
 
-  if (normalizedAiSkills.value.length) {
+  if (aiFieldSelection.summary) {
+    form.summary = data.optimizedSummary || data.summary || form.summary
+  }
+
+  if (aiFieldSelection.skills && normalizedAiSkills.value.length) {
     form.skills = [...normalizedAiSkills.value]
   }
-  if (normalizedAiExperiences.value.length) {
+
+  if (aiFieldSelection.experience && normalizedAiExperiences.value.length) {
     form.experiences = normalizedAiExperiences.value.map(experience => ({ ...experience, details: [...experience.details] }))
   }
-  if (normalizedAiEducations.value.length) {
-    form.educations = normalizedAiEducations.value.map(education => ({ ...education }))
-  } else if (data.school || data.major || data.education) {
-    form.educations = [{
-      school: data.school || '',
-      major: data.major || '',
-      degree: data.education || '',
-      time: ''
-    }]
+
+  if (aiFieldSelection.education) {
+    if (normalizedAiEducations.value.length) {
+      form.educations = normalizedAiEducations.value.map(education => ({ ...education }))
+    } else if (data.school || data.major || data.education) {
+      form.educations = [{
+        school: data.school || '',
+        major: data.major || '',
+        degree: data.education || '',
+        time: ''
+      }]
+    }
   }
 
   aiResultVisible.value = false
-  ElMessage.success('解析结果已应用，请检查后保存简历')
+  ElMessage.success('已应用勾选的解析字段，请检查后保存简历')
 }
 
 function handleResumeFileChange(uploadFile) {
@@ -983,6 +1045,15 @@ async function handleUpload() {
   }
 
   try {
+    // 如果已有旧文件，先删除旧文件
+    if (form.fileId) {
+      try {
+        await deleteFile(form.fileId)
+      } catch (e) {
+        console.warn('删除旧文件失败:', e)
+      }
+    }
+
     const uploadRes = await uploadFile(file, 'resume')
     if (uploadRes?.data) {
       form.fileId = uploadRes.data.id
@@ -995,7 +1066,23 @@ async function handleUpload() {
       // 自动保存到后端，确保持久化 fileUrl
       await persistFileUrl()
 
-      ElMessage.success('简历文件已保存到服务器')
+      ElMessage.success('简历文件已保存到服务器，正在解析文件内容...')
+
+      // 自动触发 AI 解析上传的文件
+      aiParsing.value = true
+      try {
+        const res = await aiParseResumeFile(file)
+        if (res?.data) {
+          aiResult.value = res.data
+          aiResultVisible.value = true
+          ElMessage.success('文件解析完成，请确认解析结果')
+        }
+      } catch (parseError) {
+        console.error('文件 AI 解析失败:', parseError)
+        ElMessage.warning('文件已保存，但 AI 解析失败，可稍后点击「AI智能解析」重试')
+      } finally {
+        aiParsing.value = false
+      }
     }
   } catch (error) {
     console.error('简历文件上传失败:', error)
@@ -1037,11 +1124,19 @@ async function handleDownloadFile() {
 }
 
 async function handleRemoveFile() {
+  // 删除磁盘文件和数据库记录
+  if (form.fileId) {
+    try {
+      await deleteFile(form.fileId)
+    } catch (e) {
+      console.warn('删除文件失败:', e)
+    }
+  }
   form.fileId = null
   form.fileName = ''
   form.fileUrl = ''
   await persistFileUrl()
-  ElMessage.info('已移除简历文件关联')
+  ElMessage.info('简历文件已删除')
 }
 </script>
 
@@ -1097,6 +1192,8 @@ async function handleRemoveFile() {
 
 .ai-result-section { margin: 0; padding: 22px 0; border-bottom: 1px solid #edf2f7; }
 .ai-result-section:last-child { border-bottom: none; }
+.ai-field-selection { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 8px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd; }
+.ai-field-selection-label { font-weight: 600; color: #2d3748; font-size: 14px; }
 .ai-profile-section { padding: 18px 0 22px; }
 .ai-section-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; color: #2d3748; }
 .ai-section-heading .el-icon { flex: 0 0 auto; color: #718096; font-size: 17px; }

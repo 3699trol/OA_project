@@ -82,6 +82,19 @@ public class ResumeController {
     }
 
     /**
+     * 删除当前用户的简历（含子表数据和关联文件）
+     */
+    @DeleteMapping("/my")
+    public Result<?> deleteMyResume() {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return Result.error(401, "未登录");
+        }
+        resumeService.deleteMyResume(userId);
+        return Result.success();
+    }
+
+    /**
      * AI解析简历
      */
     @PostMapping("/{id}/parse")

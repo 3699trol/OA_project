@@ -70,12 +70,23 @@ public class OpenAiResponsesClient {
                     outputText.length() > 500 ? outputText.substring(0, 500) + "..." : outputText);
             return objectMapper.readValue(outputText, responseType);
         } catch (JsonProcessingException e) {
-            // qwen模型常忽略json_schema返回纯文本，尝试fallback包装
-            if (outputText != null && !outputText.trim().startsWith("{")) {
-                log.warn("AI返回纯文本而非JSON，尝试fallback包装为 {}: text前100字={}",
-                        responseType.getSimpleName(),
-                        outputText.length() > 100 ? outputText.substring(0, 100) + "..." : outputText);
-                return wrapPlainTextFallback(outputText.trim(), responseType);
+            // 模型可能返回带markdown包裹的JSON或纯文本，尝试提取JSON后重新解析
+            if (outputText != null) {
+                String extractedJson = extractJsonFromText(outputText);
+                if (extractedJson != null) {
+                    try {
+                        log.info("从文本中提取到JSON，重新解析");
+                        return objectMapper.readValue(extractedJson, responseType);
+                    } catch (JsonProcessingException ignored) {
+                        // 提取的JSON仍然解析失败，继续走fallback
+                    }
+                }
+                if (!outputText.trim().startsWith("{")) {
+                    log.warn("AI返回纯文本而非JSON，尝试fallback包装为 {}: text前100字={}",
+                            responseType.getSimpleName(),
+                            outputText.length() > 100 ? outputText.substring(0, 100) + "..." : outputText);
+                    return wrapPlainTextFallback(outputText.trim(), responseType);
+                }
             }
             log.warn("AI JSON解析失败: {} — location={}, outputText={}",
                     e.getMessage(), e.getLocation(),
@@ -142,6 +153,58 @@ public class OpenAiResponsesClient {
 
     private String stripSuggestedQuestions(String text) {
         return text.replaceAll("\\s*【?建议反问】?[：:]\\s*.+$", "").replaceAll("\\s*【?反问建议】?[：:]\\s*.+$", "");
+    }
+
+    /**
+     * 从可能包含markdown代码块或前后多余文本的内容中提取JSON字符串。
+     * 支持 ```json {...} ``` 和 ``` {...} ``` 以及纯文本中嵌入的 {...} 格式。
+     */
+    private String extractJsonFromText(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        String trimmed = text.trim();
+
+        // 情况1：```json\n{...}\n``` 或 ```\n{...}\n```
+        java.util.regex.Matcher codeBlockMatcher = java.util.regex.Pattern.compile(
+                "```(?:json)?\\s*\\n?(\\{.*?})\\s*```",
+                java.util.regex.Pattern.DOTALL).matcher(trimmed);
+        if (codeBlockMatcher.find()) {
+            return codeBlockMatcher.group(1).trim();
+        }
+
+        // 情况2：文本中直接包含 {...}（取第一个完整的JSON对象）
+        int braceStart = trimmed.indexOf('{');
+        if (braceStart >= 0) {
+            int depth = 0;
+            boolean inString = false;
+            boolean escaped = false;
+            for (int i = braceStart; i < trimmed.length(); i++) {
+                char c = trimmed.charAt(i);
+                if (escaped) {
+                    escaped = false;
+                    continue;
+                }
+                if (c == '\\') {
+                    escaped = true;
+                    continue;
+                }
+                if (c == '"') {
+                    inString = !inString;
+                    continue;
+                }
+                if (inString) continue;
+                if (c == '{') depth++;
+                else if (c == '}') {
+                    depth--;
+                    if (depth == 0) {
+                        return trimmed.substring(braceStart, i + 1);
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private String executeWithNetworkRetry(String requestJson) {

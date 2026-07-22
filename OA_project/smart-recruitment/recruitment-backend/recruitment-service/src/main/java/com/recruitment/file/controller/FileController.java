@@ -91,6 +91,18 @@ public class FileController {
         return Result.success(record);
     }
 
+    /**
+     * 删除文件（同时删除磁盘文件和数据库记录）
+     */
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable Long id) {
+        boolean ok = fileService.deleteById(id);
+        if (!ok) {
+            return Result.error(404, "文件不存在");
+        }
+        return Result.success();
+    }
+
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof LoginUser loginUser) {

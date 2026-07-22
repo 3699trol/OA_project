@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.recruitment.file.service.FileService;
 import com.recruitment.resume.entity.Resume;
 import com.recruitment.resume.entity.ResumeEducation;
 import com.recruitment.resume.entity.ResumeExperience;
@@ -33,6 +34,7 @@ public class ResumeServiceImpl implements ResumeService {
     private final ResumeEducationMapper resumeEducationMapper;
     private final ResumeExperienceMapper resumeExperienceMapper;
     private final ObjectMapper objectMapper;
+    private final FileService fileService;
 
     @Override
     public Map<String, Object> getMyResume(Long userId) {
@@ -321,5 +323,46 @@ public class ResumeServiceImpl implements ResumeService {
             return "";
         }
         return String.format("%d.%02d", date.getYear(), date.getMonthValue());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteMyResume(Long userId) {
+        Resume resume = resumeMapper.selectOne(
+                new LambdaQueryWrapper<Resume>()
+                        .eq(Resume::getUserId, userId)
+                        .eq(Resume::getDeleted, 0));
+
+        if (resume == null) {
+            return;
+        }
+
+        Long resumeId = resume.getId();
+
+        // 删除教育经历子表
+        resumeEducationMapper.delete(
+                new LambdaQueryWrapper<ResumeEducation>().eq(ResumeEducation::getResumeId, resumeId));
+
+        // 删除工作经历子表
+        resumeExperienceMapper.delete(
+                new LambdaQueryWrapper<ResumeExperience>().eq(ResumeExperience::getResumeId, resumeId));
+
+        // 删除关联的简历文件
+        String fileUrl = resume.getFileUrl();
+        if (fileUrl != null) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("/download/(\\d+)").matcher(fileUrl);
+            if (matcher.find()) {
+                try {
+                    Long fileId = Long.parseLong(matcher.group(1));
+                    fileService.deleteById(fileId);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        // 逻辑删除简历主记录
+        resume.setDeleted(1);
+        resume.setFileUrl(null);
+        resumeMapper.updateById(resume);
     }
 }

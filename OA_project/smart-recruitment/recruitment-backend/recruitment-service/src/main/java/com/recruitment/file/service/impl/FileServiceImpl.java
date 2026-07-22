@@ -83,4 +83,26 @@ public class FileServiceImpl implements FileService {
     public FileRecord getById(Long id) {
         return fileRecordMapper.selectById(id);
     }
+
+    @Override
+    public boolean deleteById(Long id) {
+        FileRecord record = fileRecordMapper.selectById(id);
+        if (record == null || (record.getDeleted() != null && record.getDeleted() == 1)) {
+            return false;
+        }
+
+        // 删除磁盘文件
+        if (record.getFilePath() != null) {
+            File file = new File(record.getFilePath());
+            if (file.exists() && !file.delete()) {
+                // 文件删除失败只记日志，不阻断流程
+                // 可考虑 log.warn(...)
+            }
+        }
+
+        // 逻辑删除数据库记录
+        record.setDeleted(1);
+        fileRecordMapper.updateById(record);
+        return true;
+    }
 }

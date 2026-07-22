@@ -21,4 +21,11 @@ public interface FileService {
      * 根据ID获取文件记录
      */
     FileRecord getById(Long id);
+
+    /**
+     * 根据ID删除文件（同时删除磁盘文件和数据库记录）
+     * @param id 文件记录ID
+     * @return true 表示删除成功
+     */
+    boolean deleteById(Long id);
 }
