@@ -18,11 +18,7 @@
         </el-form-item>
         <el-form-item label="职位类别">
           <el-select v-model="filterForm.category" placeholder="全部类别" clearable class="category-select">
-            <el-option label="开发" value="开发" />
-            <el-option label="算法" value="算法" />
-            <el-option label="产品" value="产品" />
-            <el-option label="设计" value="设计" />
-            <el-option label="运营" value="运营" />
+            <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -132,13 +128,14 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getJobList, publishJob, unpublishJob } from '@/api/job'
+import { getJobList, publishJob, unpublishJob, getActiveCategoryNames } from '@/api/job'
 
 const activeTab = ref('ALL')
 const loading = ref(false)
 const page = ref(1)
 const total = ref(0)
 const jobs = ref([])
+const categories = ref([])
 
 const filterForm = reactive({
   title: '',
@@ -178,6 +175,7 @@ async function fetchJobs() {
     const params = {
       keyword: filterForm.title || undefined,
       status: activeTab.value === 'ALL' ? undefined : statusToNum(activeTab.value),
+      category: filterForm.category || undefined,
       page: page.value,
       size: 10
     }
@@ -248,8 +246,16 @@ async function handleUnpublish(row) {
 }
 
 onMounted(() => {
+  fetchCategories()
   fetchJobs()
 })
+
+async function fetchCategories() {
+  try {
+    const res = await getActiveCategoryNames()
+    categories.value = res.data || []
+  } catch (e) { /* ignore */ }
+}
 </script>
 
 <style scoped>

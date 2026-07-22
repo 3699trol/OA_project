@@ -21,7 +21,7 @@ public class JobServiceImpl implements JobService {
     private final JobMapper jobMapper;
 
     @Override
-    public Page<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status) {
+    public Page<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status, String category) {
         LambdaQueryWrapper<Job> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             wrapper.and(w -> w
@@ -33,6 +33,9 @@ public class JobServiceImpl implements JobService {
         }
         if (status != null) {
             wrapper.eq(Job::getStatus, status);
+        }
+        if (StringUtils.hasText(category)) {
+            wrapper.eq(Job::getCategory, category);
         }
         wrapper.orderByDesc(Job::getCreateTime);
         return jobMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);

@@ -25,9 +25,10 @@ public class JobController {
     public Result<PageResult<Job>> list(@RequestParam(name = "page", defaultValue = "1") long page,
                                          @RequestParam(name = "size", defaultValue = "10") long size,
                                          @RequestParam(name = "keyword", required = false) String keyword,
-                                         @RequestParam(name = "status", required = false) Integer status) {
+                                         @RequestParam(name = "status", required = false) Integer status,
+                                         @RequestParam(name = "category", required = false) String category) {
         if (jobService == null) return Result.success(PageResult.empty(page, size));
-        Page<Job> jobPage = jobService.listByPage(page, size, keyword, status);
+        Page<Job> jobPage = jobService.listByPage(page, size, keyword, status, category);
         return Result.success(new PageResult<>(jobPage.getRecords(), jobPage.getTotal(), page, size));
     }
 
