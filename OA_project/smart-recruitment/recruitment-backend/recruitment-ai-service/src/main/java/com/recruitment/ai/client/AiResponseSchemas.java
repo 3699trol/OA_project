@@ -100,20 +100,20 @@ public final class AiResponseSchemas {
     public static Map<String, Object> mockInterviewSubmit() {
         Map<String, Object> scores = object(
                 Map.of(
-                        "base", integer(0, 100),
-                        "framework", integer(0, 100),
-                        "design", integer(0, 100),
+                        "tech", integer(0, 100),
+                        "logic", integer(0, 100),
                         "communication", integer(0, 100)
                 ),
-                List.of("base", "framework", "design", "communication"));
+                List.of("tech", "logic", "communication"));
 
         Map<String, Object> reportData = object(
                 Map.of(
                         "overall", Map.of("type", "string"),
                         "scores", scores,
-                        "details", Map.of("type", "string")
+                        "details", Map.of("type", "string"),
+                        "weaknesses", array(Map.of("type", "string"))
                 ),
-                List.of("overall", "scores", "details"));
+                List.of("overall", "scores", "details", "weaknesses"));
 
         return object(
                 Map.of("report", reportData),

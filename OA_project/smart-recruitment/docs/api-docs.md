@@ -106,10 +106,10 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 | 简历优化建议 | POST | /api/ai/resume/optimize | AI简历优化建议 | ⬜ |
 | 人岗匹配 | POST | /api/ai/match | AI人岗匹配分析（需配置 API Key） | ❓️ |
 | 面试题生成 | POST | /api/ai/question/generate | AI生成面试题（需配置 API Key） | ❓️ |
-| 模拟面试生成 | POST | /api/ai/mock-interview/generate | 生成模拟面试题 | ⬜ |
-| 模拟面试答题记录 | POST | /api/ai/mock-interview/record | 记录用户回答 | ⬜ |
-| 模拟追问 | POST | /api/ai/mock-interview/follow-up | AI追问 | ⬜ |
-| 模拟面试报告 | GET | /api/ai/mock-interview/report/{sessionId} | 生成模拟面试报告 | ⬜ |
+| 模拟面试生成 | POST | /api/ai/mock-interview/generate | 生成模拟面试题 | ✅️ |
+| 模拟面试答题记录 | POST | /api/ai/mock-interview/record | 记录用户回答 | ✅️ |
+| 模拟追问 | POST | /api/ai/mock-interview/follow-up | AI追问 | ✅️ |
+| 模拟面试报告 | GET | /api/ai/mock-interview/report/{sessionId} | 生成模拟面试报告 | ✅️ |
 
 ### AI 服务团队配置
 
