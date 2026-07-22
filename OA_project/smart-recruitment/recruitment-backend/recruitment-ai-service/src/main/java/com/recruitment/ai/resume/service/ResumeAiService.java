@@ -47,16 +47,24 @@ public class ResumeAiService {
             throw new BusinessException(400, "简历内容不能为空");
         }
         String resumeContent = request.getResumeContent().trim();
-        return parseCache.get(cacheKey(resumeContent), ignored -> {
-            AiResumeParseResponse response = openAiClient.generateStructured(
-                    INSTRUCTIONS,
-                    resumeContent,
-                    "resume_parse",
-                    AiResponseSchemas.resumeParse(),
-                    AiResumeParseResponse.class);
-            fillContactFallback(response, resumeContent);
+        String cacheKey = cacheKey(resumeContent);
+        if (request.isForceRefresh()) {
+            AiResumeParseResponse response = parseWithAi(resumeContent);
+            parseCache.put(cacheKey, response);
             return response;
-        });
+        }
+        return parseCache.get(cacheKey, ignored -> parseWithAi(resumeContent));
+    }
+
+    private AiResumeParseResponse parseWithAi(String resumeContent) {
+        AiResumeParseResponse response = openAiClient.generateStructured(
+                INSTRUCTIONS,
+                resumeContent,
+                "resume_parse",
+                AiResponseSchemas.resumeParse(),
+                AiResumeParseResponse.class);
+        fillContactFallback(response, resumeContent);
+        return response;
     }
 
     private void fillContactFallback(AiResumeParseResponse response, String content) {

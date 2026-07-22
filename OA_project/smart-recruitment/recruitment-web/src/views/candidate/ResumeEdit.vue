@@ -121,52 +121,94 @@
       <el-button type="primary" size="large" icon="Check" @click="handleSave">保存简历</el-button>
     </div>
 
+    <!-- AI 解析进度 -->
+    <el-dialog
+      :model-value="aiParsing"
+      title="AI 正在解析简历"
+      width="min(440px, 92vw)"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      align-center
+    >
+      <div class="ai-waiting">
+        <el-progress :percentage="50" :indeterminate="true" :duration="2" :show-text="false" />
+        <p class="ai-waiting-status">{{ aiWaitingStatus }}</p>
+        <div class="ai-waiting-metrics">
+          <span>已用时 {{ formatAiDuration(aiElapsedMs) }}</span>
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- AI 解析结果预览 -->
-    <el-dialog v-model="aiResultVisible" title="AI 简历解析结果" width="min(720px, 92vw)" destroy-on-close>
+    <el-dialog
+      v-model="aiResultVisible"
+      width="min(880px, 94vw)"
+      top="5vh"
+      class="ai-result-dialog"
+      destroy-on-close
+    >
+      <template #header>
+        <div class="ai-result-header">
+          <div class="ai-result-title">
+            <el-icon><DocumentChecked /></el-icon>
+            <strong>AI 简历解析结果</strong>
+          </div>
+          <span v-if="lastAiDurationMs" class="ai-result-duration">
+            <el-icon><Clock /></el-icon>
+            {{ formatAiDuration(lastAiDurationMs) }}
+          </span>
+        </div>
+      </template>
+
       <div v-if="aiResult" class="ai-result">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="姓名">{{ displayAiValue(aiResult.name) }}</el-descriptions-item>
-          <el-descriptions-item label="工作年限">
-            {{ aiResult.workYears == null ? '未识别' : `${aiResult.workYears} 年` }}
-          </el-descriptions-item>
-          <el-descriptions-item label="手机号">{{ displayAiValue(aiResult.phone) }}</el-descriptions-item>
-          <el-descriptions-item label="邮箱">{{ displayAiValue(aiResult.email) }}</el-descriptions-item>
-          <el-descriptions-item label="学校">{{ displayAiValue(aiResult.school) }}</el-descriptions-item>
-          <el-descriptions-item label="专业">{{ displayAiValue(aiResult.major) }}</el-descriptions-item>
-          <el-descriptions-item label="教育背景" :span="2">{{ displayAiValue(aiResult.education) }}</el-descriptions-item>
-        </el-descriptions>
+        <section class="ai-result-section ai-profile-section">
+          <div class="ai-section-heading">
+            <el-icon><User /></el-icon>
+            <h4>识别概览</h4>
+          </div>
+          <dl class="ai-profile-grid">
+            <div><dt>姓名</dt><dd>{{ displayAiValue(aiResult.name) }}</dd></div>
+            <div><dt>工作年限</dt><dd>{{ aiResult.workYears == null ? '未识别' : `${aiResult.workYears} 年` }}</dd></div>
+            <div><dt>手机号</dt><dd>{{ displayAiValue(aiResult.phone) }}</dd></div>
+            <div><dt>邮箱</dt><dd>{{ displayAiValue(aiResult.email) }}</dd></div>
+            <div><dt>最高学历</dt><dd>{{ displayAiValue(aiResult.education) }}</dd></div>
+            <div><dt>学校与专业</dt><dd>{{ [aiResult.school, aiResult.major].filter(Boolean).join(' · ') || '未识别' }}</dd></div>
+          </dl>
+        </section>
 
         <section class="ai-result-section ai-diagnosis">
           <div class="ai-section-heading">
-            <h4>AI 简历诊断</h4>
-            <strong v-if="aiResult.overallScore != null" class="ai-score">{{ aiScore }} 分</strong>
+            <el-icon><DataAnalysis /></el-icon>
+            <h4>简历诊断</h4>
           </div>
-          <el-progress
-            v-if="aiResult.overallScore != null"
-            :percentage="aiScore"
-            :stroke-width="10"
-            :color="scoreColor"
-          />
-          <p v-if="aiResult.evaluation" class="ai-summary">{{ aiResult.evaluation }}</p>
-          <span v-else class="ai-empty">暂无综合评价</span>
+          <div class="ai-score-overview" :class="{ 'without-score': aiResult.overallScore == null }">
+            <div v-if="aiResult.overallScore != null" class="ai-score-block">
+              <strong class="ai-score" :style="{ color: scoreColor }">{{ aiScore }}</strong>
+              <span>综合评分 / 100</span>
+              <el-progress :percentage="aiScore" :stroke-width="8" :color="scoreColor" :show-text="false" />
+            </div>
+            <p v-if="aiResult.evaluation" class="ai-evaluation">{{ aiResult.evaluation }}</p>
+            <span v-else class="ai-empty">暂无综合评价</span>
+          </div>
 
           <div class="ai-diagnosis-grid">
             <div class="ai-diagnosis-column is-strength">
-              <h5>简历优势</h5>
+              <h5><el-icon><CircleCheck /></el-icon>简历优势</h5>
               <ul v-if="aiStrengths.length">
                 <li v-for="item in aiStrengths" :key="item">{{ item }}</li>
               </ul>
               <span v-else class="ai-empty">暂无</span>
             </div>
             <div class="ai-diagnosis-column is-issue">
-              <h5>存在问题</h5>
+              <h5><el-icon><Warning /></el-icon>存在问题</h5>
               <ul v-if="aiIssues.length">
                 <li v-for="item in aiIssues" :key="item">{{ item }}</li>
               </ul>
               <span v-else class="ai-empty">暂无</span>
             </div>
             <div class="ai-diagnosis-column is-suggestion">
-              <h5>修改建议</h5>
+              <h5><el-icon><Aim /></el-icon>修改建议</h5>
               <ul v-if="aiSuggestions.length">
                 <li v-for="item in aiSuggestions" :key="item">{{ item }}</li>
               </ul>
@@ -176,7 +218,10 @@
         </section>
 
         <section class="ai-result-section">
-          <h4>专业技能</h4>
+          <div class="ai-section-heading">
+            <el-icon><CollectionTag /></el-icon>
+            <h4>专业技能</h4>
+          </div>
           <div v-if="normalizedAiSkills.length" class="ai-skill-list">
             <el-tag v-for="skill in normalizedAiSkills" :key="skill" effect="plain">{{ skill }}</el-tag>
           </div>
@@ -184,34 +229,63 @@
         </section>
 
         <section class="ai-result-section">
-          <h4>个人摘要</h4>
-          <p v-if="aiResult.summary" class="ai-summary">{{ aiResult.summary }}</p>
-          <span v-else class="ai-empty">未识别</span>
-        </section>
-
-        <section v-if="aiResult.optimizedSummary" class="ai-result-section ai-optimized-summary">
-          <h4>AI 优化后的个人摘要</h4>
-          <p class="ai-summary">{{ aiResult.optimizedSummary }}</p>
+          <div class="ai-section-heading">
+            <el-icon><EditPen /></el-icon>
+            <h4>个人摘要</h4>
+          </div>
+          <div class="ai-summary-grid" :class="{ 'is-single': !aiResult.optimizedSummary }">
+            <div class="ai-summary-panel">
+              <h5>原始摘要</h5>
+              <p v-if="aiResult.summary" class="ai-summary">{{ aiResult.summary }}</p>
+              <span v-else class="ai-empty">未识别</span>
+            </div>
+            <div v-if="aiResult.optimizedSummary" class="ai-summary-panel is-optimized">
+              <h5>AI 优化摘要</h5>
+              <p class="ai-summary">{{ aiResult.optimizedSummary }}</p>
+            </div>
+          </div>
         </section>
 
         <section class="ai-result-section">
-          <h4>工作经历</h4>
-          <div v-if="normalizedAiExperiences.length" class="ai-experience-list">
-            <div v-for="(experience, index) in normalizedAiExperiences" :key="index" class="ai-experience-item">
-              <div class="ai-experience-heading">
+          <div class="ai-section-heading">
+            <el-icon><School /></el-icon>
+            <h4>教育经历</h4>
+          </div>
+          <div v-if="displayedAiEducations.length" class="ai-timeline-list">
+            <div v-for="(education, index) in displayedAiEducations" :key="index" class="ai-timeline-item">
+              <div class="ai-timeline-heading">
+                <strong>{{ education.school || '未识别学校' }}</strong>
+                <span>{{ [education.major, education.degree].filter(Boolean).join(' · ') || '专业学历未识别' }}</span>
+                <time>{{ education.time || '时间未识别' }}</time>
+              </div>
+            </div>
+          </div>
+          <span v-else class="ai-empty">未识别</span>
+        </section>
+
+        <section class="ai-result-section">
+          <div class="ai-section-heading">
+            <el-icon><Briefcase /></el-icon>
+            <h4>工作经历</h4>
+          </div>
+          <div v-if="normalizedAiExperiences.length" class="ai-timeline-list">
+            <div v-for="(experience, index) in normalizedAiExperiences" :key="index" class="ai-timeline-item">
+              <div class="ai-timeline-heading">
                 <strong>{{ experience.company || '未识别公司' }}</strong>
                 <span>{{ experience.role || '未识别职位' }}</span>
                 <time>{{ experience.time || '时间未识别' }}</time>
               </div>
-              <p v-for="(detail, detailIndex) in experience.details" :key="detailIndex">{{ detail }}</p>
+              <ul v-if="experience.details.length" class="ai-timeline-details">
+                <li v-for="(detail, detailIndex) in experience.details" :key="detailIndex">{{ detail }}</li>
+              </ul>
             </div>
           </div>
           <span v-else class="ai-empty">未识别</span>
         </section>
       </div>
       <template #footer>
-        <el-button @click="aiResultVisible = false">关闭</el-button>
-        <el-button type="primary" icon="Check" @click="applyAiResult">应用提取及优化结果</el-button>
+        <el-button @click="aiResultVisible = false">暂不应用</el-button>
+        <el-button type="primary" icon="Check" @click="applyAiResult">应用到我的简历</el-button>
       </template>
     </el-dialog>
 
@@ -340,8 +414,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyResume, saveMyResume } from '@/api/resume'
 import { getCurrentUser } from '@/api/auth'
 import { aiParseResume } from '@/api/ai'
@@ -353,6 +427,11 @@ const selectedResumeFile = ref(null)
 const aiResultVisible = ref(false)
 const aiParsing = ref(false)
 const aiResult = ref(null)
+const aiElapsedMs = ref(0)
+const lastAiDurationMs = ref(0)
+let aiStartedAt = 0
+let aiTimer = null
+let lastAiRequestContent = ''
 const tagVisible = ref(false)
 const tagValue = ref('')
 const tagInput = ref()
@@ -467,6 +546,12 @@ onMounted(async () => {
 
 const normalizedAiSkills = computed(() => normalizeSkills(aiResult.value?.skills))
 const normalizedAiEducations = computed(() => normalizeAiEducations(aiResult.value?.educationExperiences))
+const displayedAiEducations = computed(() => {
+  if (normalizedAiEducations.value.length) return normalizedAiEducations.value
+  const data = aiResult.value
+  if (!data || !(data.school || data.major || data.education)) return []
+  return [{ school: data.school || '', major: data.major || '', degree: data.education || '', time: '' }]
+})
 const normalizedAiExperiences = computed(() => normalizeAiExperiences(aiResult.value?.workExperiences))
 const aiStrengths = computed(() => normalizeTextList(aiResult.value?.strengths))
 const aiIssues = computed(() => normalizeTextList(aiResult.value?.issues))
@@ -697,25 +782,83 @@ async function handleSave() {
   }
 }
 
+const aiWaitingStatus = computed(() => {
+  return aiElapsedMs.value < 30000
+    ? '正在等待 AI 服务返回解析结果'
+    : '本次模型响应较慢，仍在处理中'
+})
+
+function formatAiDuration(duration) {
+  const seconds = Math.max(0, duration) / 1000
+  return seconds < 10 ? `${seconds.toFixed(1)} 秒` : `${Math.round(seconds)} 秒`
+}
+
+function startAiTimer() {
+  aiStartedAt = Date.now()
+  aiElapsedMs.value = 0
+  aiTimer = window.setInterval(() => {
+    aiElapsedMs.value = Date.now() - aiStartedAt
+  }, 250)
+}
+
+function stopAiTimer() {
+  if (aiTimer) {
+    window.clearInterval(aiTimer)
+    aiTimer = null
+  }
+  aiElapsedMs.value = aiStartedAt ? Date.now() - aiStartedAt : 0
+  return aiElapsedMs.value
+}
+
 async function handleAiParse() {
   if (aiParsing.value) return
+
+  const resumeContent = JSON.stringify(form)
+  let forceRefresh = false
+  if (aiResult.value && lastAiRequestContent === resumeContent) {
+    try {
+      await ElMessageBox.confirm(
+        '简历内容未发生变化。你可以查看上次结果，或重新调用 AI 生成新结果。',
+        '再次解析',
+        {
+          type: 'info',
+          confirmButtonText: '重新解析',
+          cancelButtonText: '查看上次结果',
+          distinguishCancelAndClose: true
+        }
+      )
+      forceRefresh = true
+    } catch (action) {
+      if (action === 'cancel') aiResultVisible.value = true
+      return
+    }
+  }
+
   aiParsing.value = true
+  startAiTimer()
   try {
     const res = await aiParseResume({
-      resumeContent: JSON.stringify(form),
-      fileType: 'json'
+      resumeContent,
+      fileType: 'json',
+      forceRefresh
     })
     if (res && res.data) {
+      const duration = stopAiTimer()
+      lastAiRequestContent = resumeContent
+      lastAiDurationMs.value = duration
       aiResult.value = res.data
       aiResultVisible.value = true
-      ElMessage.success('AI 解析完成，请确认解析结果')
+      ElMessage.success(`AI 解析完成，用时 ${formatAiDuration(duration)}`)
     }
   } catch (error) {
     console.error('AI 解析失败:', error)
   } finally {
+    stopAiTimer()
     aiParsing.value = false
   }
 }
+
+onBeforeUnmount(stopAiTimer)
 
 function displayAiValue(value) {
   return value == null || String(value).trim() === '' ? '未识别' : value
@@ -937,41 +1080,105 @@ async function handleRemoveFile() {
 .skill-tag { margin-right: 4px; }
 .form-actions { margin-top: 32px; display: flex; gap: 12px; justify-content: center; }
 
-.ai-result-section { margin-top: 20px; }
-.ai-result-section h4 { margin: 0 0 10px; color: #2d3748; font-size: 15px; }
-.ai-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.ai-section-heading h4 { margin-bottom: 0; }
-.ai-score { color: #303133; font-size: 18px; white-space: nowrap; }
-.ai-diagnosis > .ai-summary { margin-top: 12px; }
-.ai-diagnosis-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
-.ai-diagnosis-column { padding-left: 12px; border-left: 3px solid #cbd5e0; min-width: 0; }
+.ai-waiting { padding: 8px 0 4px; }
+.ai-waiting-status { margin: 18px 0 10px; color: #303133; font-size: 15px; text-align: center; }
+.ai-waiting-metrics { min-height: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 20px; color: #606266; font-size: 13px; }
+
+:global(.ai-result-dialog) { max-height: 90vh; display: flex; flex-direction: column; margin-bottom: 0; }
+:global(.ai-result-dialog .el-dialog__header) { padding: 18px 24px; border-bottom: 1px solid #ebeef5; }
+:global(.ai-result-dialog .el-dialog__body) { flex: 1; min-height: 0; overflow-y: auto; padding: 0 24px; }
+:global(.ai-result-dialog .el-dialog__footer) { padding: 14px 24px; border-top: 1px solid #ebeef5; }
+
+.ai-result-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-right: 32px; }
+.ai-result-title { display: flex; align-items: center; gap: 10px; min-width: 0; color: #1f2937; }
+.ai-result-title .el-icon { flex: 0 0 auto; color: #3182ce; font-size: 21px; }
+.ai-result-title strong { font-size: 18px; line-height: 1.4; }
+.ai-result-duration { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; color: #606266; font-size: 13px; }
+
+.ai-result-section { margin: 0; padding: 22px 0; border-bottom: 1px solid #edf2f7; }
+.ai-result-section:last-child { border-bottom: none; }
+.ai-profile-section { padding: 18px 0 22px; }
+.ai-section-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; color: #2d3748; }
+.ai-section-heading .el-icon { flex: 0 0 auto; color: #718096; font-size: 17px; }
+.ai-section-heading h4 { margin: 0; font-size: 15px; line-height: 1.4; }
+
+.ai-profile-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+.ai-profile-grid > div { min-width: 0; padding: 13px 16px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+.ai-profile-grid > div:nth-child(3n) { border-right: none; }
+.ai-profile-grid > div:nth-last-child(-n + 3) { border-bottom: none; }
+.ai-profile-grid dt { margin-bottom: 5px; color: #909399; font-size: 12px; }
+.ai-profile-grid dd { margin: 0; color: #303133; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+
+.ai-score-overview { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 22px; align-items: center; padding: 16px 18px; background: #f8fafc; border-radius: 6px; }
+.ai-score-overview.without-score { grid-template-columns: 1fr; }
+.ai-score-overview.without-score .ai-evaluation { padding-left: 0; border-left: none; }
+.ai-score-block { min-width: 0; }
+.ai-score-block > span { margin-left: 8px; color: #718096; font-size: 12px; }
+.ai-score-block .el-progress { margin-top: 8px; }
+.ai-score { font-size: 30px; line-height: 1; white-space: nowrap; }
+.ai-evaluation { margin: 0; padding-left: 20px; border-left: 1px solid #dbe3ec; color: #4a5568; line-height: 1.7; }
+.ai-diagnosis-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.ai-diagnosis-column { min-width: 0; padding: 14px 14px 15px; background: #f8fafc; border-top: 3px solid #cbd5e0; border-radius: 6px; }
 .ai-diagnosis-column.is-strength { border-color: #38a169; }
 .ai-diagnosis-column.is-issue { border-color: #e53e3e; }
 .ai-diagnosis-column.is-suggestion { border-color: #3182ce; }
-.ai-diagnosis-column h5 { margin: 0 0 8px; color: #303133; font-size: 14px; }
+.ai-diagnosis-column h5 { display: flex; align-items: center; gap: 6px; margin: 0 0 9px; color: #303133; font-size: 14px; }
+.ai-diagnosis-column h5 .el-icon { flex: 0 0 auto; }
+.ai-diagnosis-column.is-strength h5 .el-icon { color: #38a169; }
+.ai-diagnosis-column.is-issue h5 .el-icon { color: #e53e3e; }
+.ai-diagnosis-column.is-suggestion h5 .el-icon { color: #3182ce; }
 .ai-diagnosis-column ul { margin: 0; padding-left: 18px; color: #4a5568; line-height: 1.6; }
 .ai-diagnosis-column li + li { margin-top: 6px; }
-.ai-optimized-summary { padding: 14px; background: #f0f9ff; border-left: 3px solid #3182ce; }
+
 .ai-skill-list { display: flex; flex-wrap: wrap; gap: 8px; }
-.ai-summary { margin: 0; color: #4a5568; line-height: 1.7; white-space: pre-wrap; }
+.ai-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ai-summary-grid.is-single { grid-template-columns: 1fr; }
+.ai-summary-panel { min-width: 0; padding: 14px 16px; background: #f8fafc; border-left: 3px solid #a0aec0; border-radius: 0 6px 6px 0; }
+.ai-summary-panel.is-optimized { background: #f0f9ff; border-color: #3182ce; }
+.ai-summary-panel h5 { margin: 0 0 8px; color: #303133; font-size: 13px; }
+.ai-summary { margin: 0; color: #4a5568; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ai-empty { color: #909399; font-size: 14px; }
-.ai-experience-list { border-top: 1px solid #ebeef5; }
-.ai-experience-item { padding: 14px 0; border-bottom: 1px solid #ebeef5; }
-.ai-experience-heading { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto; gap: 12px; align-items: baseline; }
-.ai-experience-heading span { color: #606266; }
-.ai-experience-heading time { color: #909399; font-size: 13px; }
-.ai-experience-item p { margin: 8px 0 0; color: #4a5568; line-height: 1.6; }
-.ai-result :deep(.el-descriptions__content) { overflow-wrap: anywhere; }
+
+.ai-timeline-list { position: relative; padding-left: 18px; }
+.ai-timeline-list::before { content: ''; position: absolute; top: 7px; bottom: 8px; left: 4px; width: 1px; background: #cbd5e0; }
+.ai-timeline-item { position: relative; padding: 0 0 18px 12px; }
+.ai-timeline-item:last-child { padding-bottom: 0; }
+.ai-timeline-item::before { content: ''; position: absolute; top: 6px; left: -18px; width: 7px; height: 7px; background: #fff; border: 2px solid #3182ce; border-radius: 50%; }
+.ai-timeline-heading { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto; gap: 12px; align-items: baseline; }
+.ai-timeline-heading strong { color: #303133; overflow-wrap: anywhere; }
+.ai-timeline-heading span { color: #606266; overflow-wrap: anywhere; }
+.ai-timeline-heading time { color: #909399; font-size: 13px; white-space: nowrap; }
+.ai-timeline-details { margin: 9px 0 0; padding-left: 18px; color: #4a5568; line-height: 1.6; }
+.ai-timeline-details li + li { margin-top: 5px; }
 
 /* 年月下拉框样式 */
 .time-select-row { display: flex; align-items: center; gap: 8px; width: 100%; }
 .time-part-item { display: flex; align-items: center; gap: 8px; flex: 1; }
 .time-sep { color: #718096; font-size: 13px; font-weight: bold; }
 @media (max-width: 768px) {
+  :global(.ai-result-dialog .el-dialog__header) { padding: 16px 18px; }
+  :global(.ai-result-dialog .el-dialog__body) { padding: 0 18px; }
+  :global(.ai-result-dialog .el-dialog__footer) { padding: 12px 18px; }
+  .ai-profile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ai-profile-grid > div:nth-child(3n) { border-right: 1px solid #e2e8f0; }
+  .ai-profile-grid > div:nth-child(2n) { border-right: none; }
+  .ai-profile-grid > div:nth-last-child(-n + 3) { border-bottom: 1px solid #e2e8f0; }
+  .ai-profile-grid > div:nth-last-child(-n + 2) { border-bottom: none; }
   .ai-diagnosis-grid { grid-template-columns: 1fr; }
+  .ai-summary-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
   .wrap-mobile { flex-wrap: wrap; }
-  .ai-experience-heading { grid-template-columns: 1fr; gap: 4px; }
+  .ai-result-header { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .ai-profile-grid { grid-template-columns: 1fr; }
+  .ai-profile-grid > div { border-right: none; border-bottom: 1px solid #e2e8f0; }
+  .ai-profile-grid > div:nth-child(3n),
+  .ai-profile-grid > div:nth-child(2n),
+  .ai-profile-grid > div:nth-last-child(-n + 2) { border-right: none; border-bottom: 1px solid #e2e8f0; }
+  .ai-profile-grid > div:last-child { border-bottom: none; }
+  .ai-score-overview { grid-template-columns: 1fr; gap: 14px; }
+  .ai-evaluation { padding: 12px 0 0; border-top: 1px solid #dbe3ec; border-left: none; }
+  .ai-timeline-heading { grid-template-columns: 1fr; gap: 4px; }
+  .ai-timeline-heading time { white-space: normal; }
 }
 </style>

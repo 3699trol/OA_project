@@ -9,4 +9,5 @@ import lombok.Data;
 public class AiResumeParseRequest {
     private String resumeContent;
     private String fileType;
+    private boolean forceRefresh;
 }
