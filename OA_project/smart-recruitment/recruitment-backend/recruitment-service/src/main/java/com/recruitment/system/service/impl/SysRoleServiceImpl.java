@@ -22,7 +22,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     public List<SysRole> listAll() {
         return sysRoleMapper.selectList(
                 new LambdaQueryWrapper<SysRole>()
-                        .eq(SysRole::getStatus, 1)
+                        .orderByDesc(SysRole::getStatus)
                         .orderByAsc(SysRole::getId));
     }
 

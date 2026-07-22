@@ -373,10 +373,10 @@ const menuItems = computed(() => {
     ADMIN: [
       { path: '/admin/users', title: '系统用户主表', icon: 'User' },
       { path: '/admin/roles', title: '系统角色权限', icon: 'UserFilled' },
-      { path: '/admin/permissions', title: '权限节点定义', icon: 'Lock' },
+      // { path: '/admin/permissions', title: '权限节点定义', icon: 'Lock' }, // 暂时屏蔽
       { path: '/admin/categories', title: '行业岗位分类', icon: 'Collection' },
       { path: '/admin/logs', title: '后台审计日志', icon: 'DocumentChecked' },
-      { path: '/admin/config', title: '智能AI系统参数', icon: 'Setting' },
+      // { path: '/admin/config', title: '智能AI系统参数', icon: 'Setting' }, // 暂时屏蔽
     ]
   }
   return menus[role] || []

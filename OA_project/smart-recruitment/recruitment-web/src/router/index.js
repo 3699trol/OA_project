@@ -72,10 +72,10 @@ const routes = [
       { path: '', name: 'AdminDashboard', redirect: '/admin/users' },
       { path: 'users', name: 'UserList', component: () => import('@/views/admin/UserList.vue'), meta: { title: '系统用户主表' } },
       { path: 'roles', name: 'RoleList', component: () => import('@/views/admin/RoleList.vue'), meta: { title: '系统角色权限' } },
-      { path: 'permissions', name: 'PermissionList', component: () => import('@/views/admin/PermissionList.vue'), meta: { title: '权限节点定义' } },
+      // { path: 'permissions', name: 'PermissionList', component: () => import('@/views/admin/PermissionList.vue'), meta: { title: '权限节点定义' } }, // 暂时屏蔽
       { path: 'categories', name: 'JobCategoryList', component: () => import('@/views/admin/JobCategoryList.vue'), meta: { title: '行业岗位分类' } },
       { path: 'logs', name: 'OperationLog', component: () => import('@/views/admin/OperationLog.vue'), meta: { title: '后台审计日志' } },
-      { path: 'config', name: 'SystemConfig', component: () => import('@/views/admin/SystemConfig.vue'), meta: { title: '智能AI系统参数' } },
+      // { path: 'config', name: 'SystemConfig', component: () => import('@/views/admin/SystemConfig.vue'), meta: { title: '智能AI系统参数' } }, // 暂时屏蔽
     ]
   },
   // 错误页面

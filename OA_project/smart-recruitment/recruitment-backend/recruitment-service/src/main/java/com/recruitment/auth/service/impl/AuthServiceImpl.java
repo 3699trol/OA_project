@@ -9,7 +9,9 @@ import com.recruitment.auth.service.AuthService;
 import com.recruitment.auth.vo.LoginResponse;
 import com.recruitment.common.core.exception.BusinessException;
 import com.recruitment.common.security.jwt.JwtUtil;
+import com.recruitment.system.entity.SysRole;
 import com.recruitment.system.entity.SysUser;
+import com.recruitment.system.mapper.SysRoleMapper;
 import com.recruitment.system.mapper.SysUserMapper;
 import com.recruitment.system.vo.SysUserVO;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import java.util.List;
 public class AuthServiceImpl implements AuthService {
 
     private final SysUserMapper sysUserMapper;
+    private final SysRoleMapper sysRoleMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -57,7 +60,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String role = resolveRole(user.getUserType());
-        
+
+        // 校验该用户所属角色是否已被禁用
+        checkRoleEnabled(role);
+
         // 验证角色是否匹配
         if (request.getExpectedRole() != null && !request.getExpectedRole().isEmpty()) {
             if (!role.equals(request.getExpectedRole())) {
@@ -86,7 +92,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(401, "账号已被禁用");
         }
 
-        return issueTokens(user, resolveRole(user.getUserType()));
+        String role = resolveRole(user.getUserType());
+        checkRoleEnabled(role);
+
+        return issueTokens(user, role);
     }
 
     @Override
@@ -175,6 +184,20 @@ public class AuthServiceImpl implements AuthService {
             case 3 -> "INTERVIEWER";
             default -> "CANDIDATE";
         };
+    }
+
+    /**
+     * 校验用户所属角色是否处于启用状态，被禁用的角色不允许登录
+     */
+    private void checkRoleEnabled(String roleCode) {
+        if (roleCode == null) return;
+        SysRole role = sysRoleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>()
+                        .eq(SysRole::getRoleCode, roleCode)
+                        .last("LIMIT 1"));
+        if (role != null && Integer.valueOf(0).equals(role.getStatus())) {
+            throw new BusinessException("该角色已被禁用，无法登录，请联系管理员");
+        }
     }
 
     private LoginResponse issueTokens(SysUser user, String role) {

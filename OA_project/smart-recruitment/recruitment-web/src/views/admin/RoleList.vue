@@ -2,15 +2,25 @@
   <div class="page">
     <div class="page-header"><h2>🔐 角色管理</h2><el-button type="primary" icon="Plus" @click="handleAdd">新增角色</el-button></div>
     <el-card shadow="never" class="section-card">
-      <el-table :data="roles" v-loading="loading" stripe>
+      <el-table :data="roles" v-loading="loading" stripe :row-class-name="rowClassName">
         <el-table-column prop="roleCode" label="编码" width="140" />
         <el-table-column prop="roleName" label="名称" width="120">
           <template #default="{ row }"><el-tag :type="roleColor(row.roleCode)" effect="dark" round>{{ row.roleName }}</el-tag></template>
         </el-table-column>
         <el-table-column prop="description" label="描述" min-width="200" />
         <el-table-column prop="userCount" label="用户数" width="80" align="center" />
-        <el-table-column prop="status" label="状态" width="80" align="center">
-          <template #default="{ row }"><el-switch :model-value="row.status === 1" active-color="#67C23A" size="small" /></template>
+        <el-table-column prop="status" label="状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-switch
+              :model-value="row.status === 1"
+              active-color="#67C23A"
+              inactive-color="#909399"
+              size="small"
+              :loading="row._switching"
+              @change="handleStatusChange(row)"
+            />
+            <el-tag v-if="row.status === 0" type="info" size="small" effect="plain" style="margin-left: 6px;">已禁用</el-tag>
+          </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
@@ -57,7 +67,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoleList, updateRole } from '@/api/user'
 
 const loading = ref(false)
@@ -91,6 +101,35 @@ const rules = {
 
 function roleColor(c) {
   return { 'ADMIN': 'danger', 'HR': 'warning', 'INTERVIEWER': 'primary', 'CANDIDATE': 'success' }[c] || 'info'
+}
+
+function rowClassName({ row }) {
+  return row.status === 0 ? 'role-disabled-row' : ''
+}
+
+async function handleStatusChange(row) {
+  const nextStatus = row.status === 1 ? 0 : 1
+  const action = nextStatus === 1 ? '启用' : '禁用'
+  try {
+    await ElMessageBox.confirm(
+      `确定要${action}角色「${row.roleName}」吗？`,
+      `${action}角色`,
+      { confirmButtonText: action, cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch (e) {
+    // 用户取消，恢复开关状态由 v-model 重新同步
+    return
+  }
+  row._switching = true
+  try {
+    await updateRole({ id: row.id, status: nextStatus })
+    row.status = nextStatus
+    ElMessage.success(`角色已${action}`)
+  } catch (e) {
+    ElMessage.error(e.message || `${action}失败`)
+  } finally {
+    row._switching = false
+  }
 }
 
 async function fetchRoles() {
@@ -167,4 +206,18 @@ onMounted(fetchRoles)
 .page-header { display: flex; justify-content: space-between; align-items: center; }
 .page-header h2 { margin: 0; font-size: 22px; color: #3E2723; }
 .section-card { border-radius: 12px; margin-top: 16px; }
+</style>
+
+<style>
+/* 被禁用角色整行置灰显示 */
+.el-table .role-disabled-row {
+  color: #a8abb2;
+}
+.el-table .role-disabled-row .el-tag {
+  filter: grayscale(0.8);
+  opacity: 0.6;
+}
+.el-table .role-disabled-row .el-button {
+  color: #a8abb2 !important;
+}
 </style>
