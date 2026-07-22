@@ -50,8 +50,8 @@ const state = {
   },
   // 日志
   logs: [
-    { id: 1, operator: 'admin', ip: '127.0.0.1', action: '登录系统', time: '2026-07-18 14:15:22' },
-    { id: 2, operator: 'admin', ip: '127.0.0.1', action: '修改系统参数 [sys.config.ai.enabled]', time: '2026-07-18 14:16:05' }
+    { id: 1, module: '认证管理', description: '登录系统', operatorName: 'admin', ip: '127.0.0.1', costTime: 86, createTime: '2026-07-18 14:15:22' },
+    { id: 2, module: '系统配置', description: '修改系统参数 [sys.config.ai.enabled]', operatorName: 'admin', ip: '127.0.0.1', costTime: 42, createTime: '2026-07-18 14:16:05' }
   ],
   // 权限与角色
   roles: [
@@ -630,8 +630,21 @@ addRoute('GET', '/api/system/role/list', () => {
   return { code: 200, message: '获取成功', data: state.roles }
 })
 
-addRoute('GET', '/api/system/log/list', () => {
-  return { code: 200, message: '获取成功', data: { list: state.logs, total: state.logs.length } }
+addRoute('GET', '/api/system/log/list', (req) => {
+  const { keyword = '', startTime, endTime, page = 1, size = 10 } = req.params || {}
+  const normalizedKeyword = String(keyword).trim().toLowerCase()
+  let logs = state.logs.filter(log => {
+    const matchesKeyword = !normalizedKeyword || [log.module, log.description, log.operatorName]
+      .some(value => String(value || '').toLowerCase().includes(normalizedKeyword))
+    const date = log.createTime.slice(0, 10)
+    return matchesKeyword && (!startTime || date >= startTime) && (!endTime || date <= endTime)
+  })
+  logs = logs.sort((a, b) => b.createTime.localeCompare(a.createTime) || b.id - a.id)
+  const pageNum = Math.max(1, Number(page) || 1)
+  const pageSize = Math.min(100, Math.max(1, Number(size) || 10))
+  const total = logs.length
+  const records = logs.slice((pageNum - 1) * pageSize, pageNum * pageSize)
+  return { code: 200, message: '获取成功', data: { records, total, pageNum, pageSize } }
 })
 
 addRoute('GET', '/api/admin/config/info', () => {

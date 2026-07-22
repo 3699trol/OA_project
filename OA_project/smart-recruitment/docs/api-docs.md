@@ -33,7 +33,7 @@
 | 角色详情 | GET | /api/system/role/{id} | 根据ID查询角色 | ✅ |
 | 更新角色 | PUT | /api/system/role/{id} | 更新角色信息（名称、编码、描述、状态） | ✅ |
 | 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ⬜ |
-| 操作日志 | GET | /api/system/log/list | 查询操作日志（支持关键字、时间范围） | ⬜ |
+| 操作日志 | GET | /api/system/log/list | 管理员分页查询操作日志（支持关键字、时间范围） | ✅ |
 
 ### 用户列表查询参数
 
@@ -54,6 +54,24 @@
 ```http
 GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userType=2&status=1&deleted=0
 ```
+
+### 操作日志查询参数
+
+`GET /api/system/log/list` 仅允许管理员调用，结果按操作时间和日志 ID 倒序排列。
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|:---:|------|------|
+| page | Long | 否 | 1 | 页码，从 1 开始 |
+| size | Long | 否 | 10 | 每页数量，范围 1-100 |
+| keyword | String | 否 | - | 匹配模块、操作描述或操作人，自动去除首尾空格 |
+| startTime | String | 否 | - | 开始日期（含），格式 `yyyy-MM-dd` |
+| endTime | String | 否 | - | 结束日期（含），格式 `yyyy-MM-dd`，不能早于开始日期 |
+
+```http
+GET /api/system/log/list?page=1&size=10&keyword=用户&startTime=2026-07-01&endTime=2026-07-21
+```
+
+返回的 `data` 使用统一分页结构：`{ records, total, pageNum, pageSize }`。
 
 ## 职位接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
