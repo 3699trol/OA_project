@@ -847,6 +847,7 @@ function formatAiDuration(duration) {
 }
 
 function startAiTimer() {
+  stopAiTimer()
   aiStartedAt = Date.now()
   aiElapsedMs.value = 0
   aiTimer = window.setInterval(() => {
@@ -1070,17 +1071,21 @@ async function handleUpload() {
 
       // 自动触发 AI 解析上传的文件
       aiParsing.value = true
+      startAiTimer()
       try {
         const res = await aiParseResumeFile(file)
         if (res?.data) {
+          const duration = stopAiTimer()
+          lastAiDurationMs.value = duration
           aiResult.value = res.data
           aiResultVisible.value = true
-          ElMessage.success('文件解析完成，请确认解析结果')
+          ElMessage.success(`文件解析完成，用时 ${formatAiDuration(duration)}，请确认解析结果`)
         }
       } catch (parseError) {
         console.error('文件 AI 解析失败:', parseError)
         ElMessage.warning('文件已保存，但 AI 解析失败，可稍后点击「AI智能解析」重试')
       } finally {
+        stopAiTimer()
         aiParsing.value = false
       }
     }
