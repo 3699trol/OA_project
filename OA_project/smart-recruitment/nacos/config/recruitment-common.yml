@@ -1,0 +1,15 @@
+# Shared configuration for all backend services.
+jwt:
+  secret: ${JWT_SECRET:recruitment-system-secret-key-must-be-at-least-256-bits}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+recruitment:
+  config-center:
+    common-loaded: true
+  security:
+    permit-all: false
+
+logging:
+  level:
+    com.alibaba.nacos.client: info

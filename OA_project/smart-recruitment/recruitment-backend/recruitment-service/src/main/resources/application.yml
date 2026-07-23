@@ -1,47 +1,15 @@
-server:
-  port: 8080
-  servlet:
-    context-path: /
-
 spring:
   application:
     name: recruitment-service
   profiles:
-    # 默认启用完整联调配置，连接本地 Docker 中间件。
     active: dev
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
   cloud:
-    nacos:
-      discovery:
-        enabled: false
-      config:
-        enabled: false
-        import-check:
-          enabled: false
     openfeign:
       client:
         config:
           recruitment-ai-service:
             connectTimeout: 10000
             readTimeout: 120000
-
-jwt:
-  secret: recruitment-system-secret-key-must-be-at-least-256-bits
-  expiration: ${JWT_EXPIRATION:86400000}
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
-
-ai:
-  service:
-    # 非空 URL 时 OpenFeign 直接调用 AI 服务，不经过 Nacos 服务发现。
-    url: "${AI_SERVICE_URL:http://127.0.0.1:8081}"
-
-# 文件上传配置
-file:
-  upload-dir: ${FILE_UPLOAD_DIR:uploads}
-  max-size: 10485760
 
 logging:
   level:

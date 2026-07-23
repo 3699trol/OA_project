@@ -5,6 +5,7 @@ import com.recruitment.auth.dto.ChangePasswordRequest;
 import com.recruitment.auth.dto.LoginRequest;
 import com.recruitment.auth.dto.RegisterRequest;
 import com.recruitment.auth.dto.UpdateProfileRequest;
+import com.recruitment.auth.config.AuthRuntimeProperties;
 import com.recruitment.auth.service.AuthService;
 import com.recruitment.auth.vo.LoginResponse;
 import com.recruitment.common.core.exception.BusinessException;
@@ -38,15 +39,13 @@ public class AuthServiceImpl implements AuthService {
 
     private static final String USER_CACHE_PREFIX = "auth:user:";
     private static final String LOGIN_FAIL_PREFIX = "auth:login:fail:";
-    private static final long USER_CACHE_TTL_MINUTES = 30;
-    private static final long LOGIN_FAIL_TTL_MINUTES = 10;
-    private static final long MAX_LOGIN_FAIL_COUNT = 5;
 
     private final SysUserMapper sysUserMapper;
     private final SysRoleMapper sysRoleMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final ObjectProvider<RedisUtil> redisUtilProvider;
+    private final AuthRuntimeProperties authRuntimeProperties;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -273,7 +272,11 @@ public class AuthServiceImpl implements AuthService {
             return;
         }
         try {
-            redisUtil.set(userCacheKey(user.getId()), user, USER_CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+            redisUtil.set(
+                    userCacheKey(user.getId()),
+                    user,
+                    positiveMillis(authRuntimeProperties.getUserCacheTtl()),
+                    TimeUnit.MILLISECONDS);
         } catch (RuntimeException e) {
             log.warn("Failed to write user {} to Redis cache: {}", user.getId(), e.getMessage());
         }
@@ -298,7 +301,8 @@ public class AuthServiceImpl implements AuthService {
         }
         try {
             Object value = redisUtil.get(loginFailKey(loginAccount));
-            if (value instanceof Number count && count.longValue() >= MAX_LOGIN_FAIL_COUNT) {
+            long maxFailures = Math.max(1L, authRuntimeProperties.getMaxLoginFailures());
+            if (value instanceof Number count && count.longValue() >= maxFailures) {
                 throw new BusinessException(429, "登录失败次数过多，请稍后再试");
             }
         } catch (BusinessException e) {
@@ -316,7 +320,10 @@ public class AuthServiceImpl implements AuthService {
         try {
             Long count = redisUtil.increment(loginFailKey(loginAccount));
             if (count != null && count == 1L) {
-                redisUtil.expire(loginFailKey(loginAccount), LOGIN_FAIL_TTL_MINUTES, TimeUnit.MINUTES);
+                redisUtil.expire(
+                        loginFailKey(loginAccount),
+                        positiveMillis(authRuntimeProperties.getLoginFailureWindow()),
+                        TimeUnit.MILLISECONDS);
             }
         } catch (RuntimeException e) {
             log.warn("Failed to record login failure for {}: {}", loginAccount, e.getMessage());
@@ -341,5 +348,9 @@ public class AuthServiceImpl implements AuthService {
 
     private String loginFailKey(String loginAccount) {
         return LOGIN_FAIL_PREFIX + loginAccount.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private long positiveMillis(java.time.Duration duration) {
+        return Math.max(1L, duration.toMillis());
     }
 }

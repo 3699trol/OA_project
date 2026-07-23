@@ -1,17 +1,25 @@
 # 本地开发启动配置：启用 MySQL，不依赖 Nacos / Redis / ES
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:smart_recruitment}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:123456}
+    password: ${DB_PASSWORD:root}
   cloud:
     nacos:
       discovery:
         enabled: false
         server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
-        ip: "${NACOS_DISCOVERY_IP:127.0.0.1}"
         fail-fast: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
@@ -21,6 +29,23 @@ spring:
       - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
       - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
       - org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRepositoriesAutoConfiguration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+jwt:
+  secret: ${JWT_SECRET:recruitment-system-secret-key-must-be-at-least-256-bits}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+ai:
+  service:
+    url: "${AI_SERVICE_URL:http://127.0.0.1:8081}"
+
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:uploads}
+  max-size: ${FILE_MAX_SIZE:10485760}
 
 mybatis-plus:
   mapper-locations: classpath:mapper/**/*.xml
@@ -38,3 +63,7 @@ mybatis-plus:
 recruitment:
   security:
     permit-all: true
+  auth:
+    user-cache-ttl: 30m
+    login-failure-window: 10m
+    max-login-failures: 5
