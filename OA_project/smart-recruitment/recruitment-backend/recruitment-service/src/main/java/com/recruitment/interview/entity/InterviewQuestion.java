@@ -24,5 +24,7 @@ public class InterviewQuestion {
     private String scoringCriteria;
     private Integer sortOrder;
     private Boolean isAiGenerated;
+    private String candidateAnswer;
+    private LocalDateTime answerTime;
     private LocalDateTime createTime;
 }

@@ -52,6 +52,19 @@ public class InterviewController {
     }
 
     /**
+     * 候选人查看自己的面试（根据当前登录用户查找投递关联的面试）
+     */
+    @GetMapping("/my-interviews")
+    public Result<List<Map<String, Object>>> myInterviews() {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return Result.error(401, "未登录");
+        }
+        List<Map<String, Object>> result = interviewService.listByCandidate(userId);
+        return Result.success(result);
+    }
+
+    /**
      * 面试官查看自己的面试任务列表
      */
     @GetMapping("/my-tasks")

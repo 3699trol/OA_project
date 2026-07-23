@@ -242,6 +242,8 @@ CREATE TABLE IF NOT EXISTS interview_question (
     scoring_criteria TEXT COMMENT '评分标准',
     sort_order INT DEFAULT 0 COMMENT '排序',
     is_ai_generated TINYINT DEFAULT 0 COMMENT '是否AI生成',
+    candidate_answer TEXT COMMENT '候选人回答',
+    answer_time DATETIME COMMENT '回答时间',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_interview_question_interview FOREIGN KEY (interview_id) REFERENCES interview (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '面试题表';
@@ -338,3 +340,7 @@ INSERT INTO sys_role (role_code, role_name, description) VALUES
 INSERT INTO sys_user (username, password, real_name, user_type, status)
 VALUES ('admin', '$2b$10$8vKAcLuJEFFCK6mIdbKNUOes8EvMJk.s7p6AWN.dlj6BXcXGYmC96', '系统管理员', 1, 1);
 ALTER TABLE job_application MODIFY COLUMN resume_id BIGINT DEFAULT NULL COMMENT '简历ID';
+
+-- 面试题增加候选人答案字段（兼容旧表，新增表已包含这些字段）; 若字段已存在可忽略报错
+ALTER TABLE interview_question ADD COLUMN candidate_answer TEXT COMMENT '候选人回答';
+ALTER TABLE interview_question ADD COLUMN answer_time DATETIME COMMENT '回答时间';

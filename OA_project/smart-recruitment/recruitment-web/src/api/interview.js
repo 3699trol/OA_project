@@ -51,3 +51,15 @@ export function cancelInterview(id) {
 export function processInterviewResult(id, hireDecision) {
   return request.post(`/interview/${id}/process`, { hireDecision })
 }
+
+export function getMyInterviews() {
+  return request.get('/interview/my-interviews')
+}
+
+export function getCandidateQuestions(interviewId) {
+  return request.get(`/interview/question/candidate/${interviewId}`)
+}
+
+export function submitAnswer(data) {
+  return request.put('/interview/question/answer', data)
+}

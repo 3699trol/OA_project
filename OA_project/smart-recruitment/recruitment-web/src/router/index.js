@@ -29,6 +29,7 @@ const routes = [
       { path: 'applications', name: 'MyApplications', component: () => import('@/views/candidate/MyApplications.vue'), meta: { title: '投递进度追踪' } },
       { path: 'mock-interview', name: 'MockInterview', component: () => import('@/views/candidate/MockInterview.vue'), meta: { title: 'AI 仿真模拟面试' } },
       { path: 'mock-interview/report', name: 'MockInterviewReport', component: () => import('@/views/candidate/MockInterviewReport.vue'), meta: { title: '模拟面试诊断评估报告' } },
+      { path: 'interview/:id', name: 'CandidateInterview', component: () => import('@/views/candidate/Interview.vue'), meta: { title: '正式面试答题' } },
     ]
   },
   // HR

@@ -25,7 +25,7 @@ if (FORCE_DISABLE_MOCK) {
 
 const request = axios.create({
   baseURL: '/api',
-  timeout: 30000
+  timeout: 180000   // 3 分钟，AI 生成类接口耗时较长
 })
 
 function clearSession() {

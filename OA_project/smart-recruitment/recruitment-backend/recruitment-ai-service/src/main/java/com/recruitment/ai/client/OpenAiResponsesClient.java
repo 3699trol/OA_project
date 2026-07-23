@@ -107,6 +107,12 @@ public class OpenAiResponsesClient {
     private <T> T wrapPlainTextFallback(String plainText, Class<T> responseType) {
         try {
             T instance = responseType.getDeclaredConstructor().newInstance();
+
+            // 特殊处理：AiQuestionResponse — 从纯文本中按编号拆分为多个Question
+            if (responseType.getSimpleName().equals("AiQuestionResponse")) {
+                return parseQuestionResponseFromPlainText(plainText, responseType);
+            }
+
             java.util.List<String> extractedQuestions = extractSuggestedQuestions(plainText);
             String mainText = stripSuggestedQuestions(plainText);
 
@@ -131,9 +137,49 @@ public class OpenAiResponsesClient {
         }
     }
 
+    /**
+     * 从纯文本中按编号拆分面试题，构造 AiQuestionResponse。
+     * 文本格式：1. 题目1  2. 题目2  ...  或  Q1: 题目1  Q2: 题目2  ...
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T parseQuestionResponseFromPlainText(String plainText, Class<T> responseType) {
+        java.util.List<Object> questions = new java.util.ArrayList<>();
+        // 按 "数字. " 或 "数字) " 或 "Q数字: " 或 "Q数字. " 拆分
+        String[] parts = plainText.split("\\n(?=(?:\\d+[.)]\\s|Q\\d+[:.]))");
+        if (parts.length <= 1) {
+            // 没有编号，整个文本作为一道题
+            parts = new String[] { plainText };
+        }
+        for (String part : parts) {
+            String text = part.trim();
+            if (text.isEmpty()) continue;
+            // 去除前导编号 "1. " "Q1: " 等
+            text = text.replaceFirst("^(?:Q?\\d+[.):]\\s*)+", "").trim();
+            if (text.isEmpty()) continue;
+            try {
+                // 反射创建 Question 内部类实例
+                Class<?> questionClass = Class.forName(
+                        "com.recruitment.api.dto.AiQuestionResponse$Question");
+                Object question = questionClass.getDeclaredConstructor().newInstance();
+                questionClass.getMethod("setTitle", String.class).invoke(question, text);
+                questionClass.getMethod("setDifficulty", String.class).invoke(question, "中等");
+                questions.add(question);
+            } catch (Exception ignored) {
+                // 反射创建失败则跳过
+            }
+        }
+        try {
+            T instance = responseType.getDeclaredConstructor().newInstance();
+            responseType.getMethod("setQuestions", java.util.List.class).invoke(instance, questions);
+            log.info("从纯文本中解析出 {} 道面试题", questions.size());
+            return instance;
+        } catch (Exception e) {
+            throw new BusinessException(502, "AI 返回纯文本且无法解析为面试题");
+        }
+    }
+
     private java.util.List<String> extractSuggestedQuestions(String text) {
         java.util.List<String> questions = new java.util.ArrayList<>();
-        // 匹配 "【建议反问】" 或 "建议反问：" 后面的编号列表
         java.util.regex.Matcher m = java.util.regex.Pattern.compile(
                 "(?:建议反问|反问建议)[】：:]\\s*(.+?)(?:$|\\Z)",
                 java.util.regex.Pattern.DOTALL).matcher(text);
