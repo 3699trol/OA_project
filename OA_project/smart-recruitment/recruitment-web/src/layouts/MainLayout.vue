@@ -354,6 +354,7 @@ const menuItems = computed(() => {
     CANDIDATE: [
       { path: '/candidate', title: '智能求职首页', icon: 'HomeFilled' },
       { path: '/candidate/jobs', title: '全职岗位大厅', icon: 'Briefcase' },
+      { path: '/candidate/search', title: '职位全文搜索', icon: 'Search' },
       { path: '/candidate/resume', title: '我的智能简历', icon: 'Document' },
       { path: '/candidate/applications', title: '投递进度追踪', icon: 'List' },
       { path: '/candidate/mock-interview', title: 'AI 仿真模拟面试', icon: 'ChatDotRound' },
@@ -361,7 +362,8 @@ const menuItems = computed(() => {
     HR: [
       { path: '/hr', title: '招聘监控大屏', icon: 'DataLine' },
       { path: '/hr/jobs', title: '发布职位管理', icon: 'Briefcase' },
-      { path: '/hr/candidates', title: '候选人才库', icon: 'User' },
+      { path: '/hr/candidates', title: '候选人管理', icon: 'User' },
+      { path: '/hr/talent-pool', title: '候选人才库', icon: 'Collection' },
       { path: '/hr/interviews', title: '日常面试安排', icon: 'Calendar' },
     ],
     INTERVIEWER: [

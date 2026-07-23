@@ -69,11 +69,11 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 | 更新分类 | PUT | /api/job/category/{id} | 更新职位分类 | ✅️ |
 | 删除分类 | DELETE | /api/job/category/{id} | 删除职位分类 | ✅️ |
 | 切换分类状态 | PUT | /api/job/category/{id}/status | 启用/停用职位分类 | ✅️ |
-   
+
 ## 简历接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:-:|
-| 简历详情 | GET | /api/resume/{id} | 查询简历 |   |
+| 简历详情 | GET | /api/resume/{id} | 查询简历 | ✅️ |
 | 保存简历 | POST | /api/resume | 新建简历 | ✅️ |
 | 更新简历 | PUT | /api/resume/{id} | 更新简历 | ✅️ |
 | AI解析 | POST | /api/resume/{id}/parse | AI解析简历 |  ✅ |
@@ -90,7 +90,6 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
 | 创建面试 | POST | /api/interview | 创建面试任务 | ✅️ |
-<<<<<<< HEAD
 | 面试列表 | GET | /api/interview/list | 查询面试列表（支持状态筛选） | ✅ |
 | 面试详情 | GET | /api/interview/{id} | 查询面试详情（含题目+候选人答案+评价） | ✅ |
 | 我的面试 | GET | /api/interview/my-interviews | 候选人查看自己的面试列表 | ✅ |
@@ -103,7 +102,6 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 | 查询评价 | GET | /api/interview/evaluation/{interviewId} | 根据面试ID查询评价 | ✅ |
 | 取消面试 | POST | /api/interview/{id}/cancel | HR取消待面试的面试 | ✅ |
 | 处理结果 | POST | /api/interview/{id}/process | HR录用或淘汰候选人 | ✅ |
-=======
 | 面试列表 | GET | /api/interview/list | 查询面试列表（支持状态筛选） | ✅ |
 | 面试详情 | GET | /api/interview/{id} | 查询面试详情（含题目+候选人答案+评价） | ✅ |
 | 我的面试 | GET | /api/interview/my-interviews | 候选人查看自己的面试列表 | ✅ |
@@ -116,8 +114,6 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 | 查询评价 | GET | /api/interview/evaluation/{interviewId} | 根据面试ID查询评价 | ✅ |
 | 取消面试 | POST | /api/interview/{id}/cancel | HR取消待面试的面试 | ✅ |
 | 处理结果 | POST | /api/interview/{id}/process | HR录用或淘汰候选人 | ✅ |
->>>>>>> origin/master
-
 ## AI服务接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|

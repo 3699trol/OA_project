@@ -29,6 +29,15 @@ public class ResumeDocument {
     @Field(type = FieldType.Text, analyzer = "standard", searchAnalyzer = "standard")
     private String aiAnalysis;
 
+    @Field(type = FieldType.Text, analyzer = "standard", searchAnalyzer = "standard")
+    private String education; // 教育经历（学校+专业+学历）
+
+    @Field(type = FieldType.Text, analyzer = "standard", searchAnalyzer = "standard")
+    private String experience; // 工作经历（公司+职位+描述）
+
+    @Field(type = FieldType.Text, analyzer = "standard", searchAnalyzer = "standard")
+    private String skills; // 技能标签
+
     @Field(type = FieldType.Double)
     private BigDecimal aiScore;
 
