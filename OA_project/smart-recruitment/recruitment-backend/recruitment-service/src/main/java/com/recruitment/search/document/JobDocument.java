@@ -47,6 +47,9 @@ public class JobDocument {
     @Field(type = FieldType.Text, analyzer = "standard", searchAnalyzer = "standard")
     private String requirements;
 
+    @Field(type = FieldType.Text, analyzer = "standard", searchAnalyzer = "standard")
+    private String skills;
+
     @Field(type = FieldType.Integer)
     private Integer status;
 

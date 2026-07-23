@@ -20,6 +20,7 @@ public class JobSearchVO {
     private String experience;
     private String description;
     private String requirements;
+    private String skills;
     private Integer status;
     private Long publisherId;
     private LocalDateTime publishTime;

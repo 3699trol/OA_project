@@ -24,8 +24,10 @@
               <h4>{{ r.label }}</h4><p>{{ r.desc }}</p>
             </div>
           </div>
-          <el-button type="primary" size="large" style="width:100%;margin-top:24px;" :disabled="!selectedRole" @click="handleRegister">完成注册</el-button>
-          <el-button size="large" style="width:100%;margin-top:10px;" @click="step = 0">返回上一步</el-button>
+          <div class="register-actions">
+            <el-button type="primary" size="large" :disabled="!selectedRole" @click="handleRegister">完成注册</el-button>
+            <el-button size="large" @click="step = 0">返回上一步</el-button>
+          </div>
         </div>
         <div v-if="step === 2" class="register-success">
           <div class="success-icon"><el-icon size="64" color="#67C23A"><CircleCheckFilled /></el-icon></div>
@@ -95,6 +97,8 @@ async function handleRegister() {
 .steps { margin-bottom: 30px; }
 .role-select h3 { text-align: center; margin-bottom: 20px; color: #3E2723; }
 .role-cards { display: flex; gap: 16px; }
+.register-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.register-actions .el-button { width: 100%; margin: 0; }
 .role-card { flex: 1; padding: 28px 16px; border: 2px solid #eee; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s; }
 .role-card:hover { border-color: #F4A261; background: #fef9f3; }
 .role-card.active { border-color: #ED8936; background: #fdf4e8; }

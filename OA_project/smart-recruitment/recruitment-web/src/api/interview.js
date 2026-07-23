@@ -53,7 +53,15 @@ export function processInterviewResult(id, hireDecision) {
 }
 
 export function getMyInterviews() {
-  return request.get('/interview/my-interviews')
+    return request.get('/interview/my-interviews')
+}
+
+export function getTodayInterviews() {
+  return request.get('/interview/today')
+}
+
+export function getRecentEvaluations(limit = 5) {
+  return request.get('/interview/recent-evaluations', { params: { limit } })
 }
 
 export function getCandidateQuestions(interviewId) {

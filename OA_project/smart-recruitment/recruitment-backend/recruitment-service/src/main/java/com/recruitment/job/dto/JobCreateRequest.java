@@ -24,4 +24,5 @@ public class JobCreateRequest {
     private Integer headcount;
     private String description;
     private String requirements;
+    private String skills; // 技能标签，逗号分隔
 }

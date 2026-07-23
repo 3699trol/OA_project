@@ -28,6 +28,7 @@ public class Job {
     private Integer headcount;
     private String description;
     private String requirements;
+    private String skills; // 技能标签，逗号分隔
     private Integer status; // 0-草稿 1-招聘中 2-下架
     private Long publisherId;
     private LocalDateTime publishTime;

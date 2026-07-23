@@ -81,6 +81,31 @@ public class InterviewController {
     }
 
     /**
+     * 面试官今日面试安排
+     */
+    @GetMapping("/today")
+    public Result<List<Map<String, Object>>> todayInterviews() {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return Result.error(401, "未登录");
+        }
+        return Result.success(interviewService.listTodayByInterviewer(userId));
+    }
+
+    /**
+     * 面试官最近提交的评价
+     */
+    @GetMapping("/recent-evaluations")
+    public Result<List<Map<String, Object>>> recentEvaluations(
+            @RequestParam(defaultValue = "5") int limit) {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return Result.error(401, "未登录");
+        }
+        return Result.success(interviewService.listRecentEvaluationsByInterviewer(userId, limit));
+    }
+
+    /**
      * 获取创建面试的下拉选项（候选人 + 面试官）
      */
     @GetMapping("/options")

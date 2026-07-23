@@ -21,6 +21,14 @@
         </template>
       </el-table-column>
       <el-table-column prop="category" label="类别" width="120" />
+      <el-table-column label="技能标签" min-width="200">
+        <template #default="{ row }">
+          <div v-if="parseSkills(row.skills).length" class="skill-cell">
+            <el-tag v-for="s in parseSkills(row.skills)" :key="s" size="small" effect="plain" type="info">{{ s }}</el-tag>
+          </div>
+          <span v-else class="empty-skills">-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="120"><template #default="{ row }"><el-button type="primary" link @click="$router.push(`/candidate/jobs/${row.id}`)">查看详情</el-button></template></el-table-column>
     </el-table>
     <el-pagination v-model:current-page="page" :page-size="10" :total="total" layout="prev, pager, next, total" background style="margin-top:20px;justify-content:center;" />
@@ -60,13 +68,18 @@ async function fetchJobs() {
     console.error('获取职位列表失败:', error)
   } finally { loading.value = false }
 }
-function resetFilters() { 
-  filters.keyword = ''; 
-  filters.location = ''; 
-  filters.category = ''; 
-  filters.sortBy = ''; 
-  filters.sortOrder = 'desc'; 
-  fetchJobs() 
+function resetFilters() {
+  filters.keyword = '';
+  filters.location = '';
+  filters.category = '';
+  filters.sortBy = '';
+  filters.sortOrder = 'desc';
+  fetchJobs()
+}
+
+function parseSkills(skills) {
+  if (!skills) return []
+  return String(skills).split(/[,，\n]/).map(s => s.trim()).filter(Boolean)
 }
 
 onMounted(() => { fetchCategories(); fetchJobs() })
@@ -75,4 +88,6 @@ onMounted(() => { fetchCategories(); fetchJobs() })
 <style scoped>
 .page-header h2 { margin: 0 0 4px; font-size: 22px; color: #3E2723; }
 .search-card { border-radius: 12px; background: #fafafa; border: none; }
+.skill-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+.empty-skills { color: #c0c4cc; }
 </style>

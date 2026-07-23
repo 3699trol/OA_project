@@ -41,6 +41,16 @@ public interface InterviewService {
     PageResult<Map<String, Object>> listByInterviewer(long pageNum, long pageSize, Integer status, Long interviewerId);
 
     /**
+     * 面试官今日面试安排（按面试时间升序）
+     */
+    List<Map<String, Object>> listTodayByInterviewer(Long interviewerId);
+
+    /**
+     * 面试官最近提交的评价（按评价时间倒序，取最近若干条）
+     */
+    List<Map<String, Object>> listRecentEvaluationsByInterviewer(Long interviewerId, int limit);
+
+    /**
      * 面试详情（HR/面试官通用）
      */
     Map<String, Object> getInterviewDetail(Long interviewId);

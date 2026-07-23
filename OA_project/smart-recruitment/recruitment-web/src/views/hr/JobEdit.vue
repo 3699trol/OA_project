@@ -67,7 +67,7 @@ onMounted(async () => {
     categories.value = res.data || []
   } catch (e) { /* ignore */ }
 
-  if (isEdit.value) {
+      if (isEdit.value) {
     try {
       const res = await getJobDetail(route.params.id)
       const job = res.data
@@ -82,7 +82,7 @@ onMounted(async () => {
         experience: job.experience || '3-5年',
         description: job.description || '',
         requirements: job.requirements || '',
-        skills: []
+        skills: job.skills ? String(job.skills).split(/[,，]/).map(s => s.trim()).filter(Boolean) : []
       })
     } catch (e) { ElMessage.error('加载职位详情失败') }
   }
@@ -101,7 +101,8 @@ async function handleSave() {
       education: form.education,
       experience: form.experience,
       description: form.description,
-      requirements: form.requirements
+      requirements: form.requirements,
+      skills: (form.skills || []).join(',')
     }
     if (isEdit.value) {
       await updateJob(route.params.id, data)
@@ -127,7 +128,8 @@ async function handlePublish() {
       education: form.education,
       experience: form.experience,
       description: form.description,
-      requirements: form.requirements
+      requirements: form.requirements,
+      skills: (form.skills || []).join(',')
     }
     let jobId
     if (isEdit.value) {

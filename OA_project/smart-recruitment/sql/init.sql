@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS job (
     headcount INT DEFAULT 1 COMMENT '招聘人数',
     description TEXT COMMENT '岗位描述',
     requirements TEXT COMMENT '任职要求',
+    skills VARCHAR(500) DEFAULT NULL COMMENT '技能标签，逗号分隔',
     status TINYINT DEFAULT 0 COMMENT '0 草稿 1 招聘中 2 下架',
     publisher_id BIGINT DEFAULT NULL COMMENT '发布人',
     publish_time DATETIME DEFAULT NULL COMMENT '发布时间',

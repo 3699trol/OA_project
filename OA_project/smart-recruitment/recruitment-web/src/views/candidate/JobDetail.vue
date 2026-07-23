@@ -17,7 +17,10 @@
           <h3 class="card-title">📋 职位描述</h3>
           <div class="desc-text">{{ job.description || '加载中...' }}</div>
           <h3 class="card-title">🏷️ 技能标签</h3>
-          <div class="skill-tags"><el-tag v-for="s in job.skills" :key="s" size="default" effect="plain">{{ s }}</el-tag></div>
+          <div class="skill-tags">
+            <el-tag v-for="s in job.skills" :key="s" size="default" effect="plain">{{ s }}</el-tag>
+            <span v-if="!job.skills || job.skills.length === 0" class="empty-skills">暂未设置技能标签</span>
+          </div>
         </el-card>
         <el-card shadow="never" class="section-card">
           <h3 class="card-title">🏢 公司信息</h3>
@@ -66,6 +69,9 @@ onMounted(async () => {
   try {
     const res = await getJobDetail(route.params.id)
     const j = res.data
+    const skillList = j.skills
+      ? String(j.skills).split(/[,，\n]/).map(s => s.trim()).filter(Boolean)
+      : (j.requirements ? j.requirements.split('\n').map(s => s.trim()).filter(Boolean) : [])
     Object.assign(job, {
       jobName: j.jobName || '',
       department: j.department || '',
@@ -76,7 +82,7 @@ onMounted(async () => {
       salaryMax: j.salaryMax,
       description: j.description || '',
       requirements: j.requirements || '',
-      skills: j.requirements ? j.requirements.split('\n').filter(Boolean) : []
+      skills: skillList
     })
   } catch (e) { /* fallback */ }
 })
@@ -108,4 +114,5 @@ async function handleApply() {
 .salary { font-size: 24px; font-weight: 700; color: #E76F51; }
 .desc-text { font-size: 14px; line-height: 1.8; color: #555; white-space: pre-wrap; }
 .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.empty-skills { font-size: 13px; color: #999; }
 </style>

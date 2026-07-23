@@ -62,10 +62,10 @@ public class SearchServiceImpl implements SearchService {
         NativeQuery query = NativeQuery.builder()
                 .withQuery(q -> q.multiMatch(m -> m
                         .query(normalizedKeyword)
-                        .fields("jobName^3", "education^2", "experience^2", "requirements^2", "description", "category", "city")))
+                        .fields("jobName^3", "education^2", "experience^2", "requirements^2", "skills^2", "description", "category", "city")))
                 .withPageable(PageRequest.of(toPageIndex(page), toPageSize(size)))
                 .build();
-        query.setHighlightQuery(highlight(JobDocument.class, "jobName", "description", "requirements"));
+        query.setHighlightQuery(highlight(JobDocument.class, "jobName", "description", "requirements", "skills"));
 
         SearchHits<JobDocument> hits = operations.search(query, JobDocument.class);
         List<JobSearchVO> records = hits.getSearchHits().stream()

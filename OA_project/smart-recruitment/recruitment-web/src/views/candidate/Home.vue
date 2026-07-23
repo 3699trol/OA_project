@@ -60,7 +60,7 @@
 
       <el-row :gutter="24" v-loading="loading" class="job-grid-row">
         <el-col :span="12" v-for="job in recommendedJobs" :key="job.id" class="job-col">
-          <el-card shadow="hover" class="job-card" @click="$router.push(`/candidate/jobs`)">
+          <el-card shadow="hover" class="job-card" @click="openJobDetail(job.id)">
             <div class="job-card-header">
               <div class="job-main-info">
                 <h4 class="job-title">{{ job.jobName }}</h4>
@@ -95,13 +95,19 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getJobList } from '@/api/job'
 import { formatDate } from '@/utils/date'
 
 const userStore = useUserStore()
+const router = useRouter()
 const loading = ref(false)
 const recommendedJobs = ref([])
+
+function openJobDetail(id) {
+  router.push(`/candidate/jobs/${id}`)
+}
 
 const quickCards = [
   { title: '浏览公开职位', desc: '查看最新最热的大厂直聘信息', icon: 'Briefcase', path: '/candidate/jobs', bg: 'rgba(231,111,81,0.08)', color: '#e76f51' },
