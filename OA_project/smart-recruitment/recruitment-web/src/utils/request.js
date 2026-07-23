@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { handleMockRequest } from '@/mock'
 import { useUserStore } from '@/stores/user'
@@ -137,8 +136,8 @@ request.interceptors.response.use(
       if (res.code === 401) {
         return retryAfterRefresh(response.config)
       }
-      ElMessage.error(res.message || '请求失败')
-      return Promise.reject(new Error(res.message))
+      // 错误提示统一交给调用方 catch 处理，避免与组件层重复弹窗
+      return Promise.reject(new Error(res.message || '请求失败'))
     }
     return res
   },
@@ -153,7 +152,6 @@ request.interceptors.response.use(
             resolve(res)
           } else {
             const msg = (res && res.message) || mockRes.message || '请求失败'
-            ElMessage.error(msg)
             if (res && res.code === 401) {
               localStorage.removeItem('token')
               router.push('/login')
@@ -169,9 +167,9 @@ request.interceptors.response.use(
     if (error.response?.status === 401 || data?.code === 401) {
       return retryAfterRefresh(error.config)
     }
+    // 统一以携带后端消息的 Error 抛出，由调用方 catch 决定是否提示，避免重复弹窗
     const msg = data?.message || error.message || '网络错误'
-    ElMessage.error(msg)
-    return Promise.reject(error)
+    return Promise.reject(new Error(msg))
   }
 )
 

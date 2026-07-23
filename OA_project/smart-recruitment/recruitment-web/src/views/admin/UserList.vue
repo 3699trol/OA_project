@@ -69,7 +69,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" sortable />
+        <el-table-column prop="createTime" label="创建时间" width="180" sortable>
+          <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <template v-if="row.deleted === 0">
@@ -142,6 +144,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserList, resetPassword, deleteUser, restoreUser, updateUser } from '@/api/user'
+import { formatDateTime } from '@/utils/date'
 
 const pageSize = 10
 const loading = ref(false)

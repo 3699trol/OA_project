@@ -14,18 +14,13 @@
       <el-table :data="candidates" v-loading="loading" stripe>
         <el-table-column prop="name" label="姓名" width="80" />
         <el-table-column prop="jobTitle" label="投递职位" min-width="160" />
-        <el-table-column prop="matchScore" label="AI匹配度" width="100" align="center">
-          <template #default="{ row }"><el-tag :type="row.matchScore >= 80 ? 'success' : 'warning'">{{ row.matchScore }}%</el-tag></template>
-        </el-table-column>
-        <el-table-column prop="education" label="学历" width="80" />
-        <el-table-column prop="experience" label="经验" width="90" />
         <el-table-column prop="status" label="状态" width="90" align="center">
           <template #default="{ row }"><el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag></template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="$router.push(`/hr/candidates/detail/${row.id}`)">简历详情</el-button>
-            <el-button v-if="row.status === '面试中' || row.status === '已录用'" size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}`)">安排面试</el-button>
+            <el-button v-if="row.status === '面试中'" size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}`)">安排面试</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -63,10 +58,7 @@ async function fetchCandidates() {
       userId: a.userId,
       name: a.candidateName || a.userName || '候选人',
       jobTitle: a.jobName || a.jobTitle || '',
-      matchScore: a.aiMatchScore || 0,
-      status: mapStatus(a.status),
-      education: '',
-      experience: ''
+      status: mapStatus(a.status)
     }))
     total.value = res.data.total || 0
   } catch (e) { /* fallback */ }

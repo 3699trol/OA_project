@@ -9,7 +9,7 @@
             <el-descriptions-item label="候选人">{{ interview.candidateName }}</el-descriptions-item>
             <el-descriptions-item label="面试职位">{{ interview.jobName }}</el-descriptions-item>
             <el-descriptions-item label="面试类型">{{ interview.interviewType }}</el-descriptions-item>
-            <el-descriptions-item label="面试时间">{{ interview.interviewTime }}</el-descriptions-item>
+            <el-descriptions-item label="面试时间">{{ formatDateTime(interview.interviewTime) }}</el-descriptions-item>
           </el-descriptions>
         </el-card>
 
@@ -104,6 +104,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getInterviewDetail, saveEvaluation, getEvaluationByInterview } from '@/api/interview'
+import { formatDateTime } from '@/utils/date'
 
 const route = useRoute()
 const router = useRouter()

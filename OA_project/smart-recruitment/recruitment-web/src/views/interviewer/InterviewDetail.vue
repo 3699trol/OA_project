@@ -10,7 +10,7 @@
               <h2>{{ detail.candidateName }} — {{ detail.jobName }}</h2>
               <div class="meta">
                 <el-tag :type="detail.status === 0 ? 'warning' : 'success'">{{ detail.statusLabel }}</el-tag>
-                <span>{{ detail.interviewTime }}</span>
+                <span>{{ formatDateTime(detail.interviewTime) }}</span>
                 <span>{{ detail.interviewType }}</span>
                 <span v-if="detail.address">{{ detail.address }}</span>
               </div>
@@ -80,7 +80,7 @@
           <h3 class="card-title">面试信息</h3>
           <el-descriptions direction="vertical" :column="1" size="small">
             <el-descriptions-item label="面试官">{{ detail.interviewerName }}</el-descriptions-item>
-            <el-descriptions-item label="面试时间">{{ detail.interviewTime }}</el-descriptions-item>
+            <el-descriptions-item label="面试时间">{{ formatDateTime(detail.interviewTime) }}</el-descriptions-item>
             <el-descriptions-item label="面试类型">{{ detail.interviewType }}</el-descriptions-item>
             <el-descriptions-item label="地点/链接">{{ detail.address || '-' }}</el-descriptions-item>
           </el-descriptions>
@@ -108,6 +108,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { getInterviewDetail } from '@/api/interview'
+import { formatDateTime } from '@/utils/date'
 
 const route = useRoute()
 const detail = reactive({

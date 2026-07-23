@@ -11,7 +11,7 @@
             <el-descriptions-item label="面试职位">{{ interview.jobName }}</el-descriptions-item>
             <el-descriptions-item label="面试官">{{ interview.interviewerName }}</el-descriptions-item>
             <el-descriptions-item label="面试类型">{{ interview.interviewType }}</el-descriptions-item>
-            <el-descriptions-item label="面试时间">{{ interview.interviewTime }}</el-descriptions-item>
+            <el-descriptions-item label="面试时间">{{ formatDateTime(interview.interviewTime) }}</el-descriptions-item>
             <el-descriptions-item label="地点/链接" :span="2">{{ interview.address || '-' }}</el-descriptions-item>
             <el-descriptions-item label="状态" :span="2">
               <el-tag :type="interview.status === 0 ? 'warning' : 'success'">{{ interview.statusLabel }}</el-tag>
@@ -44,7 +44,7 @@
                 :disabled="!!q.candidateAnswer || interview.status !== 0"
               />
               <div v-if="q.candidateAnswer" class="answer-saved">
-                <el-icon><CircleCheckFilled /></el-icon> 已作答 · {{ q.answerTime }}
+                <el-icon><CircleCheckFilled /></el-icon> 已作答 · {{ formatDateTime(q.answerTime) }}
               </div>
             </div>
           </div>
@@ -87,6 +87,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { CircleCheckFilled } from '@element-plus/icons-vue'
 import { getInterviewDetail, getCandidateQuestions, submitAnswer } from '@/api/interview'
+import { formatDateTime } from '@/utils/date'
 
 const route = useRoute()
 const interviewId = Number(route.params.id)

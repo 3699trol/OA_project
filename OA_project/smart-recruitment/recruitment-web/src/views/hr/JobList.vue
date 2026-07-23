@@ -75,7 +75,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="更新时间" width="170" />
+        <el-table-column prop="createTime" label="更新时间" width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
+        </el-table-column>
         <el-table-column label="快捷操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <el-button 
@@ -129,6 +131,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getJobList, publishJob, unpublishJob, getActiveCategoryNames } from '@/api/job'
+import { formatDateTime } from '@/utils/date'
 
 const activeTab = ref('ALL')
 const loading = ref(false)

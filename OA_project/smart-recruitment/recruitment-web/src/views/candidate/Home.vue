@@ -80,7 +80,7 @@
                 <el-icon size="14" color="#67C23A" class="sparkle-icon"><Compass /></el-icon>
                 <span>AI 匹配度：<b class="score-num">95%</b></span>
               </div>
-              <span class="pub-time">{{ job.createTime.split(' ')[0] }} 发布</span>
+              <span class="pub-time">{{ formatDate(job.createTime) }} 发布</span>
             </div>
           </el-card>
         </el-col>
@@ -97,6 +97,7 @@
 import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { getJobList } from '@/api/job'
+import { formatDate } from '@/utils/date'
 
 const userStore = useUserStore()
 const loading = ref(false)

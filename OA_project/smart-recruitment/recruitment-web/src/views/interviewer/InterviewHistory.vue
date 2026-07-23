@@ -5,7 +5,9 @@
       <el-table :data="history" v-loading="loading" stripe>
         <el-table-column prop="candidateName" label="候选人" width="100" />
         <el-table-column prop="jobName" label="职位" min-width="150" />
-        <el-table-column prop="interviewTime" label="日期" width="160" sortable />
+        <el-table-column prop="interviewTime" label="日期" width="160" sortable>
+          <template #default="{ row }">{{ formatDateTime(row.interviewTime) }}</template>
+        </el-table-column>
         <el-table-column label="评分" width="120" align="center">
           <template #default="{ row }">
             <span v-if="row.evaluation">{{ row.evaluation.overallScore || '-' }}分</span>
@@ -35,6 +37,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getInterviewerTasks } from '@/api/interview'
+import { formatDateTime } from '@/utils/date'
 
 const loading = ref(false)
 const page = ref(1)

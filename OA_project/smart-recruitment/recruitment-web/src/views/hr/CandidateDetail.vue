@@ -15,10 +15,10 @@
             <div class="info-item" v-if="candidate.email"><el-icon><Message /></el-icon> {{ candidate.email }}</div>
             <div class="info-item" v-if="candidate.jobName"><el-icon><Briefcase /></el-icon> 投递职位：{{ candidate.jobName }}</div>
             <div class="info-item" v-if="candidate.department"><el-icon><OfficeBuilding /></el-icon> 部门：{{ candidate.department }}</div>
-            <div class="info-item" v-if="candidate.applyTime"><el-icon><Clock /></el-icon> 投递时间：{{ candidate.applyTime }}</div>
+            <div class="info-item" v-if="candidate.applyTime"><el-icon><Clock /></el-icon> 投递时间：{{ formatDateTime(candidate.applyTime) }}</div>
           </div>
           <el-divider />
-          <div style="text-align:center; display:flex; gap:12px; justify-content:center;">
+          <div class="action-buttons">
             <el-button type="primary" @click="handleStatusChange(1)" :loading="statusLoading">初筛通过</el-button>
             <el-button type="danger" plain @click="handleStatusChange(3)" :loading="statusLoading">不合适</el-button>
           </div>
@@ -37,14 +37,17 @@
             <div v-if="resumeData.educations?.length" class="resume-section">
               <h4>教育经历</h4>
               <div v-for="(edu, idx) in resumeData.educations" :key="idx" class="resume-block">
-                <p><strong>{{ edu.school }}</strong> - {{ edu.major }} ({{ edu.degree }}) {{ edu.startDate }} ~ {{ edu.endDate }}</p>
+                <p><strong>{{ edu.school }}</strong> - {{ edu.major }} ({{ edu.degree }}) <span v-if="edu.time">{{ edu.time }}</span></p>
               </div>
             </div>
             <div v-if="resumeData.experiences?.length" class="resume-section">
               <h4>工作经历</h4>
               <div v-for="(exp, idx) in resumeData.experiences" :key="idx" class="resume-block">
-                <p><strong>{{ exp.company }}</strong> - {{ exp.position }} ({{ exp.startDate }} ~ {{ exp.endDate }})</p>
-                <p v-if="exp.description">{{ exp.description }}</p>
+                <p><strong>{{ exp.company }}</strong> - {{ exp.role }} <span v-if="exp.time">({{ exp.time }})</span></p>
+                <ul v-if="exp.details?.length" class="exp-details">
+                  <li v-for="(det, di) in exp.details" :key="di">{{ det }}</li>
+                </ul>
+                <p v-else-if="exp.description" class="exp-desc">{{ exp.description }}</p>
               </div>
             </div>
             <div v-if="resumeData.skills?.length" class="resume-section">
@@ -82,6 +85,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Phone, Message, Briefcase, Clock, OfficeBuilding } from '@element-plus/icons-vue'
 import { getCandidateDetail, updateApplicationStatus } from '@/api/application'
+import { formatDateTime } from '@/utils/date'
 
 const route = useRoute()
 const router = useRouter()
@@ -149,4 +153,9 @@ onMounted(loadDetail)
 .resume-block p { margin: 4px 0; color: #555; }
 .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .eval-text { color: #666; line-height: 1.8; white-space: pre-wrap; }
+.action-buttons { display: flex; flex-direction: column; gap: 10px; }
+.action-buttons .el-button { width: 100%; margin: 0; }
+.exp-details { margin: 6px 0 0; padding-left: 20px; color: #555; line-height: 1.7; }
+.exp-details li { margin-bottom: 2px; }
+.exp-desc { color: #555; line-height: 1.7; }
 </style>

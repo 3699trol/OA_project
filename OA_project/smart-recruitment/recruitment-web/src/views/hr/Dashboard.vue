@@ -161,7 +161,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="applyTime" label="投递时间" width="180" />
+        <el-table-column prop="applyTime" label="投递时间" width="180">
+          <template #default="{ row }">{{ formatDateTime(row.applyTime) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="scope">
             <el-button 
@@ -183,6 +185,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getDashboardStats } from '@/api/dashboard'
+import { formatDateTime } from '@/utils/date'
 
 const router = useRouter()
 const loading = ref(false)

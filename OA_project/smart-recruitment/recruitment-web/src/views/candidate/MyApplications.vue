@@ -13,7 +13,9 @@
       <el-table-column prop="status" label="状态" width="100" align="center">
         <template #default="{ row }"><el-tag :type="statusType(row.status)" effect="plain" round>{{ row.status }}</el-tag></template>
       </el-table-column>
-      <el-table-column prop="createTime" label="投递时间" width="130" sortable />
+      <el-table-column prop="createTime" label="投递时间" width="160" sortable>
+        <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="180">
         <template #default="{ row }">
           <el-button size="small" @click="showDetail(row)">查看进度</el-button>
@@ -39,6 +41,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { getApplications } from '@/api/application'
 import { getMyInterviews } from '@/api/interview'
+import { formatDateTime } from '@/utils/date'
 
 const activeTab = ref('all'); const loading = ref(false); const detailVisible = ref(false); const detailStep = ref(0)
 const applications = ref([])

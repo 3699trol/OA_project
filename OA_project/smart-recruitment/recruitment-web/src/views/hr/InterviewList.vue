@@ -14,7 +14,9 @@
         <el-table-column prop="jobName" label="面试职位" min-width="150" />
         <el-table-column prop="interviewerName" label="面试官" width="100" />
         <el-table-column prop="interviewType" label="类型" width="100" />
-        <el-table-column prop="interviewTime" label="时间" width="160" sortable />
+        <el-table-column prop="interviewTime" label="时间" width="160" sortable>
+          <template #default="{ row }">{{ formatDateTime(row.interviewTime) }}</template>
+        </el-table-column>
         <el-table-column prop="statusLabel" label="状态" width="90" align="center">
           <template #default="{ row }"><el-tag :type="row.statusType" size="small">{{ row.statusLabel }}</el-tag></template>
         </el-table-column>
@@ -35,6 +37,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getInterviewList, cancelInterview } from '@/api/interview'
+import { formatDateTime } from '@/utils/date'
 
 const router = useRouter()
 const activeTab = ref('all'); const loading = ref(false); const page = ref(1); const total = ref(0)

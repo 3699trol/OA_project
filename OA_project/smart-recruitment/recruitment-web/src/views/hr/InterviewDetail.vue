@@ -10,7 +10,7 @@
             <el-descriptions-item label="面试职位">{{ detail.jobName }}</el-descriptions-item>
             <el-descriptions-item label="面试官">{{ detail.interviewerName }}</el-descriptions-item>
             <el-descriptions-item label="面试类型">{{ detail.interviewType }}</el-descriptions-item>
-            <el-descriptions-item label="面试时间">{{ detail.interviewTime }}</el-descriptions-item>
+            <el-descriptions-item label="面试时间">{{ formatDateTime(detail.interviewTime) }}</el-descriptions-item>
             <el-descriptions-item label="状态">
               <el-tag :type="detail.status === 0 ? 'warning' : detail.status === 1 ? 'success' : 'danger'">{{ detail.statusLabel }}</el-tag>
             </el-descriptions-item>
@@ -59,11 +59,13 @@
       <el-col :span="8">
         <el-card shadow="never" class="section-card">
           <h3 class="card-title">操作</h3>
-          <el-button v-if="detail.status === 0" type="danger" style="width:100%;" @click="handleCancel">取消面试</el-button>
-          <el-button v-if="detail.status === 0" type="primary" style="width:100%;margin-top:10px;" @click="$router.push(`/hr/candidates/detail/${detail.applicationId}`)">查看候选人简历</el-button>
-          <el-button v-if="detail.status === 1 && detail.evaluation" type="success" style="width:100%;" @click="handleHire(1)">录用</el-button>
-          <el-button v-if="detail.status === 1 && detail.evaluation" type="danger" style="width:100%;margin-top:10px;" @click="handleHire(0)">淘汰</el-button>
-          <el-button v-if="detail.status === 1 && !detail.evaluation" disabled style="width:100%;">等待面试官提交评价</el-button>
+          <div class="action-buttons">
+            <el-button v-if="detail.status === 0" type="danger" @click="handleCancel">取消面试</el-button>
+            <el-button v-if="detail.status === 0" type="primary" @click="$router.push(`/hr/candidates/detail/${detail.applicationId}`)">查看候选人简历</el-button>
+            <el-button v-if="detail.status === 1 && detail.evaluation" type="success" @click="handleHire(1)">录用</el-button>
+            <el-button v-if="detail.status === 1 && detail.evaluation" type="danger" @click="handleHire(0)">淘汰</el-button>
+            <el-button v-if="detail.status === 1 && !detail.evaluation" disabled>等待面试官提交评价</el-button>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -75,6 +77,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getInterviewDetail, cancelInterview, processInterviewResult } from '@/api/interview'
+import { formatDateTime } from '@/utils/date'
 
 const route = useRoute()
 const router = useRouter()
@@ -149,4 +152,6 @@ onMounted(loadDetail)
 .candidate-answer { margin-top: 8px; padding: 10px 12px; background: #f0f9eb; border-radius: 6px; border-left: 3px solid #67C23A; }
 .candidate-answer p { margin: 4px 0 0; color: #333; white-space: pre-wrap; line-height: 1.6; }
 .no-answer { margin-top: 8px; }
+.action-buttons { display: flex; flex-direction: column; gap: 10px; }
+.action-buttons .el-button { width: 100%; margin: 0; }
 </style>
