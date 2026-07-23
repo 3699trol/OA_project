@@ -25,14 +25,16 @@
         </el-card>
       </el-col>
       <el-col :span="8">
-        <el-card shadow="never" class="section-card">
-          <h4>🎯 AI匹配分析</h4>
+        <el-card shadow="never" class="section-card sidebar-card">
+          <h4 class="sidebar-title">🎯 AI匹配分析</h4>
           <!-- TODO: 对接AI匹配接口 getMatchScore(jobId, resumeId) -->
           <el-empty description="TODO: 对接匹配接口" :image-size="60" />
         </el-card>
-        <el-card shadow="never" class="section-card">
-          <el-button type="primary" size="large" style="width:100%;" @click="handleApply" :loading="applying">立即投递</el-button>
-          <el-button size="large" style="width:100%;margin-top:10px;" plain>收藏职位</el-button>
+        <el-card shadow="never" class="section-card sidebar-card">
+          <div class="action-card">
+            <el-button type="primary" size="large" class="action-btn" @click="handleApply" :loading="applying">立即投递</el-button>
+            <el-button size="large" class="action-btn" plain>收藏职位</el-button>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -91,6 +93,10 @@ async function handleApply() {
 
 <style scoped>
 .section-card { border-radius: 12px; margin-bottom: 16px; }
+.sidebar-card { display: flex; flex-direction: column; }
+.sidebar-title { margin: 0 0 14px; font-size: 16px; color: #3E2723; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
+.action-card { display: flex; flex-direction: column; gap: 10px; }
+.action-card .action-btn { width: 100%; margin-left: 0; }
 .card-title { font-size: 16px; color: #3E2723; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
 .detail-header { display: flex; justify-content: space-between; align-items: flex-start; }
 .title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }

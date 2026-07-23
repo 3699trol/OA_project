@@ -20,7 +20,7 @@
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="$router.push(`/hr/candidates/detail/${row.id}`)">简历详情</el-button>
-            <el-button v-if="row.status === '面试中'" size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}`)">安排面试</el-button>
+            <el-button v-if="row.status === '面试中'" size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}&applicationId=${row.id}`)">安排面试</el-button>
           </template>
         </el-table-column>
       </el-table>

@@ -22,6 +22,19 @@
             <el-button type="primary" @click="handleStatusChange(1)" :loading="statusLoading">初筛通过</el-button>
             <el-button type="danger" plain @click="handleStatusChange(3)" :loading="statusLoading">不合适</el-button>
           </div>
+          <el-divider />
+          <div class="resume-file-block">
+            <h4 class="resume-file-title">📎 简历文件</h4>
+            <div v-if="resumeFile.fileName" class="file-item">
+              <el-icon class="file-icon"><Document /></el-icon>
+              <span class="file-name" :title="resumeFile.fileName">{{ resumeFile.fileName }}</span>
+              <div class="file-actions">
+                <el-button type="primary" link icon="View" size="small" @click="handlePreviewFile">预览</el-button>
+                <el-button type="primary" link icon="Download" size="small" @click="handleDownloadFile">下载</el-button>
+              </div>
+            </div>
+            <div v-else class="empty-subtext">该候选人暂未上传简历文件</div>
+          </div>
         </el-card>
       </el-col>
       <el-col :span="16">
@@ -83,8 +96,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Phone, Message, Briefcase, Clock, OfficeBuilding } from '@element-plus/icons-vue'
+import { Phone, Message, Briefcase, Clock, OfficeBuilding, Document } from '@element-plus/icons-vue'
 import { getCandidateDetail, updateApplicationStatus } from '@/api/application'
+import { downloadFile } from '@/api/file'
 import { formatDateTime } from '@/utils/date'
 
 const route = useRoute()
@@ -97,6 +111,7 @@ const candidate = reactive({
   resumeId: '', status: 0, applyTime: '', aiMatchScore: null, aiMatchReason: '', selfEvaluation: ''
 })
 const resumeData = ref(null)
+const resumeFile = reactive({ fileId: null, fileName: '', fileUrl: '' })
 
 function statusLabel(s) {
   const map = { 0: '待筛选', 1: '面试中', 2: '已录用', 3: '不合适', 4: '已撤回' }
@@ -113,6 +128,20 @@ async function loadDetail() {
     if (res && res.data) {
       Object.assign(candidate, res.data)
       resumeData.value = res.data.resume || null
+      // 解析简历文件信息：后端返回的 resumeFileUrl 形如 /api/file/download/{id}
+      const fileUrl = res.data.resumeFileUrl || ''
+      const match = fileUrl.match(/\/download\/(\d+)/)
+      if (match) {
+        resumeFile.fileId = Number(match[1])
+        resumeFile.fileUrl = fileUrl
+        // 文件名优先用候选人名 + 后缀，避免后端未返回原文件名
+        const ext = fileUrl.split('.').pop()?.split('?')[0]
+        resumeFile.fileName = `${candidate.candidateName || '候选人'}的简历${ext && ext !== fileUrl ? '.' + ext : ''}`
+      } else {
+        resumeFile.fileId = null
+        resumeFile.fileUrl = ''
+        resumeFile.fileName = ''
+      }
     }
   } catch (e) {
     ElMessage.error('加载候选人详情失败')
@@ -138,6 +167,45 @@ async function handleStatusChange(newStatus) {
   }
 }
 
+async function handleDownloadFile() {
+  if (!resumeFile.fileId) {
+    ElMessage.warning('暂无可下载的简历文件')
+    return
+  }
+  try {
+    const res = await downloadFile(resumeFile.fileId)
+    const blob = new Blob([res], { type: 'application/octet-stream' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = resumeFile.fileName || 'resume.pdf'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (e) {
+    ElMessage.error('简历下载失败')
+  }
+}
+
+async function handlePreviewFile() {
+  if (!resumeFile.fileId) {
+    ElMessage.warning('暂无可预览的简历文件')
+    return
+  }
+  try {
+    const res = await downloadFile(resumeFile.fileId)
+    // 尝试用文件实际 contentType 预览；PDF/图片可在浏览器内直接预览，DOC/DOCX 仍会走下载
+    const blob = new Blob([res], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    // 延迟释放，避免新标签页还未加载完
+    setTimeout(() => window.URL.revokeObjectURL(url), 60000)
+  } catch (e) {
+    ElMessage.error('简历预览失败，请尝试下载')
+  }
+}
+
 onMounted(loadDetail)
 </script>
 
@@ -155,6 +223,13 @@ onMounted(loadDetail)
 .eval-text { color: #666; line-height: 1.8; white-space: pre-wrap; }
 .action-buttons { display: flex; flex-direction: column; gap: 10px; }
 .action-buttons .el-button { width: 100%; margin: 0; }
+.resume-file-block { margin-top: 0; }
+.resume-file-title { margin: 0 0 10px; font-size: 15px; color: #3E2723; }
+.file-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #edf2f7; }
+.file-icon { font-size: 22px; color: #3182ce; flex-shrink: 0; }
+.file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #2d3748; font-size: 13px; }
+.file-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.empty-subtext { font-size: 13px; color: #a0aec0; text-align: center; padding: 12px 0; }
 .exp-details { margin: 6px 0 0; padding-left: 20px; color: #555; line-height: 1.7; }
 .exp-details li { margin-bottom: 2px; }
 .exp-desc { color: #555; line-height: 1.7; }

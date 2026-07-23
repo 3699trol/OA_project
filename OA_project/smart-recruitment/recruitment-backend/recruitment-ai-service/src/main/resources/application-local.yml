@@ -18,18 +18,6 @@ spring:
         import-check:
           enabled: false
 
-ai:
-  openai:
-    api-key: ${OPENAI_API_KEY:}
-    base-url: ${OPENAI_BASE_URL:https://api.openai.com}
-    model: ${OPENAI_MODEL:qwen3.7-plus}
-    reasoning-effort: ${OPENAI_REASONING_EFFORT:}
-    max-output-tokens: ${OPENAI_MAX_OUTPUT_TOKENS:2500}
-    proxy-host: ${OPENAI_PROXY_HOST:}
-    proxy-port: ${OPENAI_PROXY_PORT:0}
-    connect-timeout-seconds: 10
-    read-timeout-seconds: 90
-
 jwt:
   secret: ${JWT_SECRET:recruitment-system-secret-key-must-be-at-least-256-bits}
   expiration: ${JWT_EXPIRATION:86400000}

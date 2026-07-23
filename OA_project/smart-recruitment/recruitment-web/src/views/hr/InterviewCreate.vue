@@ -112,7 +112,6 @@ async function onCandidateChange(userId) {
     ElMessage.error('加载候选人投递记录失败')
   }
 }
-
 async function handleCreate() {
   await formRef.value.validate().catch(() => {})
   if (!form.candidateId || !form.applicationId || !form.interviewerId || !form.interviewTime) {
@@ -140,6 +139,17 @@ onMounted(async () => {
     const cid = Number(route.query.candidateId)
     form.candidateId = cid
     await onCandidateChange(cid)
+    // 自动填入投递职位：优先使用路由携带的 applicationId，否则在加载的投递记录中按职位名匹配
+    if (route.query.applicationId) {
+      const aid = Number(route.query.applicationId)
+      const matched = applications.value.find(a => a.id === aid)
+      if (matched) {
+        form.applicationId = matched.id
+      } else {
+        // 列表中可能因状态过滤而找不到，直接使用传入的 applicationId
+        form.applicationId = aid
+      }
+    }
   }
 })
 </script>
