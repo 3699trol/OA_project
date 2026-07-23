@@ -7,6 +7,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication(scanBasePackages = {
         "com.recruitment.ai",
+        "com.recruitment.common.redis",
         "com.recruitment.common.security",
         "com.recruitment.common.web"
 })
