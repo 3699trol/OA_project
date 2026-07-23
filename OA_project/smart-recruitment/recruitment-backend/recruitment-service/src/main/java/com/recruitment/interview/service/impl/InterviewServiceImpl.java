@@ -6,8 +6,10 @@ import com.recruitment.application.mapper.JobApplicationMapper;
 import com.recruitment.common.core.model.PageResult;
 import com.recruitment.interview.entity.Interview;
 import com.recruitment.interview.entity.InterviewEvaluation;
+import com.recruitment.interview.entity.InterviewQuestion;
 import com.recruitment.interview.mapper.InterviewEvaluationMapper;
 import com.recruitment.interview.mapper.InterviewMapper;
+import com.recruitment.interview.mapper.InterviewQuestionMapper;
 import com.recruitment.interview.service.InterviewService;
 import com.recruitment.job.entity.Job;
 import com.recruitment.job.mapper.JobMapper;
@@ -32,6 +34,7 @@ public class InterviewServiceImpl implements InterviewService {
 
     private final InterviewMapper interviewMapper;
     private final InterviewEvaluationMapper evaluationMapper;
+    private final InterviewQuestionMapper questionMapper;
     private final JobApplicationMapper applicationMapper;
     private final JobMapper jobMapper;
     private final SysUserMapper userMapper;
@@ -235,6 +238,40 @@ public class InterviewServiceImpl implements InterviewService {
     }
 
     @Override
+    public List<Map<String, Object>> listByCandidate(Long userId) {
+        // 查找该用户的所有投递记录
+        LambdaQueryWrapper<JobApplication> appWrapper = new LambdaQueryWrapper<>();
+        appWrapper.eq(JobApplication::getUserId, userId)
+                  .eq(JobApplication::getDeleted, 0);
+        List<JobApplication> applications = applicationMapper.selectList(appWrapper);
+
+        if (applications.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> applicationIds = applications.stream()
+                .map(JobApplication::getId).collect(Collectors.toList());
+
+        // 查找这些投递关联的面试
+        LambdaQueryWrapper<Interview> interviewWrapper = new LambdaQueryWrapper<>();
+        interviewWrapper.in(Interview::getApplicationId, applicationIds)
+                        .orderByDesc(Interview::getInterviewTime);
+        List<Interview> interviews = interviewMapper.selectList(interviewWrapper);
+
+        return interviews.stream().map(interview -> {
+            Map<String, Object> map = buildInterviewMap(interview);
+
+            // 附加面试题数量
+            LambdaQueryWrapper<InterviewQuestion> qWrapper = new LambdaQueryWrapper<>();
+            qWrapper.eq(InterviewQuestion::getInterviewId, interview.getId());
+            long questionCount = questionMapper.selectCount(qWrapper);
+            map.put("questionCount", questionCount);
+
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public PageResult<Map<String, Object>> listByInterviewer(long pageNum, long pageSize, Integer status, Long interviewerId) {
         LambdaQueryWrapper<Interview> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Interview::getInterviewerId, interviewerId);
@@ -277,6 +314,13 @@ public class InterviewServiceImpl implements InterviewService {
             detail.put("evaluation", evalMap);
         }
 
+        // 关联面试题（含候选人答案）
+        LambdaQueryWrapper<InterviewQuestion> qWrapper = new LambdaQueryWrapper<>();
+        qWrapper.eq(InterviewQuestion::getInterviewId, interviewId)
+                .orderByAsc(InterviewQuestion::getSortOrder);
+        List<InterviewQuestion> questions = questionMapper.selectList(qWrapper);
+        detail.put("questions", questions);
+
         return detail;
     }
 
@@ -303,6 +347,7 @@ public class InterviewServiceImpl implements InterviewService {
             Job job = jobMapper.selectById(application.getJobId());
             if (job != null) {
                 map.put("jobName", job.getJobName());
+                map.put("jobId", job.getId());
             }
         }
 

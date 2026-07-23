@@ -8,12 +8,14 @@ import com.recruitment.api.dto.AiQuestionRequest;
 import com.recruitment.api.dto.AiQuestionResponse;
 import com.recruitment.common.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuestionService {
@@ -51,8 +53,13 @@ public class QuestionService {
                 "interview_questions",
                 AiResponseSchemas.questions(),
                 AiQuestionResponse.class);
-        if (response.getQuestions() == null || response.getQuestions().size() != count) {
-            throw new BusinessException(502, "AI 模型返回的面试题数量不符合要求");
+        if (response.getQuestions() == null || response.getQuestions().isEmpty()) {
+            throw new BusinessException(502, "AI 模型未返回面试题");
+        }
+        // 模型可能不会严格返回指定数量，取实际返回数量（不超过请求数量）
+        if (response.getQuestions().size() != count) {
+            log.info("AI 返回了 {} 道题，期望 {} 道题，以实际返回为准",
+                    response.getQuestions().size(), count);
         }
         return response;
     }

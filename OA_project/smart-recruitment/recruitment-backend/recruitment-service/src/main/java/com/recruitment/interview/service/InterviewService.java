@@ -31,6 +31,11 @@ public interface InterviewService {
     List<Map<String, Object>> getCandidateApplications(Long userId);
 
     /**
+     * 候选人查看自己的面试列表
+     */
+    List<Map<String, Object>> listByCandidate(Long userId);
+
+    /**
      * 面试官查看自己的面试任务列表
      */
     PageResult<Map<String, Object>> listByInterviewer(long pageNum, long pageSize, Integer status, Long interviewerId);
