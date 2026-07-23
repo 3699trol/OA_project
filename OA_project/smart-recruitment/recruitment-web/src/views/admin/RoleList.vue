@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <div class="page-header"><h2>🔐 角色管理</h2><el-button type="primary" icon="Plus" @click="handleAdd">新增角色</el-button></div>
+    <div class="page-header"><h2>🔐 角色管理</h2></div>
     <el-card shadow="never" class="section-card">
       <el-table :data="roles" v-loading="loading" stripe :row-class-name="rowClassName">
         <el-table-column prop="roleCode" label="编码" width="140" />
@@ -22,11 +22,9 @@
             <el-tag v-if="row.status === 0" type="info" size="small" effect="plain" style="margin-left: 6px;">已禁用</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button size="small" type="warning" link>分配权限</el-button>
-            <el-button size="small" type="danger" link>删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -35,14 +33,14 @@
     <!-- 编辑/新增角色对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑角色' : '新增角色'"
+      :title="'编辑角色'"
       width="520px"
       :close-on-click-modal="false"
       @close="resetForm"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" status-icon>
         <el-form-item label="角色编码" prop="roleCode">
-          <el-input v-model="form.roleCode" placeholder="请输入角色编码（如：HR、ADMIN）" :disabled="isEdit" />
+          <el-input v-model="form.roleCode" placeholder="请输入角色编码（如：HR、ADMIN）" disabled />
         </el-form-item>
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="form.roleName" placeholder="请输入角色名称" />
@@ -74,7 +72,6 @@ const loading = ref(false)
 const roles = ref([])
 const dialogVisible = ref(false)
 const submitting = ref(false)
-const isEdit = ref(false)
 const formRef = ref(null)
 
 const form = reactive({
@@ -144,14 +141,7 @@ async function fetchRoles() {
   }
 }
 
-function handleAdd() {
-  isEdit.value = false
-  resetForm()
-  dialogVisible.value = true
-}
-
 function handleEdit(row) {
-  isEdit.value = true
   form.id = row.id
   form.roleCode = row.roleCode
   form.roleName = row.roleName
@@ -177,19 +167,14 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    if (isEdit.value) {
-      await updateRole({
-        id: form.id,
-        roleCode: form.roleCode,
-        roleName: form.roleName,
-        description: form.description,
-        status: form.status
-      })
-      ElMessage.success('角色更新成功')
-    } else {
-      // 新增角色功能后续实现
-      ElMessage.info('新增功能开发中')
-    }
+    await updateRole({
+      id: form.id,
+      roleCode: form.roleCode,
+      roleName: form.roleName,
+      description: form.description,
+      status: form.status
+    })
+    ElMessage.success('角色更新成功')
     dialogVisible.value = false
     fetchRoles()
   } catch (e) {
