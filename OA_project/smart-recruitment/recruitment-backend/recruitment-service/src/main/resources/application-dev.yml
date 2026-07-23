@@ -1,29 +1,55 @@
-# dev only keeps the bootstrap settings needed to connect to Nacos.
-# Business settings are provided by recruitment-common.yml and recruitment-service.yml.
+# 完整中间件联调配置（Nacos 已启动）
+# 配置优先级：Nacos > application-dev.yml > application.yml
 spring:
   config:
     import:
-      - "nacos:recruitment-common.yml?group=${NACOS_CONFIG_GROUP:SMART_RECRUITMENT}&refreshEnabled=true"
-      - "nacos:${spring.application.name}.yml?group=${NACOS_CONFIG_GROUP:SMART_RECRUITMENT}&refreshEnabled=true"
+      - "optional:nacos:recruitment-common.yml?group=${NACOS_CONFIG_GROUP:SMART_RECRUITMENT}&refreshEnabled=false"
+      - "optional:nacos:${spring.application.name}.yml?group=${NACOS_CONFIG_GROUP:SMART_RECRUITMENT}&refreshEnabled=false"
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:smart_recruitment}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  elasticsearch:
+    uris: http://${ES_HOST:localhost}:${ES_PORT:9200}
   cloud:
     nacos:
-      username: "${NACOS_USERNAME:}"
-      password: "${NACOS_PASSWORD:}"
       discovery:
         enabled: true
         server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
-        ip: "${NACOS_DISCOVERY_IP:}"
-        namespace: "${NACOS_NAMESPACE:}"
-        group: "${NACOS_DISCOVERY_GROUP:SMART_RECRUITMENT}"
-        fail-fast: true
-        metadata:
-          version: "${SERVICE_VERSION:1.0.0}"
+        ip: "${NACOS_DISCOVERY_IP:127.0.0.1}"
+        fail-fast: false
       config:
         enabled: true
         server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
-        namespace: "${NACOS_NAMESPACE:}"
         group: "${NACOS_CONFIG_GROUP:SMART_RECRUITMENT}"
         file-extension: yml
-        refresh-enabled: true
+        refresh-enabled: false
+        fail-fast: false
         import-check:
-          enabled: true
+          enabled: false
+
+# 默认直连本机 AI 服务
+ai:
+  service:
+    url: "${AI_SERVICE_URL:http://127.0.0.1:8081}"
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+recruitment:
+  security:
+    permit-all: false
