@@ -73,11 +73,11 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 ## 简历接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 简历详情 | GET | /api/resume/{id} | 查询简历 | ⬜ |
+| 简历详情 | GET | /api/resume/{id} | 查询简历 | ✅️ |
 | 保存简历 | POST | /api/resume | 新建简历 | ✅️ |
 | 更新简历 | PUT | /api/resume/{id} | 更新简历 | ✅️ |
-| AI解析 | POST | /api/resume/{id}/parse | AI解析简历 | ⬜ |
-| AI评估 | POST | /api/resume/{id}/evaluate | AI简历评估 | ⬜ |
+| AI解析 | POST | /api/resume/{id}/parse | AI解析简历 | ✅️ |
+| AI评估 | POST | /api/resume/{id}/evaluate | AI简历评估 | ✅️ |
 
 ## 投递接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
@@ -92,9 +92,9 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 | 创建面试 | POST | /api/interview | 创建面试任务 | ✅️ |
 | 面试列表 | GET | /api/interview/list | 查询面试列表（支持状态筛选） | ✅️ |
 | 面试详情 | GET | /api/interview/{id} | 查询面试详情 | ✅️ |
-| 生成面试题 | POST | /api/interview/question/generate | AI生成面试题 | ⬜ |
-| 保存正式面试题 | POST | /api/interview/question | 保存面试官确认的面试题 | ⬜ |
-| 查询面试题 | GET | /api/interview/question/{interviewId} | 根据面试ID查询面试题 | ⬜ |
+| 生成面试题 | POST | /api/interview/question/generate | AI生成面试题 | ✅️ |
+| 保存正式面试题 | POST | /api/interview/question | 保存面试官确认的面试题 | ✅️ |
+| 查询面试题 | GET | /api/interview/question/{interviewId} | 根据面试ID查询面试题 | ✅️ |
 | 保存评价 | POST | /api/interview/evaluation | 填写面试评价 | ✅️ |
 | 查询评价 | GET | /api/interview/evaluation/{interviewId} | 根据面试ID查询评价 | ✅️ |
 
@@ -102,10 +102,10 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
 | 简历解析与诊断 | POST | /api/ai/resume/parse | AI简历结构化解析、质量评分、问题诊断与优化建议（需配置 API Key） | ✅ |
-| 简历评估 | POST | /api/ai/resume/evaluate | AI简历质量评估 | ⬜ |
-| 简历优化建议 | POST | /api/ai/resume/optimize | AI简历优化建议 | ⬜ |
-| 人岗匹配 | POST | /api/ai/match | AI人岗匹配分析（需配置 API Key） | ❓️ |
-| 面试题生成 | POST | /api/ai/question/generate | AI生成面试题（需配置 API Key） | ❓️ |
+| 简历评估 | POST | /api/ai/resume/evaluate | AI简历质量评估 | ✅️ |
+| 简历优化建议 | POST | /api/ai/resume/optimize | AI简历优化建议 | ✅️ |
+| 人岗匹配 | POST | /api/ai/match | AI人岗匹配分析（需配置 API Key） | ✅️ |
+| 面试题生成 | POST | /api/ai/question/generate | AI生成面试题（需配置 API Key） | ✅️ |
 | 模拟面试生成 | POST | /api/ai/mock-interview/generate | 生成模拟面试题 | ✅️ |
 | 模拟面试答题记录 | POST | /api/ai/mock-interview/record | 记录用户回答 | ✅️ |
 | 模拟追问 | POST | /api/ai/mock-interview/follow-up | AI追问 | ✅️ |
