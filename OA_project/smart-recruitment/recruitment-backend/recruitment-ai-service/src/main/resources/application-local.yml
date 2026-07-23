@@ -1,9 +1,38 @@
 # 本地轻量启动：不依赖 Nacos / Redis / 真实大模型
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
 spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+    reasoning-effort: ${OPENAI_REASONING_EFFORT:}
+    max-output-tokens: ${OPENAI_MAX_OUTPUT_TOKENS:2500}
+    proxy-host: ${OPENAI_PROXY_HOST:}
+    proxy-port: ${OPENAI_PROXY_PORT:0}
+    connect-timeout-seconds: 10
+    read-timeout-seconds: 90
+
+jwt:
+  secret: ${JWT_SECRET:recruitment-system-secret-key-must-be-at-least-256-bits}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 recruitment:
   security:

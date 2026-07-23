@@ -1,26 +1,29 @@
-# 完整中间件联调配置：注册到 Nacos，并启用 Redis Stack 与真实模型配置。
-# 个人配置通过 .env 文件或环境变量注入
+# dev only keeps the bootstrap settings needed to connect to Nacos.
+# Business settings are provided by recruitment-common.yml and recruitment-ai-service.yml.
 spring:
   config:
-    import: "optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension:yml}"
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+    import:
+      - "nacos:recruitment-common.yml?group=${NACOS_CONFIG_GROUP:SMART_RECRUITMENT}&refreshEnabled=true"
+      - "nacos:${spring.application.name}.yml?group=${NACOS_CONFIG_GROUP:SMART_RECRUITMENT}&refreshEnabled=true"
   cloud:
     nacos:
+      username: "${NACOS_USERNAME:}"
+      password: "${NACOS_PASSWORD:}"
       discovery:
         enabled: true
         server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
-        ip: "${NACOS_DISCOVERY_IP:127.0.0.1}"
-        fail-fast: false
+        ip: "${NACOS_DISCOVERY_IP:}"
+        namespace: "${NACOS_NAMESPACE:}"
+        group: "${NACOS_DISCOVERY_GROUP:SMART_RECRUITMENT}"
+        fail-fast: true
+        metadata:
+          version: "${SERVICE_VERSION:1.0.0}"
       config:
         enabled: true
         server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+        namespace: "${NACOS_NAMESPACE:}"
+        group: "${NACOS_CONFIG_GROUP:SMART_RECRUITMENT}"
         file-extension: yml
+        refresh-enabled: true
         import-check:
-          enabled: false
-
-recruitment:
-  security:
-    permit-all: false
+          enabled: true

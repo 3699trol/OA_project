@@ -5,6 +5,7 @@ import okhttp3.Protocol;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.util.StringUtils;
 
 import java.net.InetSocketAddress;
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class AiModelConfig {
 
     @Bean
+    @RefreshScope
     public OkHttpClient openAiHttpClient(OpenAiProperties properties) {
         OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder()
                 .connectTimeout(properties.getConnectTimeoutSeconds(), TimeUnit.SECONDS)
