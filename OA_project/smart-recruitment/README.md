@@ -508,7 +508,7 @@ AI 服务的团队开发配置位于：
 # Windows PowerShell 示例
 $env:OPENAI_API_KEY="your-key"
 $env:OPENAI_BASE_URL="https://api.openai.com"
-$env:OPENAI_MODEL="gpt-4o-mini"
+$env:OPENAI_MODEL="qwen3.7-plus"
 $env:OPENAI_REASONING_EFFORT="low"
 $env:OPENAI_MAX_OUTPUT_TOKENS="2500"
 ```

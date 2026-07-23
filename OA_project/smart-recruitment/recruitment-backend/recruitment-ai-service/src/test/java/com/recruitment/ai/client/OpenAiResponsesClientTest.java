@@ -96,7 +96,7 @@ class OpenAiResponsesClientTest {
     private OpenAiProperties properties(String apiKey) {
         OpenAiProperties properties = new OpenAiProperties();
         properties.setApiKey(apiKey);
-        properties.setModel("gpt-4o-mini");
+        properties.setModel("qwen3.7-plus");
         properties.setReasoningEffort("xhigh");
         return properties;
     }

@@ -30,7 +30,7 @@
               <span style="margin-left:8px;font-size:12px;color:#999;">Mock模式开启时不会调用真实AI接口</span>
             </el-form-item>
             <el-form-item label="API Base URL"><el-input value="https://api.openai.com" /></el-form-item>
-            <el-form-item label="模型"><el-input value="gpt-4o-mini" /></el-form-item>
+            <el-form-item label="模型"><el-input value="qwen3.7-plus" /></el-form-item>
             <el-form-item label="超时时间"><el-input-number :model-value="30" /> 秒</el-form-item>
             <el-form-item><el-button type="primary" icon="Check">保存配置</el-button></el-form-item>
           </el-form>

@@ -653,7 +653,7 @@ addRoute('GET', '/api/admin/config/info', () => {
     message: '获取成功',
     data: {
       'sys.config.ai.enabled': 'true',
-      'sys.config.ai.model': 'gpt-4o-mini',
+      'sys.config.ai.model': 'qwen3.7-plus',
       'sys.config.resume.parse.auto': 'true',
       'sys.config.mock.interview.limit': '5'
     }
