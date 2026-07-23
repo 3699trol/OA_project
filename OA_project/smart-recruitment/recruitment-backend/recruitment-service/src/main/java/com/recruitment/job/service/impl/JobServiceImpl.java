@@ -5,20 +5,21 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.recruitment.job.entity.Job;
 import com.recruitment.job.mapper.JobMapper;
 import com.recruitment.job.service.JobService;
+import com.recruitment.search.service.SearchService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
-/**
- * 职位服务实现
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobServiceImpl implements JobService {
 
     private final JobMapper jobMapper;
+    private final SearchService searchService;
 
     @Override
     public Page<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status, String category) {
@@ -48,9 +49,10 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Job create(Job job) {
-        job.setStatus(0); // 默认草稿
+        job.setStatus(0);
         job.setCreateTime(LocalDateTime.now());
         jobMapper.insert(job);
+        syncJobIndex(job);
         return job;
     }
 
@@ -63,7 +65,9 @@ public class JobServiceImpl implements JobService {
         job.setId(id);
         job.setUpdateTime(LocalDateTime.now());
         jobMapper.updateById(job);
-        return jobMapper.selectById(id);
+        Job updated = jobMapper.selectById(id);
+        syncJobIndex(updated);
+        return updated;
     }
 
     @Override
@@ -73,6 +77,7 @@ public class JobServiceImpl implements JobService {
             job.setStatus(1);
             job.setPublishTime(LocalDateTime.now());
             jobMapper.updateById(job);
+            syncJobIndex(job);
         }
     }
 
@@ -82,6 +87,15 @@ public class JobServiceImpl implements JobService {
         if (job != null) {
             job.setStatus(2);
             jobMapper.updateById(job);
+            syncJobIndex(job);
+        }
+    }
+
+    private void syncJobIndex(Job job) {
+        try {
+            searchService.syncJob(job);
+        } catch (RuntimeException e) {
+            log.warn("Failed to sync job {} to Elasticsearch: {}", job != null ? job.getId() : null, e.getMessage());
         }
     }
 }

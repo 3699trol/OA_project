@@ -128,9 +128,9 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 ## 搜索接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 职位搜索 | GET | /api/search/job | ES职位搜索（支持分页） | ⬜ |
-| 简历搜索 | GET | /api/search/resume | ES简历搜索（支持分页） | ⬜ |
-| 重建索引 | POST | /api/search/rebuild-index | 重建ES索引 | ⬜ |
+| 职位搜索 | GET | /api/search/job | ES职位搜索（支持分页、高亮） | ✅ |
+| 简历搜索 | GET | /api/search/resume | ES简历搜索（支持分页、高亮） | ✅ |
+| 重建索引 | POST | /api/search/rebuild-index | 重建ES职位/简历索引 | ✅ |
 
 ## 仪表板接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |

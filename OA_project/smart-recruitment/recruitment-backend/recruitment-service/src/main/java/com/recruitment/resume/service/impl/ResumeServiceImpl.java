@@ -12,7 +12,9 @@ import com.recruitment.resume.mapper.ResumeEducationMapper;
 import com.recruitment.resume.mapper.ResumeExperienceMapper;
 import com.recruitment.resume.mapper.ResumeMapper;
 import com.recruitment.resume.service.ResumeService;
+import com.recruitment.search.service.SearchService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ResumeServiceImpl implements ResumeService {
 
     private final ResumeMapper resumeMapper;
@@ -35,6 +38,7 @@ public class ResumeServiceImpl implements ResumeService {
     private final ResumeExperienceMapper resumeExperienceMapper;
     private final ObjectMapper objectMapper;
     private final FileService fileService;
+    private final SearchService searchService;
 
     @Override
     public Map<String, Object> getMyResume(Long userId) {
@@ -123,6 +127,7 @@ public class ResumeServiceImpl implements ResumeService {
         Long resumeId = resume.getId();
         saveEducations(resumeId, data.get("educations"));
         saveExperiences(resumeId, data.get("experiences"));
+        syncResumeIndex(resume);
     }
 
     /**
@@ -364,5 +369,24 @@ public class ResumeServiceImpl implements ResumeService {
         resume.setDeleted(1);
         resume.setFileUrl(null);
         resumeMapper.updateById(resume);
+        deleteResumeIndex(resumeId);
+    }
+
+    private void syncResumeIndex(Resume resume) {
+        try {
+            searchService.syncResume(resume);
+        } catch (RuntimeException e) {
+            log.warn("Failed to sync resume {} to Elasticsearch: {}",
+                    resume != null ? resume.getId() : null,
+                    e.getMessage());
+        }
+    }
+
+    private void deleteResumeIndex(Long resumeId) {
+        try {
+            searchService.deleteResume(resumeId);
+        } catch (RuntimeException e) {
+            log.warn("Failed to delete resume {} from Elasticsearch: {}", resumeId, e.getMessage());
+        }
     }
 }

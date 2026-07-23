@@ -7,8 +7,8 @@ spring:
   application:
     name: recruitment-service
   profiles:
-    # 默认本地轻量启动，不依赖 Nacos / MySQL / Redis / ES
-    active: local
+    # 默认启用完整联调配置，连接本地 Docker 中间件。
+    active: dev
   servlet:
     multipart:
       max-file-size: 10MB
