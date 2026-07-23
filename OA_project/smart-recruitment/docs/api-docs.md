@@ -32,7 +32,7 @@
 | 角色列表 | GET | /api/system/role/list | 查询角色列表 | ✅ |
 | 角色详情 | GET | /api/system/role/{id} | 根据ID查询角色 | ✅ |
 | 更新角色 | PUT | /api/system/role/{id} | 更新角色信息（名称、编码、描述、状态） | ✅ |
-| 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ⬜ |
+| 权限列表 | GET | /api/system/permission/list | 查询权限列表 | ✅️ |
 | 操作日志 | GET | /api/system/log/list | 查询操作日志（支持关键字、时间范围） | ⬜ |
 
 ### 用户列表查询参数
@@ -141,5 +141,5 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 ## 文件接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
-| 上传文件 | POST | /api/file/upload | 文件上传 | ❓️ |
+| 上传文件 | POST | /api/file/upload | 文件上传 | ✅️ |
 | 下载文件 | GET | /api/file/download/{id} | 文件下载 | ❓️ |
