@@ -3,6 +3,7 @@ package com.recruitment.dashboard.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.recruitment.application.entity.JobApplication;
 import com.recruitment.application.mapper.JobApplicationMapper;
+import com.recruitment.common.redis.util.DailyStatsCounter;
 import com.recruitment.dashboard.service.DashboardService;
 import com.recruitment.dashboard.vo.DashboardStatsVO;
 import com.recruitment.interview.entity.Interview;
@@ -13,6 +14,7 @@ import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +42,10 @@ public class DashboardServiceImpl implements DashboardService {
     private final JobApplicationMapper jobApplicationMapper;
     private final InterviewMapper interviewMapper;
     private final SysUserMapper sysUserMapper;
+    private final ObjectProvider<DailyStatsCounter> dailyStatsCounterProvider;
+
+    private static final String DOMAIN_APPLICATION = "application";
+    private static final String DOMAIN_INTERVIEW = "interview";
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -62,6 +68,16 @@ public class DashboardServiceImpl implements DashboardService {
         vo.setInterviewing(interviewMapper.selectCount(
                 new LambdaQueryWrapper<Interview>()
                         .eq(Interview::getStatus, 0)));
+
+        // 3.1 今日投递数 / 今日面试数：优先从 Redis INCR 计数器读取
+        DailyStatsCounter counter = dailyStatsCounterProvider.getIfAvailable();
+        if (counter != null) {
+            vo.setTodayApplications(counter.getTodayCount(DOMAIN_APPLICATION));
+            vo.setTodayInterviews(counter.getTodayCount(DOMAIN_INTERVIEW));
+        } else {
+            vo.setTodayApplications(0L);
+            vo.setTodayInterviews(0L);
+        }
 
         // 4. 本月入职新员工：job_application status = 2（录用）且 update_time 在本月
         LocalDate now = LocalDate.now();
@@ -196,6 +212,8 @@ public class DashboardServiceImpl implements DashboardService {
         vo.setProgressData(List.of());
         vo.setMonthlyTrend(List.of());
         vo.setRecentApplications(List.of());
+        vo.setTodayApplications(0L);
+        vo.setTodayInterviews(0L);
         return vo;
     }
 

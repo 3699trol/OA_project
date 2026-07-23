@@ -5,6 +5,7 @@ import com.recruitment.application.entity.JobApplication;
 import com.recruitment.application.mapper.JobApplicationMapper;
 import com.recruitment.application.service.ApplicationService;
 import com.recruitment.common.core.model.PageResult;
+import com.recruitment.common.redis.util.DailyStatsCounter;
 import com.recruitment.job.entity.Job;
 import com.recruitment.job.mapper.JobMapper;
 import com.recruitment.resume.entity.Resume;
@@ -13,6 +14,7 @@ import com.recruitment.resume.service.ResumeService;
 import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ResumeMapper resumeMapper;
     private final ResumeService resumeService;
     private final SysUserMapper userMapper;
+    private final ObjectProvider<DailyStatsCounter> dailyStatsCounterProvider;
+
+    /** 今日投递数计数器业务域 */
+    private static final String DOMAIN_APPLICATION = "application";
 
     @Override
     @Transactional
@@ -77,6 +83,12 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setStatus(0); // 待筛选
         application.setDeleted(0);
         applicationMapper.insert(application);
+
+        // Redis INCR 实时统计今日投递数，比 COUNT(*) 效率高得多
+        DailyStatsCounter counter = dailyStatsCounterProvider.getIfAvailable();
+        if (counter != null) {
+            counter.incrementToday(DOMAIN_APPLICATION);
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("id", application.getId());

@@ -65,6 +65,44 @@ public class RedisUtil {
         return redisTemplate == null ? null : redisTemplate.opsForValue().increment(key);
     }
 
+    /**
+     * 自增并设置 TTL：首次自增后给 key 设置过期时间，便于按天/小时自动归零。
+     * 返回自增后的值；Redis 不可用时返回 null。
+     */
+    public Long incrementWithExpire(String key, long timeout, TimeUnit unit) {
+        RedisTemplate<String, Object> redisTemplate = redisTemplate();
+        if (redisTemplate == null) {
+            return null;
+        }
+        Long value = redisTemplate.opsForValue().increment(key);
+        if (value != null && value == 1L) {
+            redisTemplate.expire(key, timeout, unit);
+        }
+        return value;
+    }
+
+    /**
+     * 读取数值型计数器，Redis 不可用或值非数值时返回 null。
+     */
+    public Long getLong(String key) {
+        RedisTemplate<String, Object> redisTemplate = redisTemplate();
+        if (redisTemplate == null) {
+            return null;
+        }
+        try {
+            Object value = redisTemplate.opsForValue().get(key);
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof Number number) {
+                return number.longValue();
+            }
+            return Long.valueOf(value.toString());
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
     private RedisTemplate<String, Object> redisTemplate() {
         return redisTemplateProvider.getIfAvailable();
     }

@@ -21,6 +21,12 @@ public class DashboardStatsVO {
     /** 系统累计投递数 */
     private Long totalApplications;
 
+    /** 今日投递数（Redis INCR 实时计数） */
+    private Long todayApplications;
+
+    /** 今日面试数（Redis INCR 实时计数） */
+    private Long todayInterviews;
+
     /** 日常面试中 */
     private Long interviewing;
 

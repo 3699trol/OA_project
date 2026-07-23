@@ -3,7 +3,9 @@ package com.recruitment.ai.resume.service;
 import com.recruitment.ai.client.OpenAiResponsesClient;
 import com.recruitment.api.dto.AiResumeParseRequest;
 import com.recruitment.api.dto.AiResumeParseResponse;
+import com.recruitment.common.redis.util.RedisUtil;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,7 +26,13 @@ class ResumeAiServiceTest {
         when(client.generateStructured(
                 anyString(), anyString(), anyString(), any(), eq(AiResumeParseResponse.class)))
                 .thenReturn(response);
-        ResumeAiService service = new ResumeAiService(client);
+
+        // 单测无 Spring 容器，让 RedisUtil 不可用，走 Caffeine 进程内回退缓存
+        @SuppressWarnings("unchecked")
+        ObjectProvider<RedisUtil> emptyRedisProvider = mock(ObjectProvider.class);
+        when(emptyRedisProvider.getIfAvailable()).thenReturn(null);
+
+        ResumeAiService service = new ResumeAiService(client, emptyRedisProvider);
 
         AiResumeParseRequest firstRequest = new AiResumeParseRequest();
         firstRequest.setResumeContent(" Java developer ");

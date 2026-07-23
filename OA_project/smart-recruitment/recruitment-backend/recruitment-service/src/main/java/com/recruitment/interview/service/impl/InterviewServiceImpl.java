@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.recruitment.application.entity.JobApplication;
 import com.recruitment.application.mapper.JobApplicationMapper;
 import com.recruitment.common.core.model.PageResult;
+import com.recruitment.common.redis.util.DailyStatsCounter;
 import com.recruitment.interview.entity.Interview;
 import com.recruitment.interview.entity.InterviewEvaluation;
 import com.recruitment.interview.entity.InterviewQuestion;
@@ -19,6 +20,7 @@ import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -44,6 +46,10 @@ public class InterviewServiceImpl implements InterviewService {
     private final JobMapper jobMapper;
     private final SysUserMapper userMapper;
     private final ResumeMapper resumeMapper;
+    private final ObjectProvider<DailyStatsCounter> dailyStatsCounterProvider;
+
+    /** 今日面试数计数器业务域 */
+    private static final String DOMAIN_INTERVIEW = "interview";
 
     @Override
     public Map<String, Object> createInterview(Map<String, Object> params, Long operatorId) {
@@ -109,6 +115,12 @@ public class InterviewServiceImpl implements InterviewService {
         interview.setAddress(address);
         interview.setStatus(0); // 待面试
         interviewMapper.insert(interview);
+
+        // Redis INCR 实时统计今日面试数
+        DailyStatsCounter counter = dailyStatsCounterProvider.getIfAvailable();
+        if (counter != null) {
+            counter.incrementToday(DOMAIN_INTERVIEW);
+        }
 
         // 同步更新投递状态为面试中(1)
         if (application.getStatus() == 0) {
