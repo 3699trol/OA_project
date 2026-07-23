@@ -1,6 +1,6 @@
 package com.recruitment.job.service;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.recruitment.common.core.model.PageResult;
 import com.recruitment.job.entity.Job;
 
 /**
@@ -11,7 +11,7 @@ public interface JobService {
     /**
      * 分页查询职位列表（支持关键字、状态、类别筛选）
      */
-    Page<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status, String category);
+    PageResult<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status, String category);
 
     /**
      * 根据ID查询职位详情

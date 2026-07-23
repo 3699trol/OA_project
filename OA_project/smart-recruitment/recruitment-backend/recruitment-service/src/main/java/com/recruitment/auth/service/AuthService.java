@@ -28,6 +28,11 @@ public interface AuthService {
     void register(RegisterRequest request);
 
     /**
+     * 用户退出登录
+     */
+    void logout(Long userId);
+
+    /**
      * 当前登录用户修改自己的密码
      */
     void changePassword(Long userId, ChangePasswordRequest request);

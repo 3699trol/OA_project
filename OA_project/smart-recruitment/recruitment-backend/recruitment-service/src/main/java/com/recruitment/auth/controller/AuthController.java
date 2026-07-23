@@ -37,7 +37,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public Result<?> logout() {
+    public Result<?> logout(HttpServletRequest httpRequest) {
+        if (authService == null) return Result.success();
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        if (userId != null) {
+            authService.logout(userId);
+        }
         return Result.success();
     }
 

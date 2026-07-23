@@ -1,6 +1,5 @@
 package com.recruitment.job.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.recruitment.common.core.model.PageResult;
 import com.recruitment.common.core.model.Result;
 import com.recruitment.job.dto.JobCreateRequest;
@@ -28,8 +27,7 @@ public class JobController {
                                          @RequestParam(name = "status", required = false) Integer status,
                                          @RequestParam(name = "category", required = false) String category) {
         if (jobService == null) return Result.success(PageResult.empty(page, size));
-        Page<Job> jobPage = jobService.listByPage(page, size, keyword, status, category);
-        return Result.success(new PageResult<>(jobPage.getRecords(), jobPage.getTotal(), page, size));
+        return Result.success(jobService.listByPage(page, size, keyword, status, category));
     }
 
     @GetMapping("/{id}")
