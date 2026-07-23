@@ -30,6 +30,9 @@ public class DashboardStatsVO {
     /** 投递阶段漏斗数据 */
     private List<ProgressItem> progressData;
 
+    /** 最近6个月投递趋势 */
+    private List<MonthlyTrendItem> monthlyTrend;
+
     /** 最新投递记录（最多10条） */
     private List<RecentApplication> recentApplications;
 
@@ -40,6 +43,16 @@ public class DashboardStatsVO {
         /** 状态中文名：待筛选 / 面试中 / 已录用 / 已淘汰 */
         private String status;
         /** 数量 */
+        private Long count;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MonthlyTrendItem {
+        /** 月份标签，例如 7月 */
+        private String month;
+        /** 当月投递数量 */
         private Long count;
     }
 

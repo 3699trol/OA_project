@@ -19,8 +19,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -90,7 +92,27 @@ public class DashboardServiceImpl implements DashboardService {
                 statusCountMap.getOrDefault(3, 0L)));
         vo.setProgressData(progressData);
 
-        // 6. 最新投递记录（前10条）
+        // 6. 最近6个月投递趋势，包含无投递月份
+        YearMonth currentMonth = YearMonth.from(now);
+        YearMonth firstMonth = currentMonth.minusMonths(5);
+        LocalDateTime trendStart = firstMonth.atDay(1).atStartOfDay();
+        Map<YearMonth, Long> monthlyCountMap = allApps.stream()
+                .map(this::getApplicationTime)
+                .filter(time -> time != null && !time.isBefore(trendStart))
+                .collect(Collectors.groupingBy(YearMonth::from, Collectors.counting()));
+
+        Map<YearMonth, Long> orderedMonthlyCounts = new LinkedHashMap<>();
+        for (int i = 0; i < 6; i++) {
+            YearMonth month = firstMonth.plusMonths(i);
+            orderedMonthlyCounts.put(month, monthlyCountMap.getOrDefault(month, 0L));
+        }
+        vo.setMonthlyTrend(orderedMonthlyCounts.entrySet().stream()
+                .map(entry -> new DashboardStatsVO.MonthlyTrendItem(
+                        entry.getKey().getMonthValue() + "月",
+                        entry.getValue()))
+                .collect(Collectors.toList()));
+
+        // 7. 最新投递记录（前10条）
         List<JobApplication> recentApps = jobApplicationMapper.selectList(
                 new LambdaQueryWrapper<JobApplication>()
                         .eq(JobApplication::getDeleted, 0)
@@ -172,6 +194,7 @@ public class DashboardServiceImpl implements DashboardService {
         vo.setOnboardingThisMonth(total > 0 ? Math.round((double) completed / total * 100) : 0L);
 
         vo.setProgressData(List.of());
+        vo.setMonthlyTrend(List.of());
         vo.setRecentApplications(List.of());
         return vo;
     }
@@ -188,5 +211,12 @@ public class DashboardServiceImpl implements DashboardService {
             case 3 -> "REJECTED";
             default -> "PENDING";
         };
+    }
+
+    private LocalDateTime getApplicationTime(JobApplication application) {
+        if (application.getApplyTime() != null) {
+            return application.getApplyTime();
+        }
+        return application.getCreateTime();
     }
 }

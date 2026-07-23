@@ -52,26 +52,22 @@
               <line x1="0" y1="140" x2="600" y2="140" stroke="#f1f3f9" stroke-dasharray="4"/>
               
               <!-- 填充渐变面积 -->
-              <path d="M 50,140 Q 150,90 250,50 T 450,80 T 550,30 L 550,170 L 50,140 Z" fill="url(#gradient)"/>
+              <path v-if="trendAreaPath" :d="trendAreaPath" fill="url(#gradient)"/>
               
               <!-- 折线图 -->
-              <path d="M 50,140 Q 150,90 250,50 T 450,80 T 550,30" fill="none" stroke="#e76f51" stroke-width="3" stroke-linecap="round"/>
+              <path v-if="trendLinePath" :d="trendLinePath" fill="none" stroke="#e76f51" stroke-width="3" stroke-linecap="round"/>
               
               <!-- 节点和小圆点 -->
-              <circle cx="50" cy="140" r="4" fill="#ffffff" stroke="#e76f51" stroke-width="2"/>
-              <circle cx="150" cy="100" r="4" fill="#ffffff" stroke="#e76f51" stroke-width="2"/>
-              <circle cx="250" cy="65" r="4" fill="#ffffff" stroke="#e76f51" stroke-width="2"/>
-              <circle cx="350" cy="90" r="4" fill="#ffffff" stroke="#e76f51" stroke-width="2"/>
-              <circle cx="450" cy="78" r="4" fill="#ffffff" stroke="#e76f51" stroke-width="2"/>
-              <circle cx="550" cy="30" r="4" fill="#ffffff" stroke="#e76f51" stroke-width="2"/>
+              <g v-for="point in trendPoints" :key="point.month">
+                <circle :cx="point.x" :cy="point.y" r="4" fill="#ffffff" stroke="#e76f51" stroke-width="2"/>
+                <text :x="point.x" :y="point.y - 10" class="chart-value">{{ point.count }}</text>
+                <title>{{ point.month }}：{{ point.count }}份</title>
+              </g>
               
               <!-- 底部标签 -->
-              <text x="50" y="190" class="chart-text">2月</text>
-              <text x="150" y="190" class="chart-text">3月</text>
-              <text x="250" y="190" class="chart-text">4月</text>
-              <text x="350" y="190" class="chart-text">5月</text>
-              <text x="450" y="190" class="chart-text">6月</text>
-              <text x="550" y="190" class="chart-text">7月</text>
+              <text v-for="point in trendPoints" :key="`${point.month}-label`" :x="point.x" y="190" class="chart-text">
+                {{ point.month }}
+              </text>
             </svg>
           </div>
         </el-card>
@@ -182,7 +178,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getDashboardStats } from '@/api/dashboard'
 import { formatDateTime } from '@/utils/date'
@@ -190,6 +186,34 @@ import { formatDateTime } from '@/utils/date'
 const router = useRouter()
 const loading = ref(false)
 const recentApplications = ref([])
+const monthlyTrend = ref(buildDefaultMonthlyTrend())
+
+const trendPoints = computed(() => {
+  const data = normalizeMonthlyTrend(monthlyTrend.value)
+  const maxCount = Math.max(...data.map(item => item.count), 1)
+  const left = 50
+  const right = 550
+  const top = 30
+  const bottom = 150
+  const step = data.length > 1 ? (right - left) / (data.length - 1) : 0
+
+  return data.map((item, index) => ({
+    ...item,
+    x: Math.round(left + step * index),
+    y: Math.round(bottom - (item.count / maxCount) * (bottom - top))
+  }))
+})
+
+const trendLinePath = computed(() => buildSmoothPath(trendPoints.value))
+
+const trendAreaPath = computed(() => {
+  const points = trendPoints.value
+  if (!points.length || !trendLinePath.value) return ''
+
+  const first = points[0]
+  const last = points[points.length - 1]
+  return `${trendLinePath.value} L ${last.x},170 L ${first.x},170 Z`
+})
 
 const statsCards = ref([
   { label: '智能在招岗位', value: 0, icon: 'Briefcase', color: '#e76f51', bg: 'rgba(231, 111, 81, 0.08)' },
@@ -217,6 +241,7 @@ onMounted(async () => {
       statsCards.value[3].value = stats.onboardingThisMonth
       
       recentApplications.value = stats.recentApplications
+      monthlyTrend.value = normalizeMonthlyTrend(stats.monthlyTrend)
       
       // 更新饼图数据
       const progressMapping = {
@@ -239,6 +264,48 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+function buildDefaultMonthlyTrend() {
+  const today = new Date()
+  const result = []
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1)
+    result.push({
+      month: `${date.getMonth() + 1}月`,
+      count: 0
+    })
+  }
+  return result
+}
+
+function normalizeMonthlyTrend(source) {
+  const fallback = buildDefaultMonthlyTrend()
+  if (!Array.isArray(source) || source.length === 0) return fallback
+
+  return source.slice(-6).map((item, index) => ({
+    month: item.month || fallback[index]?.month || '',
+    count: Math.max(Number(item.count) || 0, 0)
+  }))
+}
+
+function buildSmoothPath(points) {
+  if (!points.length) return ''
+  if (points.length === 1) return `M ${points[0].x},${points[0].y}`
+
+  let path = `M ${points[0].x},${points[0].y}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const previous = points[i - 1] || points[i]
+    const current = points[i]
+    const next = points[i + 1]
+    const afterNext = points[i + 2] || next
+    const cp1x = Math.round(current.x + (next.x - previous.x) / 6)
+    const cp1y = Math.round(current.y + (next.y - previous.y) / 6)
+    const cp2x = Math.round(next.x - (afterNext.x - current.x) / 6)
+    const cp2y = Math.round(next.y - (afterNext.y - current.y) / 6)
+    path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${next.x},${next.y}`
+  }
+  return path
+}
 
 function getScoreColor(score) {
   if (score >= 85) return '#38a169'
@@ -410,6 +477,13 @@ function getStatusLabel(status) {
   fill: #a0aec0;
   text-anchor: middle;
   font-weight: 500;
+}
+
+.chart-value {
+  font-size: 10px;
+  fill: #718096;
+  text-anchor: middle;
+  font-weight: 600;
 }
 
 /* 环形进度图样式 */
