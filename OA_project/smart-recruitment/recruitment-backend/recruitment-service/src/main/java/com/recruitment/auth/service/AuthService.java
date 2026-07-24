@@ -1,6 +1,8 @@
 package com.recruitment.auth.service;
 
 import com.recruitment.auth.dto.ChangePasswordRequest;
+import com.recruitment.auth.dto.ForgotPasswordResetRequest;
+import com.recruitment.auth.dto.ForgotPasswordSendCodeRequest;
 import com.recruitment.auth.dto.LoginRequest;
 import com.recruitment.auth.dto.RegisterRequest;
 import com.recruitment.auth.dto.UpdateProfileRequest;
@@ -36,6 +38,16 @@ public interface AuthService {
      * 当前登录用户修改自己的密码
      */
     void changePassword(Long userId, ChangePasswordRequest request);
+
+    /**
+     * 发送忘记密码邮箱验证码。
+     */
+    void sendForgotPasswordCode(ForgotPasswordSendCodeRequest request);
+
+    /**
+     * 使用邮箱验证码重置密码。
+     */
+    void resetForgotPassword(ForgotPasswordResetRequest request);
 
     /**
      * 获取当前登录用户信息

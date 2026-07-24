@@ -86,3 +86,6 @@ recruitment:
     user-cache-ttl: 30m
     login-failure-window: 10m
     max-login-failures: 5
+    password-reset-code-ttl: 10m
+    password-reset-cooldown: 60s
+    max-password-reset-attempts: 5

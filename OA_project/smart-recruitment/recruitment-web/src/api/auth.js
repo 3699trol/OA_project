@@ -24,6 +24,14 @@ export function changePassword(data) {
   return request.post('/auth/change-password', data)
 }
 
+export function sendForgotPasswordCode(data) {
+  return request.post('/auth/forgot-password/send-code', data)
+}
+
+export function resetForgotPassword(data) {
+  return request.post('/auth/forgot-password/reset', data)
+}
+
 export function updateProfile(data) {
   return request.put('/auth/profile', data)
 }

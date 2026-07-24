@@ -18,6 +18,8 @@
 | 当前用户 | GET | /api/auth/current-user | 获取当前用户信息 | ✅ |
 | 刷新Token | POST | /api/auth/refresh-token | 使用刷新令牌轮换访问令牌和刷新令牌 | ✅ |
 | 修改密码 | POST | /api/auth/change-password | 当前用户修改自己的密码 | ✅ |
+| 发送忘记密码验证码 | POST | /api/auth/forgot-password/send-code | 根据绑定邮箱发送 6 位验证码，用于未登录重置密码 | ✅ |
+| 忘记密码重置 | POST | /api/auth/forgot-password/reset | 使用邮箱验证码设置新密码 | ✅ |
 | 修改个人资料 | PUT | /api/auth/profile | 当前用户修改自己的真实姓名/手机号/邮箱等资料 | ✅ |
 
 ## 系统管理接口
