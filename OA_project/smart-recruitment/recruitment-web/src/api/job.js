@@ -4,6 +4,10 @@ export function getJobList(params) {
   return request.get('/job/list', { params })
 }
 
+export function getRecommendedJobs(params) {
+  return request.get('/job/recommend', { params })
+}
+
 export function getJobDetail(id) {
   return request.get(`/job/${id}`)
 }

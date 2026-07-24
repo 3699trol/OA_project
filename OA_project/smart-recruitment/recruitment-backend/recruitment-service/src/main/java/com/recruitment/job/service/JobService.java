@@ -9,9 +9,10 @@ import com.recruitment.job.entity.Job;
 public interface JobService {
 
     /**
-     * 分页查询职位列表（支持关键字、状态、类别筛选）
+     * 分页查询职位列表（支持关键字、状态、类别、城市筛选与排序）
      */
-    PageResult<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status, String category);
+    PageResult<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status,
+                               String category, String city, String sortBy, String sortOrder);
 
     /**
      * 根据ID查询职位详情

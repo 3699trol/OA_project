@@ -75,10 +75,15 @@
               <el-tag size="small" type="info" effect="plain" class="j-tag">{{ job.education }}</el-tag>
             </div>
 
+            <div class="job-match-skills" v-if="job.matchedSkills && job.matchedSkills.length">
+              <span class="match-label">命中技能：</span>
+              <el-tag v-for="s in job.matchedSkills" :key="s" size="small" type="success" effect="light" class="match-tag">{{ s }}</el-tag>
+            </div>
+
             <div class="job-card-footer">
               <div class="rec-score">
                 <el-icon size="14" color="#67C23A" class="sparkle-icon"><Compass /></el-icon>
-                <span>AI 匹配度：<b class="score-num">95%</b></span>
+                <span>技能匹配度：<b class="score-num">{{ job.matchScore != null ? job.matchScore + '%' : '-' }}</b></span>
               </div>
               <span class="pub-time">{{ formatDate(job.createTime) }} 发布</span>
             </div>
@@ -97,7 +102,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { getJobList } from '@/api/job'
+import { getRecommendedJobs } from '@/api/job'
 import { formatDate } from '@/utils/date'
 
 const userStore = useUserStore()
@@ -118,10 +123,9 @@ const quickCards = [
 async function fetchJobs() {
   loading.value = true
   try {
-    const res = await getJobList({ status: 1 })
+    const res = await getRecommendedJobs({ limit: 4 })
     if (res.code === 200) {
-      // 选取前 4 个已发布的职位作为推荐
-      recommendedJobs.value = res.data.records.slice(0, 4)
+      recommendedJobs.value = res.data || []
     }
   } catch (e) {
     console.error('加载推荐职位失败', e)
@@ -365,6 +369,24 @@ onMounted(() => {
   border: 1px solid #edf2f7;
   background-color: #f8f9fc;
   color: #718096;
+}
+
+.job-match-skills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.match-label {
+  font-size: 12px;
+  color: #38a169;
+  font-weight: 600;
+}
+
+.match-tag {
+  border-radius: 6px;
 }
 
 .job-card-footer {

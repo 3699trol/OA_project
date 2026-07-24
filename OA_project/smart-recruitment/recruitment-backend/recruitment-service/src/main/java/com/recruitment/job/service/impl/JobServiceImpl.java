@@ -32,8 +32,9 @@ public class JobServiceImpl implements JobService {
     private final ObjectProvider<RedisUtil> redisUtilProvider;
 
     @Override
-    public PageResult<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status, String category) {
-        String cacheKey = jobListCacheKey(pageNum, pageSize, keyword, status, category);
+    public PageResult<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status,
+                                      String category, String city, String sortBy, String sortOrder) {
+        String cacheKey = jobListCacheKey(pageNum, pageSize, keyword, status, category, city, sortBy, sortOrder);
         PageResult<Job> cached = getCachedJobPage(cacheKey);
         if (cached != null) {
             return cached;
@@ -54,7 +55,10 @@ public class JobServiceImpl implements JobService {
         if (StringUtils.hasText(category)) {
             wrapper.eq(Job::getCategory, category);
         }
-        wrapper.orderByDesc(Job::getCreateTime);
+        if (StringUtils.hasText(city)) {
+            wrapper.like(Job::getCity, city);
+        }
+        applySort(wrapper, sortBy, sortOrder);
         Page<Job> jobPage = jobMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         PageResult<Job> result = new PageResult<>(jobPage.getRecords(), jobPage.getTotal(), pageNum, pageSize);
         cacheJobPage(cacheKey, result);
@@ -196,6 +200,8 @@ public class JobServiceImpl implements JobService {
         }
         try {
             redisUtil.deleteByPattern(JOB_LIST_CACHE_PREFIX + "*");
+            // 职位变更会影响所有用户的技能匹配推荐，一并失效
+            redisUtil.deleteByPattern("job:recommend:*");
         } catch (RuntimeException e) {
             log.warn("Failed to evict job list Redis cache: {}", e.getMessage());
         }
@@ -205,13 +211,38 @@ public class JobServiceImpl implements JobService {
         return JOB_DETAIL_CACHE_PREFIX + id;
     }
 
-    private String jobListCacheKey(long pageNum, long pageSize, String keyword, Integer status, String category) {
+    private String jobListCacheKey(long pageNum, long pageSize, String keyword, Integer status,
+                                   String category, String city, String sortBy, String sortOrder) {
         return JOB_LIST_CACHE_PREFIX
                 + pageNum + ":"
                 + pageSize + ":"
                 + normalizeCachePart(keyword) + ":"
                 + (status == null ? "all" : status) + ":"
-                + normalizeCachePart(category);
+                + normalizeCachePart(category) + ":"
+                + normalizeCachePart(city) + ":"
+                + normalizeCachePart(sortBy) + ":"
+                + normalizeCachePart(sortOrder);
+    }
+
+    /**
+     * 应用排序：sortBy=salary 按起薪（salaryMin）排序，其余（含默认）按发布时间排序；
+     * sortOrder=asc 升序，否则降序。使用 Lambda 列引用，避免 SQL 注入。
+     */
+    private void applySort(LambdaQueryWrapper<Job> wrapper, String sortBy, String sortOrder) {
+        boolean asc = "asc".equalsIgnoreCase(sortOrder);
+        if ("salary".equalsIgnoreCase(sortBy)) {
+            if (asc) {
+                wrapper.orderByAsc(Job::getSalaryMin);
+            } else {
+                wrapper.orderByDesc(Job::getSalaryMin);
+            }
+        } else {
+            if (asc) {
+                wrapper.orderByAsc(Job::getCreateTime);
+            } else {
+                wrapper.orderByDesc(Job::getCreateTime);
+            }
+        }
     }
 
     private String normalizeCachePart(String value) {
