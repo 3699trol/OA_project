@@ -79,14 +79,6 @@
           </div>
           <el-empty v-else description="暂无简历数据" :image-size="80" />
         </el-card>
-        <el-card shadow="never" class="section-card">
-          <h3 class="card-title">🤖 AI匹配分析</h3>
-          <div v-if="candidate.aiMatchScore != null">
-            <el-progress :percentage="Number(candidate.aiMatchScore)" :color="'#E76F51'" :stroke-width="12" />
-            <p v-if="candidate.aiMatchReason" style="margin-top:12px; color:#666; font-size:14px;">{{ candidate.aiMatchReason }}</p>
-          </div>
-          <el-empty v-else description="暂无AI匹配数据" :image-size="60" />
-        </el-card>
       </el-col>
     </el-row>
   </div>
