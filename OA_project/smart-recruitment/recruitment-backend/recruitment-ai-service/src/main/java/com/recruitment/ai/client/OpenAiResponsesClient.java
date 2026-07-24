@@ -220,12 +220,24 @@ public class OpenAiResponsesClient {
         }
     }
 
-    /** 从JSON节点中取第一个非空的文本字段值，按候选名依次尝试。 */
+    /** 从 JSON 节点中取第一个非空的文本字段值，按候选名依次尝试。 */
     private String firstJsonText(com.fasterxml.jackson.databind.JsonNode node, String... candidates) {
         for (String name : candidates) {
             if (node.has(name) && !node.get(name).isNull()) {
-                String val = node.get(name).asText().trim();
-                if (!val.isEmpty()) return val;
+                JsonNode valNode = node.get(name);
+                // 如果是数组，将元素用换行符拼接
+                if (valNode.isArray()) {
+                    StringBuilder sb = new StringBuilder();
+                    for (JsonNode item : valNode) {
+                        if (sb.length() > 0) sb.append("\n");
+                        sb.append(item.asText());
+                    }
+                    String val = sb.toString().trim();
+                    if (!val.isEmpty()) return val;
+                } else {
+                    String val = valNode.asText().trim();
+                    if (!val.isEmpty()) return val;
+                }
             }
         }
         return null;
