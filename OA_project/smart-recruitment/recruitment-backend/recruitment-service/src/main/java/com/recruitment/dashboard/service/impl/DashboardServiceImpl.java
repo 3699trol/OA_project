@@ -3,7 +3,7 @@ package com.recruitment.dashboard.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.recruitment.application.entity.JobApplication;
 import com.recruitment.application.mapper.JobApplicationMapper;
-import com.recruitment.common.redis.util.DailyStatsCounter;
+import com.recruitment.common.redis.util.RedisUtil;
 import com.recruitment.dashboard.service.DashboardService;
 import com.recruitment.dashboard.vo.DashboardStatsVO;
 import com.recruitment.interview.entity.Interview;
@@ -14,7 +14,6 @@ import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -42,44 +42,43 @@ public class DashboardServiceImpl implements DashboardService {
     private final JobApplicationMapper jobApplicationMapper;
     private final InterviewMapper interviewMapper;
     private final SysUserMapper sysUserMapper;
-    private final ObjectProvider<DailyStatsCounter> dailyStatsCounterProvider;
+    private final RedisUtil redisUtil;
 
-    private static final String DOMAIN_APPLICATION = "application";
-    private static final String DOMAIN_INTERVIEW = "interview";
+    /** Dashboard 统计数据 Redis 缓存 key */
+    private static final String DASHBOARD_STATS_CACHE_KEY = "stats:dashboard";
+    /** 缓存 TTL：5 分钟 */
+    private static final long DASHBOARD_STATS_CACHE_TTL_MINUTES = 5;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     public DashboardStatsVO getStats() {
+        // 1. 尝试从 Redis 缓存读取
+        DashboardStatsVO cached = getCachedStats();
+        if (cached != null) {
+            log.debug("Dashboard stats cache hit");
+            return cached;
+        }
+
         DashboardStatsVO vo = new DashboardStatsVO();
 
-        // 1. 智能在招岗位数：status = 1（招聘中）
+        // 2. 智能在招岗位数：status = 1（招聘中）
         vo.setActiveJobs(jobMapper.selectCount(
                 new LambdaQueryWrapper<Job>()
                         .eq(Job::getStatus, 1)
                         .eq(Job::getDeleted, 0)));
 
-        // 2. 系统累计投递数
+        // 3. 系统累计投递数
         vo.setTotalApplications(jobApplicationMapper.selectCount(
                 new LambdaQueryWrapper<JobApplication>()
                         .eq(JobApplication::getDeleted, 0)));
 
-        // 3. 日常面试中：interview status = 0（待面试）
+        // 4. 日常面试中：interview status = 0（待面试）
         vo.setInterviewing(interviewMapper.selectCount(
                 new LambdaQueryWrapper<Interview>()
                         .eq(Interview::getStatus, 0)));
 
-        // 3.1 今日投递数 / 今日面试数：优先从 Redis INCR 计数器读取
-        DailyStatsCounter counter = dailyStatsCounterProvider.getIfAvailable();
-        if (counter != null) {
-            vo.setTodayApplications(counter.getTodayCount(DOMAIN_APPLICATION));
-            vo.setTodayInterviews(counter.getTodayCount(DOMAIN_INTERVIEW));
-        } else {
-            vo.setTodayApplications(0L);
-            vo.setTodayInterviews(0L);
-        }
-
-        // 4. 本月入职新员工：job_application status = 2（录用）且 update_time 在本月
+        // 5. 本月入职新员工：job_application status = 2（录用）且 update_time 在本月
         LocalDate now = LocalDate.now();
         LocalDateTime monthStart = now.withDayOfMonth(1).atStartOfDay();
         LocalDateTime monthEnd = now.plusMonths(1).withDayOfMonth(1).atStartOfDay();
@@ -90,7 +89,10 @@ public class DashboardServiceImpl implements DashboardService {
                         .ge(JobApplication::getUpdateTime, monthStart)
                         .lt(JobApplication::getUpdateTime, monthEnd)));
 
-        // 5. 投递阶段漏斗占比
+        // 6. 清理旧版 Redis 缓存 key（stats:application:daily:* / stats:interview:daily:*）
+        cleanupLegacyStatsKeys();
+
+        // 7. 投递阶段漏斗占比
         List<JobApplication> allApps = jobApplicationMapper.selectList(
                 new LambdaQueryWrapper<JobApplication>()
                         .eq(JobApplication::getDeleted, 0));
@@ -174,6 +176,9 @@ public class DashboardServiceImpl implements DashboardService {
         }).collect(Collectors.toList());
         vo.setRecentApplications(recentList);
 
+        // 8. 写入 Redis 缓存（完整 VO）
+        cacheStats(vo);
+
         return vo;
     }
 
@@ -212,9 +217,48 @@ public class DashboardServiceImpl implements DashboardService {
         vo.setProgressData(List.of());
         vo.setMonthlyTrend(List.of());
         vo.setRecentApplications(List.of());
-        vo.setTodayApplications(0L);
-        vo.setTodayInterviews(0L);
         return vo;
+    }
+
+    /**
+     * 从 Redis 读取 Dashboard 统计数据缓存
+     */
+    private DashboardStatsVO getCachedStats() {
+        try {
+            Object cached = redisUtil.get(DASHBOARD_STATS_CACHE_KEY);
+            if (cached instanceof DashboardStatsVO vo) {
+                return vo;
+            }
+        } catch (RuntimeException e) {
+            log.warn("Failed to read dashboard stats from Redis cache: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * 将 Dashboard 统计数据写入 Redis 缓存
+     */
+    private void cacheStats(DashboardStatsVO vo) {
+        try {
+            redisUtil.set(DASHBOARD_STATS_CACHE_KEY, vo, DASHBOARD_STATS_CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+        } catch (RuntimeException e) {
+            log.warn("Failed to write dashboard stats to Redis cache: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 清理旧版 Redis 缓存 key（stats:application:daily:* / stats:interview:daily:*）
+     */
+    private void cleanupLegacyStatsKeys() {
+        try {
+            long deleted = redisUtil.deleteByPattern("stats:application:daily:*");
+            deleted += redisUtil.deleteByPattern("stats:interview:daily:*");
+            if (deleted > 0) {
+                log.info("Cleaned up {} legacy daily stats Redis keys", deleted);
+            }
+        } catch (RuntimeException e) {
+            log.warn("Failed to cleanup legacy stats keys: {}", e.getMessage());
+        }
     }
 
     /**
