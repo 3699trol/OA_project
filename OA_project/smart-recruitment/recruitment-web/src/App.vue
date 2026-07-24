@@ -3,16 +3,6 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useUserStore } from '@/stores/user'
-import { connectWebSocket } from '@/utils/websocket'
-
-onMounted(() => {
-  const userStore = useUserStore()
-  if (userStore.token && userStore.userInfo && userStore.userInfo.username) {
-    connectWebSocket(userStore.userInfo.username)
-  }
-})
 </script>
 
 <style>

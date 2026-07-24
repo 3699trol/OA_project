@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { connectWebSocket, disconnectWebSocket } from '@/utils/websocket'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
@@ -20,9 +19,6 @@ export const useUserStore = defineStore('user', () => {
   function setUserInfo(info) {
     userInfo.value = info
     localStorage.setItem('userInfo', JSON.stringify(info))
-    if (info && info.username) {
-      connectWebSocket(info.username)
-    }
   }
 
   function logout() {
@@ -32,7 +28,6 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('token')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('userInfo')
-    disconnectWebSocket()
   }
 
   return { token, refreshToken, userInfo, setToken, setRefreshToken, setUserInfo, logout }

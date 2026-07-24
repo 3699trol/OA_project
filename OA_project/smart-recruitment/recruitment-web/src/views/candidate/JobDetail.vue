@@ -16,8 +16,6 @@
             <el-divider direction="vertical" />
             <span><el-icon><School /></el-icon>{{ job.education || '不限' }}</span>
             <el-divider direction="vertical" />
-            <span><el-icon><Clock /></el-icon>{{ job.experience || '不限' }}</span>
-            <el-divider direction="vertical" />
             <span><el-icon><User /></el-icon>招聘 {{ job.headcount || 1 }} 人</span>
           </div>
         </div>
@@ -64,7 +62,7 @@ const route = useRoute()
 const applying = ref(false)
 
 const job = reactive({
-  id: route.params.id, jobName: '', department: '', city: '', education: '', experience: '',
+  id: route.params.id, jobName: '', department: '', city: '', education: '',
   salaryMin: null, salaryMax: null, headcount: null, description: '', requirements: '',
   isUrgent: false, skills: []
 })
@@ -81,7 +79,6 @@ onMounted(async () => {
       department: j.department || '',
       city: j.city || '',
       education: j.education || '',
-      experience: j.experience || '',
       salaryMin: j.salaryMin,
       salaryMax: j.salaryMax,
       headcount: j.headcount,
