@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.recruitment.ai.config.OpenAiProperties;
+import com.recruitment.api.dto.AiQuestionResponse;
 import com.recruitment.common.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,7 +69,21 @@ public class OpenAiResponsesClient {
             outputText = extractOutputText(response);
             log.debug("AI extracted output (first 500 chars): {}",
                     outputText.length() > 500 ? outputText.substring(0, 500) + "..." : outputText);
-            return objectMapper.readValue(outputText, responseType);
+            T result = objectMapper.readValue(outputText, responseType);
+            // qwen 模型常使用非标准字段名（如 "question" 而非 "title"），
+            // Jackson 虽解析成功但字段为空。此时用灵活解析器重新解析补全字段。
+            if (result instanceof AiQuestionResponse aiResp && hasMissingTitles(aiResp)) {
+                T flexResult = tryParseFlexibleJson(outputText, responseType);
+                if (flexResult != null) {
+                    AiQuestionResponse flexResp = (AiQuestionResponse) flexResult;
+                    if (flexResp.getQuestions() != null && !flexResp.getQuestions().isEmpty()
+                            && flexResp.getQuestions().stream().anyMatch(q -> q.getTitle() != null && !q.getTitle().isEmpty())) {
+                        log.info("标准解析title为空，灵活解析器补全（{} 道题）", flexResp.getQuestions().size());
+                        return flexResult;
+                    }
+                }
+            }
+            return result;
         } catch (JsonProcessingException e) {
             // 模型可能返回带markdown包裹的JSON或纯文本，尝试提取JSON后重新解析
             if (outputText != null) {
@@ -81,17 +96,13 @@ public class OpenAiResponsesClient {
                         // 提取的JSON仍然解析失败，继续走fallback
                     }
                 }
-                if (!outputText.trim().startsWith("{")) {
-                    log.warn("AI返回纯文本而非JSON，尝试fallback包装为 {}: text前100字={}",
-                            responseType.getSimpleName(),
-                            outputText.length() > 100 ? outputText.substring(0, 100) + "..." : outputText);
-                    return wrapPlainTextFallback(outputText.trim(), responseType);
-                }
+                // JSON解析失败时，无论文本是否以 { 开头，都尝试从纯文本中提取结构化数据
+                log.warn("AI JSON解析失败，尝试从文本中提取: text前200字={}",
+                        outputText.length() > 200 ? outputText.substring(0, 200) + "..." : outputText);
+                return wrapPlainTextFallback(outputText.trim(), responseType);
             }
-            log.warn("AI JSON解析失败: {} — location={}, outputText={}",
-                    e.getMessage(), e.getLocation(),
-                    outputText != null ? outputText.substring(0, Math.min(500, outputText.length())) : "null");
-            throw new BusinessException(502, "AI 模型返回结果解析失败");
+            log.warn("AI 返回内容为空");
+            throw new BusinessException(502, "AI 模型未返回有效内容");
         } catch (BusinessException e) {
             log.warn("AI 业务异常(code={}): {} — responseBody={}",
                     e.getCode(), e.getMessage(),
@@ -108,8 +119,10 @@ public class OpenAiResponsesClient {
         try {
             T instance = responseType.getDeclaredConstructor().newInstance();
 
-            // 特殊处理：AiQuestionResponse — 从纯文本中按编号拆分为多个Question
+            // 特殊处理：AiQuestionResponse — 先尝试JSON，再尝试从纯文本中拆分
             if (responseType.getSimpleName().equals("AiQuestionResponse")) {
+                T jsonResult = tryParseFlexibleJson(plainText, responseType);
+                if (jsonResult != null) return jsonResult;
                 return parseQuestionResponseFromPlainText(plainText, responseType);
             }
 
@@ -138,35 +151,140 @@ public class OpenAiResponsesClient {
     }
 
     /**
+     * 检查 AiQuestionResponse 中是否有题目的 title 缺失（qwen 模型返回 "question" 而非 "title" 时会出现）。
+     */
+    private boolean hasMissingTitles(AiQuestionResponse aiResp) {
+        if (aiResp.getQuestions() == null || aiResp.getQuestions().isEmpty()) {
+            return true;
+        }
+        return aiResp.getQuestions().stream()
+                .anyMatch(q -> q.getTitle() == null || q.getTitle().isEmpty());
+    }
+
+    /**
+     * 灵活尝试将文本解析为JSON（兼容字段名差异），成功返回AiQuestionResponse，失败返回null。
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T tryParseFlexibleJson(String text, Class<T> responseType) {
+        try {
+            com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(text);
+            // 找到 questions 数组：可能在根节点，也可能被 key 包裹
+            com.fasterxml.jackson.databind.JsonNode questionsNode = null;
+            if (root.has("questions")) {
+                questionsNode = root.get("questions");
+            } else if (root.isArray()) {
+                questionsNode = root;
+            }
+            // 遍历所有字段，找第一个数组类型的字段
+            if (questionsNode == null) {
+                var fields = root.fields();
+                while (fields.hasNext()) {
+                    var entry = fields.next();
+                    if (entry.getValue().isArray()) {
+                        questionsNode = entry.getValue();
+                        break;
+                    }
+                }
+            }
+            if (questionsNode == null || !questionsNode.isArray() || questionsNode.size() == 0) {
+                return null;
+            }
+            Class<?> questionClass = Class.forName(
+                    "com.recruitment.api.dto.AiQuestionResponse$Question");
+            java.util.List<Object> questions = new java.util.ArrayList<>();
+            for (com.fasterxml.jackson.databind.JsonNode qNode : questionsNode) {
+                Object q = questionClass.getDeclaredConstructor().newInstance();
+                // 从 JSON 节点中取字段，兼容多种命名方式
+                String title = firstJsonText(qNode, "title", "questionTitle", "question", "topic", "content", "name");
+                String type = firstJsonText(qNode, "type", "questionType", "category", "kind");
+                String difficulty = firstJsonText(qNode, "difficulty", "level", "difficultyLevel");
+                String referenceAnswer = firstJsonText(qNode, "referenceAnswer", "answer", "reference", "solution", "modelAnswer");
+                String scoringCriteria = firstJsonText(qNode, "scoringCriteria", "criteria", "scoring", "evaluationCriteria");
+
+                questionClass.getMethod("setTitle", String.class).invoke(q,
+                        title != null ? title : qNode.toString());
+                questionClass.getMethod("setType", String.class).invoke(q, type);
+                questionClass.getMethod("setDifficulty", String.class).invoke(q,
+                        difficulty != null ? difficulty : "中等");
+                questionClass.getMethod("setReferenceAnswer", String.class).invoke(q, referenceAnswer);
+                questionClass.getMethod("setScoringCriteria", String.class).invoke(q, scoringCriteria);
+                questions.add(q);
+            }
+            T instance = responseType.getDeclaredConstructor().newInstance();
+            responseType.getMethod("setQuestions", java.util.List.class).invoke(instance, questions);
+            log.info("从灵活JSON中解析出 {} 道面试题", questions.size());
+            return instance;
+        } catch (Exception e) {
+            log.debug("灵活JSON解析失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /** 从 JSON 节点中取第一个非空的文本字段值，按候选名依次尝试。 */
+    private String firstJsonText(com.fasterxml.jackson.databind.JsonNode node, String... candidates) {
+        for (String name : candidates) {
+            if (node.has(name) && !node.get(name).isNull()) {
+                JsonNode valNode = node.get(name);
+                // 如果是数组，将元素用换行符拼接
+                if (valNode.isArray()) {
+                    StringBuilder sb = new StringBuilder();
+                    for (JsonNode item : valNode) {
+                        if (sb.length() > 0) sb.append("\n");
+                        sb.append(item.asText());
+                    }
+                    String val = sb.toString().trim();
+                    if (!val.isEmpty()) return val;
+                } else {
+                    String val = valNode.asText().trim();
+                    if (!val.isEmpty()) return val;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * 从纯文本中按编号拆分面试题，构造 AiQuestionResponse。
-     * 文本格式：1. 题目1  2. 题目2  ...  或  Q1: 题目1  Q2: 题目2  ...
+     * 文本格式：1. 题目  2. 题目  ...  或  Q1: 题目1  Q2: 题目2  ...
+     * 每道题内可能包含子字段标记：类型: / 难度: / 参考答案: / 评分标准:
      */
     @SuppressWarnings("unchecked")
     private <T> T parseQuestionResponseFromPlainText(String plainText, Class<T> responseType) {
         java.util.List<Object> questions = new java.util.ArrayList<>();
-        // 按 "数字. " 或 "数字) " 或 "Q数字: " 或 "Q数字. " 拆分
-        String[] parts = plainText.split("\\n(?=(?:\\d+[.)]\\s|Q\\d+[:.]))");
+        // 按 "数字. " 或 "数字) " 或 "Q数字: " 或 "Q数字. " 或 "**数字**" 拆分（在换行处）
+        String[] parts = plainText.split("\\n(?=(?:(?:\\*\\*)?\\d+(?:\\*\\*)?[.)、]\\s*|Q\\d+[:.]))");
         if (parts.length <= 1) {
-            // 没有编号，整个文本作为一道题
             parts = new String[] { plainText };
         }
-        for (String part : parts) {
-            String text = part.trim();
-            if (text.isEmpty()) continue;
-            // 去除前导编号 "1. " "Q1: " 等
-            text = text.replaceFirst("^(?:Q?\\d+[.):]\\s*)+", "").trim();
-            if (text.isEmpty()) continue;
-            try {
-                // 反射创建 Question 内部类实例
-                Class<?> questionClass = Class.forName(
-                        "com.recruitment.api.dto.AiQuestionResponse$Question");
+        try {
+            Class<?> questionClass = Class.forName(
+                    "com.recruitment.api.dto.AiQuestionResponse$Question");
+            for (String part : parts) {
+                String text = part.trim();
+                if (text.isEmpty()) continue;
+                // 去除前导编号 "1. " "**1**、" "Q1: " 等
+                text = text.replaceFirst("^(?:\\*\\*)?Q?\\d+(?:\\*\\*)?[.)、:]\\s*", "").trim();
+                if (text.isEmpty()) continue;
+
                 Object question = questionClass.getDeclaredConstructor().newInstance();
-                questionClass.getMethod("setTitle", String.class).invoke(question, text);
-                questionClass.getMethod("setDifficulty", String.class).invoke(question, "中等");
+
+                // 提取子字段：类型、难度、参考答案、评分标准
+                String title = extractTitle(text);
+                String type = extractField(text, "类型[：:]", "题[型类][：:]");
+                String difficulty = extractField(text, "难度[：:]", null);
+                String referenceAnswer = extractField(text, "参考答案[：:]", "参考[答案解答][：:]");
+                String scoringCriteria = extractField(text, "评分标准[：:]", "评[分判]标[准][：:]");
+
+                questionClass.getMethod("setTitle", String.class).invoke(question, title);
+                questionClass.getMethod("setType", String.class).invoke(question, type);
+                questionClass.getMethod("setDifficulty", String.class).invoke(question,
+                        difficulty != null ? difficulty : "中等");
+                questionClass.getMethod("setReferenceAnswer", String.class).invoke(question, referenceAnswer);
+                questionClass.getMethod("setScoringCriteria", String.class).invoke(question, scoringCriteria);
                 questions.add(question);
-            } catch (Exception ignored) {
-                // 反射创建失败则跳过
             }
+        } catch (Exception e) {
+            log.warn("反射创建Question失败: {}", e.getMessage());
         }
         try {
             T instance = responseType.getDeclaredConstructor().newInstance();
@@ -176,6 +294,54 @@ public class OpenAiResponsesClient {
         } catch (Exception e) {
             throw new BusinessException(502, "AI 返回纯文本且无法解析为面试题");
         }
+    }
+
+    /**
+     * 提取题目正文（子字段标记之前的内容）。
+     */
+    private String extractTitle(String text) {
+        // 去掉前导空行
+        text = text.replaceFirst("^\\s*\\n+", "").trim();
+        // 找到第一个子字段标记的位置，之前的内容为标题
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                "\\n\\s*(?:类型|题[型类]|难度|参考答案|参考[答案解答]|评分标准|评[分判]标[准])[：:]").matcher(text);
+        if (m.find() && m.start() > 0) {
+            String title = text.substring(0, m.start()).trim();
+            title = title.replaceAll("[，。,.]$", "").trim();
+            if (!title.isEmpty()) return title;
+        }
+        // 取第一个非空行作为标题
+        for (String line : text.split("\\n")) {
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty() && !trimmed.matches("^(?:类型|题[型类]|难度|参考答案|参考[答案解答]|评分标准|评[分判]标[准])[：:].*")) {
+                trimmed = trimmed.replaceAll("[，。,.]$", "").trim();
+                if (!trimmed.isEmpty()) return trimmed;
+            }
+        }
+        return "(题目)";
+    }
+
+    /**
+     * 从文本中按正则匹配提取某个字段的值。
+     * 提取从匹配位置到下一个子字段标记之间的内容。
+     */
+    private String extractField(String text, String... fieldPatterns) {
+        for (String fieldPattern : fieldPatterns) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                    "\\n\\s*" + fieldPattern + "\\s*",
+                    java.util.regex.Pattern.CASE_INSENSITIVE).matcher(text);
+            if (m.find()) {
+                int valueStart = m.end();
+                // 下一个子字段标记
+                java.util.regex.Matcher nextField = java.util.regex.Pattern.compile(
+                        "\\n\\s*(?:类型|题[型类]|难度|参考答案|参考[答案解答]|评分标准|评[分判]标[准])[：:]",
+                        java.util.regex.Pattern.CASE_INSENSITIVE).matcher(text);
+                int valueEnd = nextField.find(valueStart) ? nextField.start() : text.length();
+                String value = text.substring(valueStart, valueEnd).trim();
+                return value.isEmpty() ? null : value;
+            }
+        }
+        return null;
     }
 
     private java.util.List<String> extractSuggestedQuestions(String text) {
