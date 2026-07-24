@@ -136,6 +136,17 @@
             <el-alert title="该面试已取消" type="info" :closable="false" show-icon />
           </div>
 
+          <!-- 兜底：其他未知状态 -->
+          <div v-else>
+            <el-alert
+              :title="`面试状态：${detail.statusLabel || '未知'} ｜ 投递状态：${appStatusLabel}`"
+              type="warning"
+              :closable="false"
+              show-icon
+            />
+            <el-button style="margin-top:12px;" @click="loadDetail" type="primary" plain>刷新页面</el-button>
+          </div>
+
         </el-card>
       </el-col>
     </el-row>

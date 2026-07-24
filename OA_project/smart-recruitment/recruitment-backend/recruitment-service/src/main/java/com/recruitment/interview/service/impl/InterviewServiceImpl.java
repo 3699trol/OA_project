@@ -585,46 +585,54 @@ public class InterviewServiceImpl implements InterviewService {
             throw new RuntimeException("您不是该面试的面试官，无权提交评价");
         }
 
-        // 构建评价对象
-        InterviewEvaluation evaluation = new InterviewEvaluation();
-        evaluation.setInterviewId(interviewId);
-        if (params.get("technicalScore") != null) {
-            evaluation.setTechnicalScore(Integer.valueOf(params.get("technicalScore").toString()));
-        }
-        if (params.get("communicationScore") != null) {
-            evaluation.setCommunicationScore(Integer.valueOf(params.get("communicationScore").toString()));
-        }
-        if (params.get("logicScore") != null) {
-            evaluation.setLogicScore(Integer.valueOf(params.get("logicScore").toString()));
-        }
-        if (params.get("overallScore") != null) {
-            evaluation.setOverallScore(Integer.valueOf(params.get("overallScore").toString()));
-        }
-        evaluation.setEvaluation(params.get("evaluation") != null ? params.get("evaluation").toString() : null);
-        if (params.get("result") != null) {
-            evaluation.setResult(Integer.valueOf(params.get("result").toString()));
-        }
-        evaluation.setFeedbackTime(LocalDateTime.now());
+        // ── 第一步：先更新面试状态为已完成（独立于评价保存，确保即使评价异常也不阻塞）──
+        LambdaQueryWrapper<Interview> statusWrapper = new LambdaQueryWrapper<>();
+        statusWrapper.eq(Interview::getId, interviewId);
+        Interview updateTarget = new Interview();
+        updateTarget.setStatus(1);
+        updateTarget.setUpdateTime(LocalDateTime.now());
+        int updated = interviewMapper.update(updateTarget, statusWrapper);
+        log.info("面试状态已更新, interviewId={}, status→1, 影响行数={}", interviewId, updated);
 
-        // 查询是否已有评价，有则更新，无则插入（防御重复记录）
-        LambdaQueryWrapper<InterviewEvaluation> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(InterviewEvaluation::getInterviewId, interviewId)
-               .orderByDesc(InterviewEvaluation::getFeedbackTime)
-               .last("LIMIT 1");
-        InterviewEvaluation existing = evaluationMapper.selectOne(wrapper);
-        if (existing != null) {
-            evaluation.setId(existing.getId());
-            evaluationMapper.updateById(evaluation);
-        } else {
-            evaluationMapper.insert(evaluation);
-        }
+        // ── 第二步：保存/更新评价（不影响面试状态）──
+        try {
+            InterviewEvaluation evaluation = new InterviewEvaluation();
+            evaluation.setInterviewId(interviewId);
+            if (params.get("technicalScore") != null) {
+                evaluation.setTechnicalScore(Integer.valueOf(params.get("technicalScore").toString()));
+            }
+            if (params.get("communicationScore") != null) {
+                evaluation.setCommunicationScore(Integer.valueOf(params.get("communicationScore").toString()));
+            }
+            if (params.get("logicScore") != null) {
+                evaluation.setLogicScore(Integer.valueOf(params.get("logicScore").toString()));
+            }
+            if (params.get("overallScore") != null) {
+                evaluation.setOverallScore(Integer.valueOf(params.get("overallScore").toString()));
+            }
+            evaluation.setEvaluation(params.get("evaluation") != null ? params.get("evaluation").toString() : null);
+            if (params.get("result") != null) {
+                evaluation.setResult(Integer.valueOf(params.get("result").toString()));
+            }
+            evaluation.setFeedbackTime(LocalDateTime.now());
 
-        // 更新面试状态为已完成
-        interview.setStatus(1);
-        interview.setUpdateTime(LocalDateTime.now());
-        int updated = interviewMapper.updateById(interview);
-        log.info("面试评价已保存, interviewId={}, result={}, status更新行数={}",
-                interviewId, evaluation.getResult(), updated);
+            // 查询是否已有评价，有则更新，无则插入
+            LambdaQueryWrapper<InterviewEvaluation> evalWrapper = new LambdaQueryWrapper<>();
+            evalWrapper.eq(InterviewEvaluation::getInterviewId, interviewId)
+                       .orderByDesc(InterviewEvaluation::getFeedbackTime)
+                       .last("LIMIT 1");
+            InterviewEvaluation existing = evaluationMapper.selectOne(evalWrapper);
+            if (existing != null) {
+                evaluation.setId(existing.getId());
+                evaluationMapper.updateById(evaluation);
+            } else {
+                evaluationMapper.insert(evaluation);
+            }
+            log.info("面试评价已保存, interviewId={}, result={}", interviewId, evaluation.getResult());
+        } catch (Exception e) {
+            // 评价保存失败不抛异常——面试状态已经更新完成
+            log.error("保存面试评价失败（面试状态已更新）, interviewId={}, error={}", interviewId, e.getMessage(), e);
+        }
 
         // 面试官提交评价后不自动修改投递状态
         // 投递保持为 1(面试中)，HR 在面试详情页点击"录用"或"淘汰"后决定最终状态

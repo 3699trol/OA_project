@@ -1,6 +1,8 @@
 package com.recruitment.auth.controller;
 
 import com.recruitment.auth.dto.ChangePasswordRequest;
+import com.recruitment.auth.dto.ForgotPasswordResetRequest;
+import com.recruitment.auth.dto.ForgotPasswordSendCodeRequest;
 import com.recruitment.auth.dto.LoginRequest;
 import com.recruitment.auth.dto.RefreshTokenRequest;
 import com.recruitment.auth.dto.RegisterRequest;
@@ -82,6 +84,20 @@ public class AuthController {
             return Result.error(401, "未登录或登录已失效");
         }
         authService.changePassword(userId, request);
+        return Result.success();
+    }
+
+    @PostMapping("/forgot-password/send-code")
+    public Result<?> sendForgotPasswordCode(@Valid @RequestBody ForgotPasswordSendCodeRequest request) {
+        if (authService == null) return Result.success();
+        authService.sendForgotPasswordCode(request);
+        return Result.success();
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public Result<?> resetForgotPassword(@Valid @RequestBody ForgotPasswordResetRequest request) {
+        if (authService == null) return Result.success();
+        authService.resetForgotPassword(request);
         return Result.success();
     }
 }

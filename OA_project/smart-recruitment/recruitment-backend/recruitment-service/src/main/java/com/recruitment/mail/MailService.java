@@ -63,14 +63,23 @@ public class MailService {
         doSend(to, subject, body);
     }
 
+    /**
+     * 发送忘记密码验证码。该场景需要让调用方感知发送结果，因此使用同步发送。
+     */
+    public boolean sendPasswordResetCode(String to, String userName, String code, long expireMinutes) {
+        String subject = "【密码重置】智能招聘系统验证码";
+        String body = buildPasswordResetHtml(userName, code, expireMinutes);
+        return doSend(to, subject, body);
+    }
+
     // ──────────────────────────────────────────────
     // 内部实现
     // ──────────────────────────────────────────────
 
-    private void doSend(String to, String subject, String html) {
+    private boolean doSend(String to, String subject, String html) {
         if (!StringUtils.hasText(to)) {
             log.warn("收件人邮箱为空，跳过邮件发送: subject={}", subject);
-            return;
+            return false;
         }
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -81,8 +90,10 @@ public class MailService {
             helper.setText(html, true);
             mailSender.send(message);
             log.info("邮件发送成功: to={}, subject={}", to, subject);
+            return true;
         } catch (Exception e) {
             log.error("邮件发送失败: to={}, subject={}, error={}", to, subject, e.getMessage(), e);
+            return false;
         }
     }
 
@@ -200,5 +211,31 @@ public class MailService {
                 interviewTime != null ? interviewTime : "—",
                 interviewerName != null ? interviewerName : "—",
                 address != null ? address : "—");
+    }
+
+    private String buildPasswordResetHtml(String name, String code, long expireMinutes) {
+        return """
+                <!DOCTYPE html>
+                <html><head><meta charset="UTF-8"></head>
+                <body style="font-family:'Microsoft YaHei',Arial,sans-serif;background:#f4f6f9;padding:30px;">
+                  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);">
+                    <div style="background:linear-gradient(135deg,#e76f51,#f4a261);padding:28px;text-align:center;">
+                      <h1 style="color:#fff;margin:0;font-size:24px;">密码重置验证码</h1>
+                      <p style="color:rgba(255,255,255,.85);margin:8px 0 0;font-size:14px;">Smart Recruitment</p>
+                    </div>
+                    <div style="padding:30px;line-height:1.8;color:#333;">
+                      <p style="font-size:16px;">尊敬的 <strong>%s</strong>：</p>
+                      <p>您正在重置智能招聘系统登录密码，请在页面中输入以下验证码：</p>
+                      <div style="margin:22px 0;text-align:center;">
+                        <span style="display:inline-block;letter-spacing:8px;font-size:30px;font-weight:700;color:#e76f51;background:#fff4ef;border:1px solid #ffd8c9;border-radius:10px;padding:12px 20px;">%s</span>
+                      </div>
+                      <p>验证码 <strong>%d 分钟</strong> 内有效。若非本人操作，请忽略本邮件，并尽快检查账号安全。</p>
+                      <p style="color:#999;font-size:12px;margin-top:24px;padding-top:16px;border-top:1px solid #eee;">
+                        本邮件由智能招聘系统自动发送，请勿直接回复。
+                      </p>
+                    </div>
+                  </div>
+                </body></html>
+                """.formatted(StringUtils.hasText(name) ? name : "用户", code, expireMinutes);
     }
 }

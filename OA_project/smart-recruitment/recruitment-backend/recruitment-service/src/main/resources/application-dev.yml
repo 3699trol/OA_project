@@ -30,6 +30,10 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   elasticsearch:
     uris: http://${ES_HOST:localhost}:${ES_PORT:9200}
   cloud:
@@ -72,3 +76,10 @@ recruitment:
   mail:
     from: ${MAIL_FROM:2254696935@qq.com}
     from-name: 智能招聘系统
+  auth:
+    user-cache-ttl: 30m
+    login-failure-window: 10m
+    max-login-failures: 5
+    password-reset-code-ttl: 10m
+    password-reset-cooldown: 60s
+    max-password-reset-attempts: 5

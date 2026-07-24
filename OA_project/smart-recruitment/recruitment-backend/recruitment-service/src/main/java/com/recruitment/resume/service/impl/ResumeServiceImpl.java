@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.recruitment.file.service.FileService;
+import com.recruitment.common.redis.util.RedisUtil;
 import com.recruitment.resume.entity.Resume;
 import com.recruitment.resume.entity.ResumeEducation;
 import com.recruitment.resume.entity.ResumeExperience;
@@ -15,6 +16,7 @@ import com.recruitment.resume.service.ResumeService;
 import com.recruitment.search.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,7 @@ public class ResumeServiceImpl implements ResumeService {
     private final ObjectMapper objectMapper;
     private final FileService fileService;
     private final SearchService searchService;
+    private final ObjectProvider<RedisUtil> redisUtilProvider;
 
     @Override
     public Map<String, Object> getMyResume(Long userId) {
@@ -128,6 +131,20 @@ public class ResumeServiceImpl implements ResumeService {
         saveEducations(resumeId, data.get("educations"));
         saveExperiences(resumeId, data.get("experiences"));
         syncResumeIndex(resume);
+        // 简历技能变化会影响首页智能推荐，清除该用户的推荐缓存
+        evictRecommendCache(userId);
+    }
+
+    private void evictRecommendCache(Long userId) {
+        RedisUtil redisUtil = redisUtilProvider.getIfAvailable();
+        if (redisUtil == null || userId == null) {
+            return;
+        }
+        try {
+            redisUtil.delete("job:recommend:" + userId);
+        } catch (RuntimeException e) {
+            log.warn("Failed to evict recommendation cache for user {}: {}", userId, e.getMessage());
+        }
     }
 
     /**
@@ -370,6 +387,7 @@ public class ResumeServiceImpl implements ResumeService {
         resume.setFileUrl(null);
         resumeMapper.updateById(resume);
         deleteResumeIndex(resumeId);
+        evictRecommendCache(userId);
     }
 
     private void syncResumeIndex(Resume resume) {

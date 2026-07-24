@@ -36,4 +36,18 @@ public class AuthRuntimeProperties {
     @Min(1)
     @Max(100)
     private long maxLoginFailures = 5;
+
+    @NotNull
+    @DurationMin(seconds = 30)
+    @DurationMax(hours = 1)
+    private Duration passwordResetCodeTtl = Duration.ofMinutes(10);
+
+    @NotNull
+    @DurationMin(seconds = 10)
+    @DurationMax(hours = 1)
+    private Duration passwordResetCooldown = Duration.ofSeconds(60);
+
+    @Min(1)
+    @Max(20)
+    private long maxPasswordResetAttempts = 5;
 }

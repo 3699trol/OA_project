@@ -4,8 +4,8 @@
     <el-card class="search-card" shadow="never">
       <el-form :inline="true" :model="filters">
         <el-form-item label="关键词"><el-input v-model="filters.keyword" placeholder="职位/技能" prefix-icon="Search" clearable style="width:200px;" /></el-form-item>
-        <el-form-item label="地点"><el-select v-model="filters.location" placeholder="不限" clearable style="width:140px;"><el-option label="北京" value="北京" /><el-option label="上海" value="上海" /><el-option label="深圳" value="深圳" /><el-option label="杭州" value="杭州" /></el-select></el-form-item>
-        <el-form-item label="类别"><el-select v-model="filters.category" placeholder="不限" clearable style="width:140px;"><el-option v-for="c in categories" :key="c" :label="c" :value="c" /></el-select></el-form-item>
+        <el-form-item label="地点"><el-input v-model="filters.location" placeholder="不限" clearable style="width:140px;" /></el-form-item>
+        <el-form-item label="类别"><el-select v-model="filters.category" placeholder="不限" clearable style="width:140px;" @change="fetchJobs"><el-option v-for="c in categories" :key="c" :label="c" :value="c" /></el-select></el-form-item>
         <el-form-item label="排序"><el-select v-model="filters.sortBy" placeholder="默认" clearable style="width:120px;" @change="fetchJobs"><el-option label="发布时间" value="createTime" /><el-option label="薪资水平" value="salary" /></el-select></el-form-item>
         <el-form-item label="方式" v-if="filters.sortBy"><el-select v-model="filters.sortOrder" style="width:100px;" @change="fetchJobs"><el-option label="降序" value="desc" /><el-option label="升序" value="asc" /></el-select></el-form-item>
         <el-form-item><el-button type="primary" icon="Search" @click="fetchJobs">搜索</el-button><el-button @click="resetFilters">重置</el-button></el-form-item>
@@ -31,7 +31,7 @@
       </el-table-column>
       <el-table-column label="操作" width="120"><template #default="{ row }"><el-button type="primary" link @click="$router.push(`/candidate/jobs/${row.id}`)">查看详情</el-button></template></el-table-column>
     </el-table>
-    <el-pagination v-model:current-page="page" :page-size="10" :total="total" layout="prev, pager, next, total" background style="margin-top:20px;justify-content:center;" />
+    <el-pagination v-model:current-page="page" :page-size="10" :total="total" layout="prev, pager, next, total" background style="margin-top:20px;justify-content:center;" @current-change="fetchJobs" />
   </div>
 </template>
 
@@ -54,11 +54,14 @@ async function fetchCategories() {
 async function fetchJobs() {
   loading.value = true
   try {
-    const res = await getJobList({ 
-      page: page.value, 
-      size: 10, 
+    const res = await getJobList({
+      page: page.value,
+      size: 10,
       keyword: filters.keyword || undefined,
-      category: filters.category || undefined
+      category: filters.category || undefined,
+      city: filters.location || undefined,
+      sortBy: filters.sortBy || undefined,
+      sortOrder: filters.sortBy ? filters.sortOrder : undefined
     })
     if (res && res.data) {
       jobList.value = res.data.records || []
