@@ -377,17 +377,26 @@ public class OpenAiResponsesClient {
         }
         String trimmed = text.trim();
 
-        // 情况1：```json\n{...}\n``` 或 ```\n{...}\n```
+        // 情况1：```json\n{...}\n``` 或 ```\n{...}\n``` 或 ```json\n[...]\n```
         java.util.regex.Matcher codeBlockMatcher = java.util.regex.Pattern.compile(
-                "```(?:json)?\\s*\\n?(\\{.*?})\\s*```",
+                "```(?:json)?\\s*\\n?((?:\\{.*?})|(?:\\[.*?]))\\s*```",
                 java.util.regex.Pattern.DOTALL).matcher(trimmed);
         if (codeBlockMatcher.find()) {
             return codeBlockMatcher.group(1).trim();
         }
 
-        // 情况2：文本中直接包含 {...}（取第一个完整的JSON对象）
-        int braceStart = trimmed.indexOf('{');
+        // 情况2：文本中直接包含 {...} 或 [...]（取第一个完整的JSON对象/数组）
+        int objStart = trimmed.indexOf('{');
+        int arrStart = trimmed.indexOf('[');
+        int braceStart = -1;
+        char braceChar = 0;
+        if (objStart >= 0 && arrStart >= 0) {
+            if (objStart <= arrStart) { braceStart = objStart; braceChar = '{'; }
+            else { braceStart = arrStart; braceChar = '['; }
+        } else if (objStart >= 0) { braceStart = objStart; braceChar = '{'; }
+        else if (arrStart >= 0) { braceStart = arrStart; braceChar = '['; }
         if (braceStart >= 0) {
+            char closeBrace = braceChar == '{' ? '}' : ']';
             int depth = 0;
             boolean inString = false;
             boolean escaped = false;
@@ -406,8 +415,8 @@ public class OpenAiResponsesClient {
                     continue;
                 }
                 if (inString) continue;
-                if (c == '{') depth++;
-                else if (c == '}') {
+                if (c == braceChar) depth++;
+                else if (c == closeBrace) {
                     depth--;
                     if (depth == 0) {
                         return trimmed.substring(braceStart, i + 1);

@@ -91,6 +91,15 @@ public class InterviewServiceImpl implements InterviewService {
             throw new RuntimeException("该候选人的投递已撤回，无法安排面试");
         }
 
+        // 校验是否已安排面试（防止重复安排）
+        LambdaQueryWrapper<Interview> existWrapper = new LambdaQueryWrapper<>();
+        existWrapper.eq(Interview::getApplicationId, applicationId)
+                .ne(Interview::getStatus, 2); // 排除已取消的面试
+        Long existCount = interviewMapper.selectCount(existWrapper);
+        if (existCount != null && existCount > 0) {
+            throw new RuntimeException("该候选人已安排面试，请勿重复安排。如需调整请在面试详情中操作");
+        }
+
         // 解析面试时间
         LocalDateTime interviewTime;
         try {

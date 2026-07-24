@@ -17,10 +17,11 @@
         <el-table-column prop="status" label="状态" width="90" align="center">
           <template #default="{ row }"><el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag></template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="$router.push(`/hr/candidates/detail/${row.id}`)">简历详情</el-button>
-            <el-button v-if="row.status === '面试中'" size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}&applicationId=${row.id}`)">安排面试</el-button>
+            <el-button v-if="row.status === '面试中' && !row.interviewId" size="small" type="success" link @click="$router.push(`/hr/interviews/create?candidateId=${row.userId}&applicationId=${row.id}`)">安排面试</el-button>
+            <el-button v-if="row.status === '面试中' && row.interviewId" size="small" type="warning" link @click="$router.push(`/hr/interviews/detail/${row.interviewId}`)">面试详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -58,7 +59,9 @@ async function fetchCandidates() {
       userId: a.userId,
       name: a.candidateName || a.userName || '候选人',
       jobTitle: a.jobName || a.jobTitle || '',
-      status: mapStatus(a.status)
+      status: mapStatus(a.status),
+      interviewId: a.interviewId || null,
+      interviewStatus: a.interviewStatus != null ? a.interviewStatus : null
     }))
     total.value = res.data.total || 0
   } catch (e) { /* fallback */ }

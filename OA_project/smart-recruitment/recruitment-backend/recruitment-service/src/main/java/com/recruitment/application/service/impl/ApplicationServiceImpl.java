@@ -6,6 +6,8 @@ import com.recruitment.application.mapper.JobApplicationMapper;
 import com.recruitment.application.service.ApplicationService;
 import com.recruitment.common.core.model.PageResult;
 import com.recruitment.common.redis.util.DailyStatsCounter;
+import com.recruitment.interview.entity.Interview;
+import com.recruitment.interview.mapper.InterviewMapper;
 import com.recruitment.job.entity.Job;
 import com.recruitment.job.mapper.JobMapper;
 import com.recruitment.resume.entity.Resume;
@@ -36,6 +38,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ResumeMapper resumeMapper;
     private final ResumeService resumeService;
     private final SysUserMapper userMapper;
+    private final InterviewMapper interviewMapper;
     private final ObjectProvider<DailyStatsCounter> dailyStatsCounterProvider;
 
     /** 今日投递数计数器业务域 */
@@ -144,6 +147,21 @@ public class ApplicationServiceImpl implements ApplicationService {
             if (user != null) {
                 map.put("candidateName", user.getRealName() != null ? user.getRealName() : user.getUsername());
                 map.put("userName", user.getUsername());
+            }
+
+            // 关联面试信息
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Interview> interviewWrapper =
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+            interviewWrapper.eq(Interview::getApplicationId, app.getId())
+                    .orderByDesc(Interview::getCreateTime)
+                    .last("LIMIT 1");
+            Interview latestInterview = interviewMapper.selectOne(interviewWrapper);
+            if (latestInterview != null) {
+                map.put("interviewId", latestInterview.getId());
+                map.put("interviewStatus", latestInterview.getStatus());
+            } else {
+                map.put("interviewId", null);
+                map.put("interviewStatus", null);
             }
 
             return map;

@@ -19,7 +19,7 @@
           </div>
           <el-divider />
           <div class="action-buttons">
-            <el-button type="primary" @click="handleStatusChange(1)" :loading="statusLoading">初筛通过</el-button>
+            <el-button v-if="candidate.status === 0" type="primary" @click="handleStatusChange(1)" :loading="statusLoading">初筛通过</el-button>
             <el-button type="danger" plain @click="handleStatusChange(3)" :loading="statusLoading">不合适</el-button>
           </div>
           <el-divider />
@@ -149,12 +149,13 @@ async function loadDetail() {
 }
 
 async function handleStatusChange(newStatus) {
-  const label = newStatus === 1 ? '初筛通过' : '标记为不合适'
+  const labelMap = { 1: '初筛通过', 3: '标记为不合适' }
+  const label = labelMap[newStatus] || '操作'
   try {
     await ElMessageBox.confirm(`确定要${label}该候选人吗？`, '确认操作', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: newStatus === 1 ? 'success' : 'warning'
+      type: newStatus === 1 ? 'primary' : 'warning'
     })
     statusLoading.value = true
     await updateApplicationStatus(route.params.id, { status: newStatus })

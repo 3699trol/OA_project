@@ -48,7 +48,7 @@
         </el-card>
 
         <!-- 未出题提示 -->
-        <el-card v-else shadow="never" class="section-card">
+        <el-card v-else-if="detail.status === 0" shadow="never" class="section-card">
           <el-empty description="尚未生成面试题，请点击右侧「AI生成面试题」开始" :image-size="80">
             <el-button type="primary" @click="$router.push(`/interviewer/questions/generate?interviewId=${route.params.id}`)">立即生成</el-button>
           </el-empty>
@@ -146,13 +146,13 @@
           <div class="action-buttons">
             <template v-if="detail.status === 0">
               <el-button type="primary" @click="$router.push(`/interviewer/questions/generate?interviewId=${route.params.id}`)">
-                🤖 AI 生成面试题
+                 AI 生成面试题
               </el-button>
               <el-button type="success" @click="$router.push(`/interviewer/evaluation/${route.params.id}`)">
                 ✍️ 填写面试评价
               </el-button>
             </template>
-            <el-tag v-else type="info" class="finished-tag">面试已结束</el-tag>
+            <el-tag v-else type="success" class="finished-tag">✅ 面试已完成</el-tag>
           </div>
         </el-card>
       </el-col>
