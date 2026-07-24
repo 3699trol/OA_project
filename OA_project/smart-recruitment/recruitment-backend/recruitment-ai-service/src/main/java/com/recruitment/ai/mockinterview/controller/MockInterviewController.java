@@ -8,6 +8,7 @@ import com.recruitment.api.dto.AiMockInterviewStartResponse;
 import com.recruitment.api.dto.AiMockInterviewSubmitRequest;
 import com.recruitment.api.dto.AiMockInterviewSubmitResponse;
 import com.recruitment.common.core.model.Result;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,8 @@ public class MockInterviewController {
     private final MockInterviewService mockInterviewService;
 
     @PostMapping("/start")
-    public Result<AiMockInterviewStartResponse> start(@RequestBody AiMockInterviewStartRequest request) {
+    public Result<AiMockInterviewStartResponse> start(
+            @Valid @RequestBody AiMockInterviewStartRequest request) {
         return Result.success(mockInterviewService.start(request));
     }
 

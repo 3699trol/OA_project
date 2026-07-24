@@ -1,6 +1,8 @@
 package com.recruitment.interview.service;
 
 import com.recruitment.common.core.model.PageResult;
+import com.recruitment.interview.dto.InterviewCreateRequest;
+import com.recruitment.interview.dto.InterviewEvaluationRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +15,7 @@ public interface InterviewService {
     /**
      * 创建面试
      */
-    Map<String, Object> createInterview(Map<String, Object> params, Long operatorId);
+    Map<String, Object> createInterview(InterviewCreateRequest request, Long operatorId);
 
     /**
      * 面试列表（HR查看所有）
@@ -58,7 +60,7 @@ public interface InterviewService {
     /**
      * 保存面试评价（面试官提交）
      */
-    void saveEvaluation(Map<String, Object> params, Long interviewerId);
+    void saveEvaluation(InterviewEvaluationRequest request, Long interviewerId);
 
     /**
      * 根据面试ID查询评价

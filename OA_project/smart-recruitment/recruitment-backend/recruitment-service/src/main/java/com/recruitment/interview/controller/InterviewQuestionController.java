@@ -5,10 +5,12 @@ import com.recruitment.api.client.AiServiceClient;
 import com.recruitment.api.dto.AiQuestionRequest;
 import com.recruitment.api.dto.AiQuestionResponse;
 import com.recruitment.common.core.model.Result;
+import com.recruitment.interview.dto.InterviewQuestionGenerateRequest;
 import com.recruitment.interview.entity.InterviewQuestion;
 import com.recruitment.interview.mapper.InterviewQuestionMapper;
 import com.recruitment.job.entity.Job;
 import com.recruitment.job.service.JobService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -35,17 +37,17 @@ public class InterviewQuestionController {
      * AI生成面试题
      */
     @PostMapping("/generate")
-    public Result<AiQuestionResponse> generate(@RequestBody Map<String, Object> body) {
+    public Result<AiQuestionResponse> generate(
+            @Valid @RequestBody InterviewQuestionGenerateRequest body) {
         // 构建AI请求
         AiQuestionRequest request = new AiQuestionRequest();
 
         // 优先使用传入的 jobTitle / jobDescription，否则从 jobId 加载
-        String jobTitle = body.get("jobTitle") != null ? body.get("jobTitle").toString() : null;
-        String jobDescription = body.get("jobDescription") != null ? body.get("jobDescription").toString() : null;
-        Object jobIdObj = body.get("jobId");
+        String jobTitle = body.getJobTitle();
+        String jobDescription = body.getJobDescription();
+        Long jobId = body.getJobId();
 
-        if (!StringUtils.hasText(jobTitle) && jobIdObj != null) {
-            Long jobId = Long.valueOf(jobIdObj.toString());
+        if (!StringUtils.hasText(jobTitle) && jobId != null) {
             Job job = jobService.getById(jobId);
             if (job != null) {
                 jobTitle = job.getJobName();
@@ -60,20 +62,11 @@ public class InterviewQuestionController {
         request.setJobTitle(jobTitle);
         request.setJobDescription(jobDescription);
 
-        if (body.get("resumeContent") != null) {
-            request.setResumeContent(body.get("resumeContent").toString());
-        }
-        if (body.get("questionType") != null) {
-            request.setQuestionType(body.get("questionType").toString());
-        }
-        if (body.get("difficulty") != null) {
-            request.setDifficulty(body.get("difficulty").toString());
-        }
+        request.setResumeContent(body.getResumeContent());
+        request.setQuestionType(body.getQuestionType());
+        request.setDifficulty(body.getDifficulty());
 
-        Integer count = 5;
-        if (body.get("count") != null) {
-            count = Integer.valueOf(body.get("count").toString());
-        }
+        Integer count = body.getCount() != null ? body.getCount() : 5;
         request.setCount(count);
 
         log.info("开始生成面试题: jobTitle={}, count={}, difficulty={}",

@@ -48,6 +48,8 @@ public class AuthServiceImpl implements AuthService {
     private static final String PASSWORD_RESET_CODE_PREFIX = "auth:password-reset:code:";
     private static final String PASSWORD_RESET_COOLDOWN_PREFIX = "auth:password-reset:cooldown:";
     private static final String PASSWORD_RESET_ATTEMPT_PREFIX = "auth:password-reset:attempt:";
+    private static final int MIN_PASSWORD_LENGTH = 6;
+    private static final int MAX_PASSWORD_LENGTH = 64;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final SysUserMapper sysUserMapper;
@@ -132,6 +134,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void register(RegisterRequest request) {
+        validatePasswordLength(request.getPassword());
         // 检查用户名是否已存在
         Long count = sysUserMapper.selectCount(
                 new LambdaQueryWrapper<SysUser>()
@@ -167,9 +170,7 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new BusinessException("原密码不正确");
         }
-        if (request.getNewPassword().length() < 6) {
-            throw new BusinessException("新密码长度不能少于6位");
-        }
+        validatePasswordLength(request.getNewPassword());
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         sysUserMapper.updateById(user);
         evictUserCache(userId);
@@ -228,9 +229,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("验证码错误或已过期");
         }
 
-        if (request.getNewPassword().length() < 6) {
-            throw new BusinessException("新密码长度不能少于6位");
-        }
+        validatePasswordLength(request.getNewPassword());
 
         SysUser user = sysUserMapper.selectById(storedCode.userId());
         if (user == null || Integer.valueOf(1).equals(user.getDeleted())) {
@@ -624,6 +623,13 @@ public class AuthServiceImpl implements AuthService {
 
     private long positiveMillis(java.time.Duration duration) {
         return Math.max(1L, duration.toMillis());
+    }
+
+    private void validatePasswordLength(String password) {
+        if (password == null || password.length() < MIN_PASSWORD_LENGTH
+                || password.length() > MAX_PASSWORD_LENGTH) {
+            throw new BusinessException("密码长度应为6到64位");
+        }
     }
 
     private record StoredResetCode(Long userId, String code) {

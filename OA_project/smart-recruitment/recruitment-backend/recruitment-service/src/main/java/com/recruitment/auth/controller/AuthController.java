@@ -59,7 +59,7 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
-    public Result<?> updateProfile(@RequestBody UpdateProfileRequest request,
+    public Result<?> updateProfile(@Valid @RequestBody UpdateProfileRequest request,
                                     HttpServletRequest httpRequest) {
         if (authService == null) return Result.success();
         Long userId = (Long) httpRequest.getAttribute("userId");

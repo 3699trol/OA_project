@@ -3,10 +3,12 @@ package com.recruitment.system.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.recruitment.common.core.model.PageResult;
 import com.recruitment.common.core.model.Result;
+import com.recruitment.system.dto.UserUpdateRequest;
 import com.recruitment.system.entity.SysUser;
 import com.recruitment.system.service.SysUserService;
 import com.recruitment.system.vo.SysUserVO;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -110,13 +112,20 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public Result<Void> updateUser(@PathVariable("id") Long id, @RequestBody SysUser user) {
+    public Result<Void> updateUser(@PathVariable("id") Long id,
+                                   @Valid @RequestBody UserUpdateRequest request) {
         log.info("更新用户请求，用户ID: {}", id);
         if (sysUserService == null) {
             log.error("SysUserService 未注入，无法执行更新操作");
             return Result.error(500, "用户服务未初始化");
         }
+        SysUser user = new SysUser();
         user.setId(id);
+        user.setRealName(request.getRealName());
+        user.setUserType(request.getUserType());
+        user.setPhone(request.getPhone());
+        user.setEmail(request.getEmail());
+        user.setStatus(request.getStatus());
         try {
             sysUserService.updateUser(user);
             log.info("用户 {} 更新成功", id);

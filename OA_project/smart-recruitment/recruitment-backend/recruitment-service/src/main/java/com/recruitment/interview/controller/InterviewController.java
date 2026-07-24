@@ -3,7 +3,10 @@ package com.recruitment.interview.controller;
 import com.recruitment.common.core.model.PageResult;
 import com.recruitment.common.core.model.Result;
 import com.recruitment.common.security.model.LoginUser;
+import com.recruitment.interview.dto.InterviewCreateRequest;
+import com.recruitment.interview.dto.InterviewEvaluationRequest;
 import com.recruitment.interview.service.InterviewService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,12 +29,12 @@ public class InterviewController {
      * 创建面试
      */
     @PostMapping
-    public Result<?> create(@RequestBody Map<String, Object> body) {
+    public Result<?> create(@Valid @RequestBody InterviewCreateRequest request) {
         Long userId = getCurrentUserId();
         if (userId == null) {
             return Result.error(401, "未登录");
         }
-        Map<String, Object> result = interviewService.createInterview(body, userId);
+        Map<String, Object> result = interviewService.createInterview(request, userId);
         return Result.success(result);
     }
 
@@ -149,12 +152,12 @@ public class InterviewController {
      * 保存面试评价（面试官提交）
      */
     @PostMapping("/evaluation")
-    public Result<?> saveEvaluation(@RequestBody Map<String, Object> body) {
+    public Result<?> saveEvaluation(@Valid @RequestBody InterviewEvaluationRequest request) {
         Long userId = getCurrentUserId();
         if (userId == null) {
             return Result.error(401, "未登录");
         }
-        interviewService.saveEvaluation(body, userId);
+        interviewService.saveEvaluation(request, userId);
         return Result.success("评价提交成功");
     }
 

@@ -14,6 +14,7 @@ import com.recruitment.api.dto.AiMockInterviewSubmitResponse;
 import com.recruitment.api.dto.AiResumeParseRequest;
 import com.recruitment.api.dto.AiResumeParseResponse;
 import com.recruitment.common.core.model.Result;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
@@ -81,12 +82,13 @@ public class AiController {
     }
 
     @PostMapping("/question/generate")
-    public Result<AiQuestionResponse> generateQuestions(@RequestBody AiQuestionRequest request) {
+    public Result<AiQuestionResponse> generateQuestions(@Valid @RequestBody AiQuestionRequest request) {
         return aiServiceClient.generateQuestions(request);
     }
 
     @PostMapping("/mock-interview/start")
-    public Result<AiMockInterviewStartResponse> startMockInterview(@RequestBody AiMockInterviewStartRequest request) {
+    public Result<AiMockInterviewStartResponse> startMockInterview(
+            @Valid @RequestBody AiMockInterviewStartRequest request) {
         log.info("收到模拟面试启动请求: jobTitle={}", request != null ? request.getJobTitle() : "null");
         try {
             Result<AiMockInterviewStartResponse> result = aiServiceClient.startMockInterview(request);

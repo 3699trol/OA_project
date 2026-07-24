@@ -6,6 +6,8 @@ import com.recruitment.application.mapper.JobApplicationMapper;
 import com.recruitment.mail.MailService;
 import com.recruitment.common.core.model.PageResult;
 import com.recruitment.common.redis.util.DailyStatsCounter;
+import com.recruitment.interview.dto.InterviewCreateRequest;
+import com.recruitment.interview.dto.InterviewEvaluationRequest;
 import com.recruitment.interview.entity.Interview;
 import com.recruitment.interview.entity.InterviewEvaluation;
 import com.recruitment.interview.entity.InterviewQuestion;
@@ -54,29 +56,17 @@ public class InterviewServiceImpl implements InterviewService {
     private static final String DOMAIN_INTERVIEW = "interview";
 
     @Override
-    public Map<String, Object> createInterview(Map<String, Object> params, Long operatorId) {
-        // 必填参数校验
-        Object applicationIdObj = params.get("applicationId");
-        Object interviewerIdObj = params.get("interviewerId");
-        Object interviewTimeObj = params.get("interviewTime");
-
-        if (applicationIdObj == null) {
-            throw new RuntimeException("请选择候选人（投递记录）");
-        }
-        if (interviewerIdObj == null) {
-            throw new RuntimeException("请选择面试官");
-        }
-        if (interviewTimeObj == null || interviewTimeObj.toString().isEmpty()) {
-            throw new RuntimeException("请选择面试时间");
-        }
-
-        Long applicationId = Long.valueOf(applicationIdObj.toString());
-        Long interviewerId = Long.valueOf(interviewerIdObj.toString());
+    public Map<String, Object> createInterview(InterviewCreateRequest request, Long operatorId) {
+        Long applicationId = request.getApplicationId();
+        Long interviewerId = request.getInterviewerId();
 
         // 校验投递记录存在
         JobApplication application = applicationMapper.selectById(applicationId);
         if (application == null || application.getDeleted() == 1) {
             throw new RuntimeException("投递记录不存在");
+        }
+        if (!request.getCandidateId().equals(application.getUserId())) {
+            throw new RuntimeException("候选人与投递记录不匹配");
         }
 
         // 校验投递状态：只有"面试中(1)"或"已录用(2)"的投递才能安排面试
@@ -104,18 +94,18 @@ public class InterviewServiceImpl implements InterviewService {
         LocalDateTime interviewTime;
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-            interviewTime = LocalDateTime.parse(interviewTimeObj.toString(), formatter);
+            interviewTime = LocalDateTime.parse(request.getInterviewTime(), formatter);
         } catch (Exception e) {
             throw new RuntimeException("面试时间格式错误，请使用 yyyy-MM-dd HH:mm 格式");
         }
 
         // 构建面试类型（合并 type + mode）
-        String type = params.get("type") != null ? params.get("type").toString() : "技术面试";
-        String mode = params.get("mode") != null ? params.get("mode").toString() : "线上";
+        String type = request.getType();
+        String mode = request.getMode();
         String interviewType = type + "-" + mode;
 
         // 地址/备注
-        String address = params.get("address") != null ? params.get("address").toString() : null;
+        String address = request.getAddress();
 
         // 创建面试记录
         Interview interview = new Interview();
@@ -594,12 +584,8 @@ public class InterviewServiceImpl implements InterviewService {
     }
 
     @Override
-    public void saveEvaluation(Map<String, Object> params, Long interviewerId) {
-        Object interviewIdObj = params.get("interviewId");
-        if (interviewIdObj == null) {
-            throw new RuntimeException("面试ID不能为空");
-        }
-        Long interviewId = Long.valueOf(interviewIdObj.toString());
+    public void saveEvaluation(InterviewEvaluationRequest request, Long interviewerId) {
+        Long interviewId = request.getInterviewId();
 
         // 校验面试记录存在且面试官匹配
         Interview interview = interviewMapper.selectById(interviewId);
@@ -623,22 +609,12 @@ public class InterviewServiceImpl implements InterviewService {
         try {
             InterviewEvaluation evaluation = new InterviewEvaluation();
             evaluation.setInterviewId(interviewId);
-            if (params.get("technicalScore") != null) {
-                evaluation.setTechnicalScore(Integer.valueOf(params.get("technicalScore").toString()));
-            }
-            if (params.get("communicationScore") != null) {
-                evaluation.setCommunicationScore(Integer.valueOf(params.get("communicationScore").toString()));
-            }
-            if (params.get("logicScore") != null) {
-                evaluation.setLogicScore(Integer.valueOf(params.get("logicScore").toString()));
-            }
-            if (params.get("overallScore") != null) {
-                evaluation.setOverallScore(Integer.valueOf(params.get("overallScore").toString()));
-            }
-            evaluation.setEvaluation(params.get("evaluation") != null ? params.get("evaluation").toString() : null);
-            if (params.get("result") != null) {
-                evaluation.setResult(Integer.valueOf(params.get("result").toString()));
-            }
+            evaluation.setTechnicalScore(request.getTechnicalScore());
+            evaluation.setCommunicationScore(request.getCommunicationScore());
+            evaluation.setLogicScore(request.getLogicScore());
+            evaluation.setOverallScore(request.getOverallScore());
+            evaluation.setEvaluation(request.getEvaluation());
+            evaluation.setResult(request.getResult());
             evaluation.setFeedbackTime(LocalDateTime.now());
 
             // 查询是否已有评价，有则更新，无则插入

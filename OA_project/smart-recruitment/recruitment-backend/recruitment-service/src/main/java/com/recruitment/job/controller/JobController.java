@@ -9,6 +9,7 @@ import com.recruitment.job.entity.Job;
 import com.recruitment.job.service.JobService;
 import com.recruitment.job.service.RecommendationService;
 import com.recruitment.job.vo.JobRecommendVO;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -69,7 +70,7 @@ public class JobController {
     }
 
     @PostMapping
-    public Result<Job> create(@RequestBody JobCreateRequest request) {
+    public Result<Job> create(@Valid @RequestBody JobCreateRequest request) {
         if (jobService == null) return Result.success();
         Long userId = getCurrentUserId();
         if (userId == null) {
@@ -82,7 +83,8 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
-    public Result<Job> update(@PathVariable Long id, @RequestBody JobUpdateRequest request) {
+    public Result<Job> update(@PathVariable Long id,
+                              @Valid @RequestBody JobUpdateRequest request) {
         if (jobService == null) return Result.success();
         Job job = new Job();
         BeanUtils.copyProperties(request, job);

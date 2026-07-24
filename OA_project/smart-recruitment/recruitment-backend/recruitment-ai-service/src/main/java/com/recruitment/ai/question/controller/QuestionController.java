@@ -4,6 +4,7 @@ import com.recruitment.api.dto.AiQuestionRequest;
 import com.recruitment.api.dto.AiQuestionResponse;
 import com.recruitment.ai.question.service.QuestionService;
 import com.recruitment.common.core.model.Result;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class QuestionController {
     private final QuestionService questionService;
 
     @PostMapping("/generate")
-    public Result<AiQuestionResponse> generate(@RequestBody AiQuestionRequest request) {
+    public Result<AiQuestionResponse> generate(@Valid @RequestBody AiQuestionRequest request) {
         return Result.success(questionService.generate(request));
     }
 }
