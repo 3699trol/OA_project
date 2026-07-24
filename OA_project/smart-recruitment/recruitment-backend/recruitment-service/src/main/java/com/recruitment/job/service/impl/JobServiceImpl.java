@@ -8,6 +8,7 @@ import com.recruitment.job.entity.Job;
 import com.recruitment.job.mapper.JobMapper;
 import com.recruitment.job.service.JobService;
 import com.recruitment.search.service.SearchService;
+import com.recruitment.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -15,7 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,6 +35,7 @@ public class JobServiceImpl implements JobService {
     private final JobMapper jobMapper;
     private final SearchService searchService;
     private final ObjectProvider<RedisUtil> redisUtilProvider;
+    private final SysUserMapper userMapper;
 
     @Override
     public PageResult<Job> listByPage(long pageNum, long pageSize, String keyword, Integer status,
@@ -37,6 +43,8 @@ public class JobServiceImpl implements JobService {
         String cacheKey = jobListCacheKey(pageNum, pageSize, keyword, status, category, city, sortBy, sortOrder);
         PageResult<Job> cached = getCachedJobPage(cacheKey);
         if (cached != null) {
+            // 旧缓存条目可能不含 publisherName，缺失时补填，保证字段始终可用
+            fillPublisherNames(cached.getRecords());
             return cached;
         }
 
@@ -60,9 +68,38 @@ public class JobServiceImpl implements JobService {
         }
         applySort(wrapper, sortBy, sortOrder);
         Page<Job> jobPage = jobMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        fillPublisherNames(jobPage.getRecords());
         PageResult<Job> result = new PageResult<>(jobPage.getRecords(), jobPage.getTotal(), pageNum, pageSize);
         cacheJobPage(cacheKey, result);
         return result;
+    }
+
+    /**
+     * 批量填充职位的发布者（HR）姓名：优先 realName，回退 username。
+     * publisherId 为空或对应用户不存在时置为 "-"，避免前端展示空白。
+     */
+    private void fillPublisherNames(List<Job> jobs) {
+        if (jobs == null || jobs.isEmpty()) {
+            return;
+        }
+        // 已全部填充（如命中本次改动后写入的新缓存）则跳过，避免多余用户表查询
+        if (jobs.stream().allMatch(j -> j.getPublisherName() != null)) {
+            return;
+        }
+        List<Long> publisherIds = jobs.stream()
+                .map(Job::getPublisherId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, String> nameMap = new HashMap<>();
+        if (!publisherIds.isEmpty()) {
+            userMapper.selectBatchIds(publisherIds).forEach(u ->
+                    nameMap.put(u.getId(), StringUtils.hasText(u.getRealName()) ? u.getRealName() : u.getUsername()));
+        }
+        for (Job job : jobs) {
+            Long pid = job.getPublisherId();
+            job.setPublisherName(pid == null ? "-" : nameMap.getOrDefault(pid, "-"));
+        }
     }
 
     @Override

@@ -3,7 +3,7 @@
     <div class="page-header"><h2>💼 职位列表</h2></div>
     <el-card class="search-card" shadow="never">
       <el-form :inline="true" :model="filters">
-        <el-form-item label="关键词"><el-input v-model="filters.keyword" placeholder="职位/技能" prefix-icon="Search" clearable style="width:200px;" /></el-form-item>
+        <el-form-item label="关键词"><el-input v-model="filters.keyword" placeholder="职位" prefix-icon="Search" clearable style="width:200px;" /></el-form-item>
         <el-form-item label="地点"><el-input v-model="filters.location" placeholder="不限" clearable style="width:140px;" /></el-form-item>
         <el-form-item label="类别"><el-select v-model="filters.category" placeholder="不限" clearable style="width:140px;" @change="fetchJobs"><el-option v-for="c in categories" :key="c" :label="c" :value="c" /></el-select></el-form-item>
         <el-form-item label="排序"><el-select v-model="filters.sortBy" placeholder="默认" clearable style="width:120px;" @change="fetchJobs"><el-option label="发布时间" value="createTime" /><el-option label="薪资水平" value="salary" /></el-select></el-form-item>
@@ -13,7 +13,7 @@
     </el-card>
     <el-table :data="jobList" style="width:100%;margin-top:16px;" v-loading="loading" stripe>
       <el-table-column prop="jobName" label="职位名称" min-width="160" />
-      <el-table-column prop="department" label="公司/部门" min-width="140" />
+      <el-table-column prop="publisherName" label="发布者" min-width="120" />
       <el-table-column prop="city" label="地点" width="120" />
       <el-table-column label="薪资" width="130">
         <template #default="{ row }">

@@ -71,7 +71,6 @@
             
             <div class="job-tags">
               <el-tag size="small" type="info" effect="plain" class="j-tag">{{ job.city }}</el-tag>
-              <el-tag size="small" type="info" effect="plain" class="j-tag">{{ job.experience }}</el-tag>
               <el-tag size="small" type="info" effect="plain" class="j-tag">{{ job.education }}</el-tag>
             </div>
 
@@ -123,7 +122,7 @@ const quickCards = [
 async function fetchJobs() {
   loading.value = true
   try {
-    const res = await getRecommendedJobs({ limit: 4 })
+    const res = await getRecommendedJobs({ limit: 1000 })
     if (res.code === 200) {
       recommendedJobs.value = res.data || []
     }
@@ -311,6 +310,7 @@ onMounted(() => {
 
 .job-col {
   margin-bottom: 16px;
+  display: flex;
 }
 
 .job-card {
@@ -319,6 +319,15 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.25s ease-in-out;
   padding: 6px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.job-card :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .job-card:hover {
@@ -395,6 +404,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: auto;
 }
 
 .rec-score {

@@ -1,6 +1,7 @@
 package com.recruitment.job.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -35,4 +36,8 @@ public class Job {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer deleted;
+
+    /** 发布者（HR）姓名：非数据库字段，由服务层关联 sys_user 填充 */
+    @TableField(exist = false)
+    private String publisherName;
 }

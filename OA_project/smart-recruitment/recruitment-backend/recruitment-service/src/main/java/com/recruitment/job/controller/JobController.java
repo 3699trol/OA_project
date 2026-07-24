@@ -47,7 +47,7 @@ public class JobController {
      * 基于当前用户简历技能标签与在招职位技能标签的重叠度推荐职位。
      */
     @GetMapping("/recommend")
-    public Result<List<JobRecommendVO>> recommend(@RequestParam(name = "limit", defaultValue = "4") int limit) {
+    public Result<List<JobRecommendVO>> recommend(@RequestParam(name = "limit", defaultValue = "1000") int limit) {
         if (recommendationService == null) {
             return Result.success(List.of());
         }
@@ -71,8 +71,13 @@ public class JobController {
     @PostMapping
     public Result<Job> create(@RequestBody JobCreateRequest request) {
         if (jobService == null) return Result.success();
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return Result.error(401, "未登录");
+        }
         Job job = new Job();
         BeanUtils.copyProperties(request, job);
+        job.setPublisherId(userId);
         return Result.success(jobService.create(job));
     }
 

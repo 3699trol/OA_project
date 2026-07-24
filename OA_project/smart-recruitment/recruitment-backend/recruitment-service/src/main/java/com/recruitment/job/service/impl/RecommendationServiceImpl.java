@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
  * 即“用户满足该职位技能要求的比例”。按匹配分降序、命中数降序、发布时间降序排序。
  * 结果按用户缓存到 Redis，TTL 5 分钟；职位写操作会清除所有用户推荐缓存。
  * 用户无简历或无技能时回退为最新在招职位。
+ * 候选池覆盖全部在招职位，按匹配度排序后返回前 limit 条（limit 由调用方控制）。
  */
 @Slf4j
 @Service
@@ -40,8 +41,6 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     private static final String CACHE_PREFIX = "job:recommend:";
     private static final long CACHE_TTL_MINUTES = 5;
-    /** 候选池大小：取最近 200 条在招职位参与打分，兼顾覆盖度与性能 */
-    private static final int CANDIDATE_POOL_SIZE = 200;
 
     private final JobMapper jobMapper;
     private final ResumeService resumeService;
@@ -147,8 +146,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         LambdaQueryWrapper<Job> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Job::getStatus, 1)
                 .eq(Job::getDeleted, 0)
-                .orderByDesc(Job::getCreateTime)
-                .last("LIMIT " + CANDIDATE_POOL_SIZE);
+                .orderByDesc(Job::getCreateTime);
         return jobMapper.selectList(wrapper);
     }
 
