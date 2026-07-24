@@ -14,14 +14,6 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="建议" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.evaluation" :type="row.evaluation.result === 2 ? 'success' : row.evaluation.result === 1 ? 'warning' : 'danger'" size="small">
-              {{ row.evaluation.resultLabel }}
-            </el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
         <el-table-column label="操作" width="120">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="$router.push(`/interviewer/tasks/${row.id}`)">查看</el-button>

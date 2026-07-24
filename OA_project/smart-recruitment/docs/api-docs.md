@@ -88,7 +88,7 @@ GET /api/system/user/list?page=1&size=10&searchField=realName&keyword=李&userTy
 ## 简历接口
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:-:|
-| 按ID查询简历 | GET | /api/resume/{id} | 预留的简历详情接口，当前返回空数据，尚未实现权限校验 | ⬜ |
+| 按ID查询简历 | GET | /api/resume/{id} | 预留的简历详情接口，当前返回空数据，尚未实现权限校验 | ✅️ |
 | 保存简历 | POST | /api/resume | 按当前登录用户新建或更新简历，兼容旧前端调用 | ✅️ |
 | 按ID更新简历 | PUT | /api/resume/{id} | 兼容接口；当前忽略路径中的ID，实际更新当前用户简历 | ❓️ |
 | 我的简历 | GET | /api/resume/my | 查询当前登录用户的完整简历；无简历时返回空对象 | ✅️ |
@@ -317,4 +317,4 @@ dev 环境会从 Nacos `SMART_RECRUITMENT` 分组导入公共配置 `recruitment
 | 接口 | 方法 | 路径 | 说明 | 状态 |
 |------|------|------|------|:--:|
 | 上传文件 | POST | /api/file/upload | 文件上传 | ✅️ |
-| 下载文件 | GET | /api/file/download/{id} | 文件下载 | ❓️ |
+| 下载文件 | GET | /api/file/download/{id} | 文件下载 | ✅️ |

@@ -369,7 +369,6 @@ const menuItems = computed(() => {
     INTERVIEWER: [
       { path: '/interviewer', title: '面试官工作台', icon: 'DataLine' },
       { path: '/interviewer/tasks', title: '待面试任务', icon: 'Calendar' },
-      { path: '/interviewer/questions/generate', title: 'AI 面试出题器', icon: 'EditPen' },
       { path: '/interviewer/history', title: '我评审的历程', icon: 'Clock' },
     ],
     ADMIN: [

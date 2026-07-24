@@ -565,6 +565,31 @@ public class InterviewServiceImpl implements InterviewService {
         int s = interview.getStatus() != null ? interview.getStatus() : 0;
         map.put("statusLabel", s >= 0 && s < statusLabels.length ? statusLabels[s] : "未知");
 
+        // 关联面试评价（列表页仅返回评分和结果，不返回详细评价文本）
+        if (interview.getStatus() != null && interview.getStatus() == 1) {
+            try {
+                LambdaQueryWrapper<InterviewEvaluation> evalWrapper = new LambdaQueryWrapper<>();
+                evalWrapper.eq(InterviewEvaluation::getInterviewId, interview.getId())
+                           .orderByDesc(InterviewEvaluation::getFeedbackTime)
+                           .last("LIMIT 1");
+                InterviewEvaluation evaluation = evaluationMapper.selectOne(evalWrapper);
+                if (evaluation != null) {
+                    Map<String, Object> evalMap = new HashMap<>();
+                    evalMap.put("technicalScore", evaluation.getTechnicalScore());
+                    evalMap.put("communicationScore", evaluation.getCommunicationScore());
+                    evalMap.put("logicScore", evaluation.getLogicScore());
+                    evalMap.put("overallScore", evaluation.getOverallScore());
+                    evalMap.put("result", evaluation.getResult());
+                    String[] resultLabels = {"淘汰", "待定", "通过"};
+                    int r = evaluation.getResult() != null ? evaluation.getResult() : 0;
+                    evalMap.put("resultLabel", r >= 0 && r < resultLabels.length ? resultLabels[r] : "未知");
+                    map.put("evaluation", evalMap);
+                }
+            } catch (Exception e) {
+                log.debug("加载面试评价失败, interviewId={}: {}", interview.getId(), e.getMessage());
+            }
+        }
+
         return map;
     }
 
