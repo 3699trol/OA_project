@@ -71,7 +71,8 @@ public interface InterviewService {
     void cancelInterview(Long interviewId, Long operatorId);
 
     /**
-     * HR处理面试结果（录用/淘汰）
+     * HR处理面试结果（录用/淘汰），emailSubject/emailBody 为空时使用默认模板
      */
-    void processResult(Long interviewId, Integer hireDecision, Long operatorId);
+    void processResult(Long interviewId, Integer hireDecision, Long operatorId,
+                       String emailSubject, String emailBody);
 }

@@ -14,6 +14,22 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:2254696935@qq.com}
+    password: ${MAIL_PASSWORD:rmhcuvdxbeobechi}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   elasticsearch:
     uris: http://${ES_HOST:localhost}:${ES_PORT:9200}
   cloud:
@@ -53,3 +69,6 @@ mybatis-plus:
 recruitment:
   security:
     permit-all: false
+  mail:
+    from: ${MAIL_FROM:2254696935@qq.com}
+    from-name: 智能招聘系统

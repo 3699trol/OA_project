@@ -185,7 +185,7 @@ public class InterviewController {
     }
 
     /**
-     * HR处理面试结果（录用/淘汰）
+     * HR处理面试结果（录用/淘汰），支持自定义邮件内容
      */
     @PostMapping("/{id}/process")
     public Result<?> processResult(@PathVariable Long id, @RequestBody Map<String, Object> body) {
@@ -194,7 +194,9 @@ public class InterviewController {
             return Result.error(401, "未登录");
         }
         Integer hireDecision = body.get("hireDecision") != null ? Integer.valueOf(body.get("hireDecision").toString()) : null;
-        interviewService.processResult(id, hireDecision, userId);
+        String emailSubject = body.get("emailSubject") != null ? body.get("emailSubject").toString() : null;
+        String emailBody = body.get("emailBody") != null ? body.get("emailBody").toString() : null;
+        interviewService.processResult(id, hireDecision, userId, emailSubject, emailBody);
         return Result.success("操作成功");
     }
 

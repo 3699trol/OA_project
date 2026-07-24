@@ -48,8 +48,8 @@ export function cancelInterview(id) {
   return request.post(`/interview/${id}/cancel`)
 }
 
-export function processInterviewResult(id, hireDecision) {
-  return request.post(`/interview/${id}/process`, { hireDecision })
+export function processInterviewResult(id, hireDecision, emailSubject, emailBody) {
+  return request.post(`/interview/${id}/process`, { hireDecision, emailSubject, emailBody })
 }
 
 export function getMyInterviews() {

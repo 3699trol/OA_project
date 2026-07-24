@@ -3,6 +3,7 @@ package com.recruitment.interview.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.recruitment.application.entity.JobApplication;
 import com.recruitment.application.mapper.JobApplicationMapper;
+import com.recruitment.mail.MailService;
 import com.recruitment.common.core.model.PageResult;
 import com.recruitment.common.redis.util.DailyStatsCounter;
 import com.recruitment.interview.entity.Interview;
@@ -46,6 +47,7 @@ public class InterviewServiceImpl implements InterviewService {
     private final JobMapper jobMapper;
     private final SysUserMapper userMapper;
     private final ResumeMapper resumeMapper;
+    private final MailService mailService;
     private final ObjectProvider<DailyStatsCounter> dailyStatsCounterProvider;
 
     /** 今日面试数计数器业务域 */
@@ -121,6 +123,9 @@ public class InterviewServiceImpl implements InterviewService {
         if (counter != null) {
             counter.incrementToday(DOMAIN_INTERVIEW);
         }
+
+        // 发送面试邀请邮件（异步）
+        sendInterviewInvitationEmail(application, interviewTime, interviewerId, address);
 
         // 同步更新投递状态为面试中(1)
         if (application.getStatus() == 0) {
@@ -442,6 +447,12 @@ public class InterviewServiceImpl implements InterviewService {
         List<InterviewQuestion> questions = questionMapper.selectList(qWrapper);
         detail.put("questions", questions);
 
+        // 附加投递状态，供 HR 判断是否已处理
+        JobApplication app = applicationMapper.selectById(interview.getApplicationId());
+        if (app != null) {
+            detail.put("applicationStatus", app.getStatus());
+        }
+
         // 关联候选人简历信息，供面试官查看
         appendCandidateResume(detail, interview.getApplicationId());
 
@@ -602,10 +613,12 @@ public class InterviewServiceImpl implements InterviewService {
         // 更新面试状态为已完成
         interview.setStatus(1);
         interview.setUpdateTime(LocalDateTime.now());
-        interviewMapper.updateById(interview);
+        int updated = interviewMapper.updateById(interview);
+        log.info("面试评价已保存, interviewId={}, result={}, status更新行数={}",
+                interviewId, evaluation.getResult(), updated);
 
-        // 注意：面试官提交评价后，不自动修改投递状态
-        // 投递状态保持为 1(面试中)，由 HR 在面试详情页点击"录用"或"淘汰"后决定最终状态
+        // 面试官提交评价后不自动修改投递状态
+        // 投递保持为 1(面试中)，HR 在面试详情页点击"录用"或"淘汰"后决定最终状态
     }
 
     @Override
@@ -657,7 +670,8 @@ public class InterviewServiceImpl implements InterviewService {
     }
 
     @Override
-    public void processResult(Long interviewId, Integer hireDecision, Long operatorId) {
+    public void processResult(Long interviewId, Integer hireDecision, Long operatorId,
+                               String emailSubject, String emailBody) {
         Interview interview = interviewMapper.selectById(interviewId);
         if (interview == null) {
             throw new RuntimeException("面试记录不存在");
@@ -671,13 +685,63 @@ public class InterviewServiceImpl implements InterviewService {
             throw new RuntimeException("投递记录不存在");
         }
 
+        // 加载候选人邮箱和名称
+        String candidateEmail = null;
+        String candidateName = null;
+        SysUser candidate = userMapper.selectById(application.getUserId());
+        if (candidate != null) {
+            candidateEmail = candidate.getEmail();
+            candidateName = candidate.getRealName() != null ? candidate.getRealName() : candidate.getUsername();
+        }
+        String jobName = null;
+        Job job = jobMapper.selectById(application.getJobId());
+        if (job != null) {
+            jobName = job.getJobName();
+        }
+
         // hireDecision: 1-录用, 0-淘汰
         if (hireDecision != null && hireDecision == 1) {
             application.setStatus(2); // 已录用
+            mailService.sendHireNotification(candidateEmail, candidateName, jobName,
+                    interview.getInterviewTime() != null ? interview.getInterviewTime().toString() : null,
+                    emailSubject, emailBody);
         } else {
             application.setStatus(3); // 不合适
+            mailService.sendRejectNotification(candidateEmail, candidateName, jobName,
+                    emailSubject, emailBody);
         }
         application.setUpdateTime(LocalDateTime.now());
         applicationMapper.updateById(application);
+    }
+
+    /**
+     * 发送面试邀请邮件（异步），失败不影响主流程
+     */
+    private void sendInterviewInvitationEmail(JobApplication application, LocalDateTime interviewTime,
+                                               Long interviewerId, String address) {
+        try {
+            String candidateEmail = null;
+            String candidateName = null;
+            SysUser candidate = userMapper.selectById(application.getUserId());
+            if (candidate != null) {
+                candidateEmail = candidate.getEmail();
+                candidateName = candidate.getRealName() != null ? candidate.getRealName() : candidate.getUsername();
+            }
+            String jobName = null;
+            Job job = jobMapper.selectById(application.getJobId());
+            if (job != null) {
+                jobName = job.getJobName();
+            }
+            String interviewerName = null;
+            SysUser interviewer = userMapper.selectById(interviewerId);
+            if (interviewer != null) {
+                interviewerName = interviewer.getRealName() != null ? interviewer.getRealName() : interviewer.getUsername();
+            }
+            mailService.sendInterviewInvitation(candidateEmail, candidateName, jobName,
+                    interviewTime != null ? interviewTime.toString() : null, interviewerName, address);
+        } catch (Exception e) {
+            log.warn("发送面试邀请邮件失败，不影响面试创建: applicationId={}, error={}",
+                    application.getId(), e.getMessage());
+        }
     }
 }
