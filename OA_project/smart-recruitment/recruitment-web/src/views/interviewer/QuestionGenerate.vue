@@ -53,6 +53,33 @@
       </el-form>
     </el-card>
 
+    <!-- AI 生成中加载遮罩 -->
+    <el-card v-if="loading" shadow="never" class="section-card loading-card">
+      <div class="loading-wrap">
+        <div class="loading-avatar">
+          <el-icon class="is-loading"><Loading /></el-icon>
+        </div>
+        <div class="loading-info">
+          <h3 class="loading-title">🤖 AI 正在为您智能生成面试题...</h3>
+          <p class="loading-tip">{{ currentTip }}</p>
+          <div class="loading-meta">
+            <el-tag type="warning" effect="plain" size="large">
+              <el-icon style="margin-right:4px;"><Timer /></el-icon>
+              已耗时 {{ formattedElapsed }}
+            </el-tag>
+            <span class="loading-hint">请耐心等待，大模型正在深度分析岗位要求</span>
+          </div>
+          <el-progress
+            :percentage="progressPercent"
+            :stroke-width="8"
+            :show-text="false"
+            status="warning"
+            style="margin-top:10px;"
+          />
+        </div>
+      </div>
+    </el-card>
+
     <!-- 结果展示 -->
     <el-card v-if="questions.length" shadow="never" class="section-card">
       <div class="result-header">
@@ -89,10 +116,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { ArrowDown, Loading, Timer } from '@element-plus/icons-vue'
 import { generateQuestions, saveFormalQuestion, getInterviewDetail } from '@/api/interview'
 import { getJobList } from '@/api/job'
 
@@ -102,6 +129,59 @@ const saving = ref(false)
 const questions = ref([])
 const jobOptions = ref([])
 const interviewJobId = ref(null)
+
+// === 生成中加载状态：耗时计时 + 提示轮播 + 进度条 ===
+const elapsedMs = ref(0)
+const loadingTimer = ref(null)
+const tipTimer = ref(null)
+const tipIndex = ref(0)
+const GENERATE_TIPS = [
+  '正在解析目标岗位的核心技能要求...',
+  '正在结合行业知识库匹配最佳题型...',
+  '正在调整题目难度梯度，确保由浅入深...',
+  '正在为每道题撰写参考答案与评分标准...',
+  '正在对生成结果进行质量校验与去重...',
+  '即将完成，请稍候...'
+]
+const currentTip = ref(GENERATE_TIPS[0])
+// 预估总耗时 30s，进度条按比例推进（最高 95% 封顶，完成时跳到 100%）
+const ESTIMATE_MS = 30000
+const progressPercent = computed(() => {
+  if (!loading.value) return 0
+  const p = Math.min(95, Math.round((elapsedMs.value / ESTIMATE_MS) * 100))
+  return p
+})
+const formattedElapsed = computed(() => {
+  const totalSec = Math.floor(elapsedMs.value / 1000)
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return m > 0 ? `${m}分${s.toString().padStart(2, '0')}秒` : `${s}秒`
+})
+
+function startLoadingTimer() {
+  elapsedMs.value = 0
+  tipIndex.value = 0
+  currentTip.value = GENERATE_TIPS[0]
+  const startTime = Date.now()
+  loadingTimer.value = setInterval(() => {
+    elapsedMs.value = Date.now() - startTime
+  }, 100)
+  tipTimer.value = setInterval(() => {
+    tipIndex.value = (tipIndex.value + 1) % GENERATE_TIPS.length
+    currentTip.value = GENERATE_TIPS[tipIndex.value]
+  }, 3000)
+}
+
+function stopLoadingTimer() {
+  if (loadingTimer.value) {
+    clearInterval(loadingTimer.value)
+    loadingTimer.value = null
+  }
+  if (tipTimer.value) {
+    clearInterval(tipTimer.value)
+    tipTimer.value = null
+  }
+}
 
 const config = reactive({
   jobId: null,
@@ -159,6 +239,7 @@ async function generate() {
   }
   loading.value = true
   questions.value = []
+  startLoadingTimer()
   try {
     const res = await generateQuestions({
       jobId: config.jobId,
@@ -169,13 +250,14 @@ async function generate() {
     const data = res.data
     if (data && data.questions) {
       questions.value = data.questions.map(q => ({ ...q, _expanded: false }))
-      ElMessage.success(`成功生成 ${data.questions.length} 道面试题`)
+      ElMessage.success(`成功生成 ${data.questions.length} 道面试题（耗时 ${formattedElapsed.value}）`)
     } else {
       ElMessage.warning('AI 暂未返回题目，请重试')
     }
   } catch (e) {
     ElMessage.error(e.message || 'AI 生成失败')
   } finally {
+    stopLoadingTimer()
     loading.value = false
   }
 }
@@ -208,6 +290,10 @@ onMounted(() => {
   fetchJobs()
   loadInterviewInfo()
 })
+
+onBeforeUnmount(() => {
+  stopLoadingTimer()
+})
 </script>
 
 <style scoped>
@@ -230,4 +316,24 @@ onMounted(() => {
 .q-section { margin-bottom: 10px; }
 .q-section p { margin: 4px 0 0; color: #555; white-space: pre-wrap; line-height: 1.6; }
 .q-section strong { color: #333; }
+
+/* AI 生成中加载卡片 */
+.loading-card { border: 1px solid #fde8e4; }
+.loading-wrap { display: flex; gap: 20px; align-items: flex-start; padding: 8px 4px; }
+.loading-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #e76f51 0%, #f4a261 100%);
+  color: #fff; font-size: 30px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 18px rgba(231, 111, 81, 0.25);
+}
+.loading-info { flex: 1; min-width: 0; }
+.loading-title { margin: 0 0 8px; font-size: 17px; color: #3E2723; }
+.loading-tip {
+  margin: 0 0 12px; font-size: 14px; color: #e76f51; font-weight: 500;
+  min-height: 22px; transition: opacity 0.3s;
+}
+.loading-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.loading-hint { font-size: 12px; color: #a0aec0; }
 </style>
